@@ -14,6 +14,7 @@ import {
   Cpu, 
   Gauge, 
   CheckCircle2, 
+  Clock,
   Flame,
   MessageSquare,
   BarChart3

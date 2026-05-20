@@ -20,6 +20,7 @@ import {
   Settings
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
 interface LogLine {
   timestamp: string;
@@ -351,7 +352,7 @@ export default function TrainingVisualizer() {
                   <stop offset="100%" stopColor="#a855f7" />
                 </linearGradient>
                 <linearGradient id="trainStreamGradient" x1="0" y1="0" x2="1" y2="0">
-                  <stop offset="0%" stopColor="#a855f7" stopColorOpacity="0.8" />
+                  <stop offset="0%" stopColor="#a855f7" stopOpacity={0.8} />
                   <stop offset="100%" stopColor="#10b981" />
                 </linearGradient>
               </defs>
