@@ -34,16 +34,6 @@ api.interceptors.response.use(
       }
       // Tag the error so pages can detect it without re-checking
       error.isOffline = true;
-    } else if (error.response?.status === 401) {
-      // ── Handle 401 Unauthorized globally ──────────────────────────────────
-      if (typeof window !== 'undefined') {
-        const isAuthPage = window.location.pathname.startsWith('/auth');
-        if (!isAuthPage) {
-          localStorage.removeItem('token');
-          localStorage.removeItem('current_user');
-          window.location.href = '/auth/login?expired=true';
-        }
-      }
     }
 
     return Promise.reject(error);

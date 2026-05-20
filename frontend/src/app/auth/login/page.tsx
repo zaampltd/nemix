@@ -3,7 +3,7 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Zap, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Zap, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -17,14 +17,10 @@ function LoginForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [justRegistered, setJustRegistered] = useState(false);
-  const [sessionExpired, setSessionExpired] = useState(false);
 
   useEffect(() => {
     if (searchParams.get('registered') === 'true') {
       setJustRegistered(true);
-    }
-    if (searchParams.get('expired') === 'true') {
-      setSessionExpired(true);
     }
   }, [searchParams]);
 
@@ -108,17 +104,7 @@ function LoginForm() {
               <span>Account created successfully! Sign in below.</span>
             </motion.div>
           )}
-          {sessionExpired && (
-            <motion.div
-              initial={{ opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              className="flex items-center gap-3 mb-6 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400 text-sm"
-            >
-              <AlertCircle className="w-5 h-5 shrink-0" />
-              <span>Session expired. Please sign in again to continue.</span>
-            </motion.div>
-          )}
+
         </AnimatePresence>
 
         <form onSubmit={handleLogin} className="space-y-6 glass p-8 rounded-3xl border-white/5 shadow-2xl">
