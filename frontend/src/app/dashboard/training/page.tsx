@@ -1,11 +1,12 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import Link from 'next/link';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/Button';
 import {
   Cpu, Clock, CheckCircle2, XCircle, Activity,
-  History, Plus, Terminal, X, ChevronDown, Zap, Layers
+  History, Plus, Terminal, X, ChevronDown, Zap, Layers, Flame
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -312,10 +313,18 @@ export default function TrainingPage() {
             <h1 className="text-3xl font-bold tracking-tight mb-1">Training Hub</h1>
             <p className="text-gray-400">Monitor and manage your AI model training jobs.</p>
           </div>
-          <Button onClick={() => setIsModalOpen(true)} className="gap-2">
-            <Plus className="w-4 h-4" />
-            New Training Job
-          </Button>
+          <div className="flex items-center gap-3">
+            <Link href="/dashboard/training/visualizer">
+              <Button variant="secondary" className="rounded-xl border border-white/5 bg-white/5 hover:bg-white/10 gap-2 text-xs font-semibold">
+                <Flame className="w-4 h-4 text-purple-400" />
+                Pipeline Visualizer
+              </Button>
+            </Link>
+            <Button onClick={() => setIsModalOpen(true)} className="gap-2">
+              <Plus className="w-4 h-4" />
+              New Training Job
+            </Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

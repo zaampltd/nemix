@@ -19,6 +19,8 @@ import {
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
+import ThemeSelector from './ThemeSelector';
+
 const sidebarItems = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Datasets', href: '/dashboard/datasets', icon: Database },
@@ -92,6 +94,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           );
         })}
       </nav>
+
+      <ThemeSelector />
 
       <div className="p-4 border-t border-white/5 space-y-3">
         {currentUser && (

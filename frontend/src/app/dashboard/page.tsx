@@ -172,7 +172,12 @@ export default function Dashboard() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-8">
+      <motion.div 
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
+        className="space-y-8"
+      >
         {/* Welcome Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
@@ -188,21 +193,31 @@ export default function Dashboard() {
         {/* Real-time Telemetry Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {[
-            { name: 'Active Models', value: loading ? '...' : modelCount.toString(), icon: Layers, color: 'text-blue-400', bg: 'bg-blue-500/10' },
-            { name: 'Total Datasets', value: loading ? '...' : datasetCount.toString(), icon: Database, color: 'text-purple-400', bg: 'bg-purple-500/10' },
-            { name: 'Active Jobs', value: loading ? '...' : activeJobsCount.toString(), icon: Cpu, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
-            { name: 'Total Telemetry', value: '1.2M', icon: TrendingUp, color: 'text-orange-400', bg: 'bg-orange-500/10' },
+            { name: 'Active Models', value: loading ? '...' : modelCount.toString(), icon: Layers, color: 'text-blue-400', bg: 'bg-blue-500/10', glow: 'from-blue-500/10 to-transparent' },
+            { name: 'Total Datasets', value: loading ? '...' : datasetCount.toString(), icon: Database, color: 'text-purple-400', bg: 'bg-purple-500/10', glow: 'from-purple-500/10 to-transparent' },
+            { name: 'Active Jobs', value: loading ? '...' : activeJobsCount.toString(), icon: Cpu, color: 'text-emerald-400', bg: 'bg-emerald-500/10', glow: 'from-emerald-500/10 to-transparent' },
+            { name: 'Total Telemetry', value: '1.2M', icon: TrendingUp, color: 'text-orange-400', bg: 'bg-orange-500/10', glow: 'from-orange-500/10 to-transparent' },
           ].map((stat, i) => (
-            <div key={i} className="glass p-6 rounded-3xl border border-white/5 hover:border-white/10 hover:shadow-[0_0_30px_rgba(255,255,255,0.02)] transition-all group duration-300">
-              <div className="flex items-center justify-between mb-4">
+            <motion.div 
+              key={i} 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: i * 0.08 }}
+              className="relative glass p-6 rounded-3xl border border-white/5 hover:border-white/10 hover:shadow-[0_0_30px_rgba(255,255,255,0.02)] transition-all group duration-300 overflow-hidden cursor-pointer"
+            >
+              {/* Subtle hover gradient circle */}
+              <div className="absolute -inset-px bg-gradient-to-r from-transparent via-white/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-3xl pointer-events-none" />
+              <div className={cn("absolute -top-24 -right-24 w-48 h-48 bg-gradient-to-br rounded-full filter blur-2xl group-hover:scale-125 transition-transform duration-500 pointer-events-none", stat.glow)} />
+              
+              <div className="flex items-center justify-between mb-4 relative z-10">
                 <div className={cn("p-3 rounded-2xl transition-transform group-hover:scale-110 duration-300", stat.bg, stat.color)}>
                   <stat.icon className="w-6 h-6" />
                 </div>
                 <span className="text-[10px] font-mono text-gray-600 uppercase tracking-widest">LIVE</span>
               </div>
-              <div className="text-3xl font-bold font-mono tracking-tight mb-1">{stat.value}</div>
-              <div className="text-sm text-gray-400">{stat.name}</div>
-            </div>
+              <div className="text-3xl font-bold font-mono tracking-tight mb-1 relative z-10">{stat.value}</div>
+              <div className="text-sm text-gray-400 relative z-10">{stat.name}</div>
+            </motion.div>
           ))}
         </div>
 
@@ -465,7 +480,7 @@ export default function Dashboard() {
             </a>
           </div>
         </div>
-      </div>
+      </motion.div>
     </DashboardLayout>
   );
 }

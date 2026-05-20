@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/Button';
 import { 
@@ -9,7 +10,8 @@ import {
   Bot, 
   Settings2,
   Sparkles,
-  ChevronDown
+  ChevronDown,
+  ArrowLeftRight
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '@/lib/api';
@@ -129,7 +131,13 @@ export default function PlaygroundPage() {
             <h1 className="text-3xl font-bold tracking-tight mb-2">Model Playground</h1>
             <p className="text-gray-400">Interactive environment to test and validate your models.</p>
           </div>
-          <div className="flex gap-4 relative">
+          <div className="flex gap-4 relative items-center">
+            <Link href="/dashboard/playground/compare">
+              <Button variant="secondary" className="rounded-xl border border-white/5 bg-white/5 hover:bg-white/10 gap-2 text-xs font-semibold">
+                <ArrowLeftRight className="w-4 h-4 text-purple-400" />
+                Model Arena
+              </Button>
+            </Link>
             <div 
               onClick={() => setDropdownOpen(!dropdownOpen)}
               className="glass px-4 py-2 rounded-xl flex items-center gap-3 border border-white/5 cursor-pointer hover:bg-white/5 transition-all select-none"

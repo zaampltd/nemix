@@ -1,27 +1,90 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: hsl(263.4 70% 50.4%);
-  --color-primary-foreground: hsl(210 20% 98%);
-  --color-secondary: hsl(217.2 32.6% 17.5%);
-  --color-secondary-foreground: hsl(210 20% 98%);
-  --color-accent: hsl(217.2 32.6% 17.5%);
-  --color-accent-foreground: hsl(210 20% 98%);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
   --color-destructive: hsl(0 62.8% 30.6%);
   --color-destructive-foreground: hsl(210 20% 98%);
-  --color-muted: hsl(217.2 32.6% 17.5%);
-  --color-muted-foreground: hsl(215 20.2% 65.1%);
-  --color-card: hsl(222.2 84% 4.9%);
-  --color-card-foreground: hsl(210 20% 98%);
-  --color-border: hsl(217.2 32.6% 17.5%);
-  --color-input: hsl(217.2 32.6% 17.5%);
-  --color-ring: hsl(263.4 70% 50.4%);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-border: var(--border);
+  --color-input: var(--border);
+  --color-ring: var(--ring);
 }
 
 :root {
+  /* Carbon Obsidian Theme */
+  --primary: hsl(263.4 70% 50.4%);
+  --primary-foreground: hsl(210 20% 98%);
+  --secondary: hsl(220 14% 10%);
+  --secondary-foreground: hsl(210 20% 98%);
+  --accent: hsl(263.4 70% 50.4%);
+  --accent-foreground: hsl(210 20% 98%);
+  --muted: hsl(220 14% 12%);
+  --muted-foreground: hsl(215 20.2% 65.1%);
+  --card: hsl(222.2 84% 3.5%);
+  --card-foreground: hsl(210 20% 98%);
+  --border: hsl(220 14% 13%);
+  --ring: hsl(263.4 70% 50.4%);
+
   --foreground-rgb: 255, 255, 255;
   --background-start-rgb: 0, 0, 0;
-  --background-end-rgb: 10, 10, 10;
+  --background-end-rgb: 8, 8, 8;
+  
+  --theme-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
+  --theme-glow: #a855f7;
+}
+
+.theme-cyberpunk {
+  /* Cyberpunk Violet & Neon Theme */
+  --primary: hsl(327 100% 54%);
+  --primary-foreground: hsl(210 20% 98%);
+  --secondary: hsl(250 24% 8%);
+  --secondary-foreground: hsl(210 20% 98%);
+  --accent: hsl(180 100% 50%);
+  --accent-foreground: hsl(250 24% 5%);
+  --muted: hsl(250 24% 10%);
+  --muted-foreground: hsl(250 10% 70%);
+  --card: hsl(250 24% 4%);
+  --card-foreground: hsl(210 20% 98%);
+  --border: hsl(250 24% 14%);
+  --ring: hsl(327 100% 54%);
+
+  --foreground-rgb: 245, 245, 250;
+  --background-start-rgb: 6, 4, 12;
+  --background-end-rgb: 10, 8, 20;
+
+  --theme-gradient: linear-gradient(135deg, #ff007f 0%, #7f00ff 50%, #00ffff 100%);
+  --theme-glow: #ff007f;
+}
+
+.theme-emerald {
+  /* Emerald Aurora Theme */
+  --primary: hsl(150 100% 40%);
+  --primary-foreground: hsl(210 20% 98%);
+  --secondary: hsl(160 20% 8%);
+  --secondary-foreground: hsl(210 20% 98%);
+  --accent: hsl(174 100% 45%);
+  --accent-foreground: hsl(160 20% 4%);
+  --muted: hsl(160 20% 10%);
+  --muted-foreground: hsl(160 10% 70%);
+  --card: hsl(160 20% 3.5%);
+  --card-foreground: hsl(210 20% 98%);
+  --border: hsl(160 20% 12%);
+  --ring: hsl(150 100% 40%);
+
+  --foreground-rgb: 240, 248, 245;
+  --background-start-rgb: 2, 8, 6;
+  --background-end-rgb: 4, 12, 10;
+
+  --theme-gradient: linear-gradient(135deg, #10b981 0%, #0d9488 50%, #06b6d4 100%);
+  --theme-glow: #10b981;
 }
 
 body {
@@ -33,17 +96,25 @@ body {
     )
     rgb(var(--background-start-rgb));
   min-height: 100vh;
+  transition: background 0.5s ease, color 0.5s ease;
 }
 
-/* Custom Utilities */
+/* Custom Premium Utilities */
 @utility glass {
-  background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.04);
 }
 
 @utility premium-gradient {
-  background: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
+  background: var(--theme-gradient);
+}
+
+@utility grid-bg {
+  background-size: 35px 35px;
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
 }
 
 @utility animate-glow {
@@ -52,9 +123,19 @@ body {
 
 @keyframes glow {
   from {
-    box-shadow: 0 0 10px -5px #a855f7;
+    box-shadow: 0 0 10px -5px var(--theme-glow);
   }
   to {
-    box-shadow: 0 0 20px 2px #a855f7;
+    box-shadow: 0 0 20px 2px var(--theme-glow);
   }
+}
+
+/* Modern styling tweaks */
+input, select, textarea {
+  transition: all 0.2s ease-in-out;
+}
+input:focus, select:focus, textarea:focus {
+  border-color: var(--theme-glow) !important;
+  box-shadow: 0 0 10px -2px var(--theme-glow);
+  outline: none;
 }
