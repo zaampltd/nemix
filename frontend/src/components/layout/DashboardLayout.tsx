@@ -15,6 +15,8 @@ import {
   Layers,
   MessageSquare,
   User,
+  Rocket,
+  Shield,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -27,6 +29,8 @@ const sidebarItems = [
   { name: 'Models', href: '/dashboard/models', icon: Layers },
   { name: 'Training', href: '/dashboard/training', icon: Cpu },
   { name: 'Playground', href: '/dashboard/playground', icon: MessageSquare },
+  { name: 'Deployments', href: '/dashboard/deployments', icon: Rocket },
+  { name: 'Security', href: '/dashboard/security', icon: Shield },
   { name: 'Settings', href: '/dashboard/settings', icon: Settings },
 ];
 

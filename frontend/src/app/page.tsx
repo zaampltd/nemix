@@ -9,7 +9,8 @@ import {
   ArrowRight, 
   Layers, 
   Cpu, 
-  Database 
+  Database,
+  MessageSquare,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -247,25 +248,134 @@ export default function LandingPage() {
       <section id="features" className="py-32">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-20">
+            <p className="text-xs font-mono uppercase tracking-widest text-purple-400 mb-3">What's inside</p>
             <h2 className="text-4xl font-bold mb-4">Everything you need to ship AI</h2>
-            <p className="text-gray-400">A complete ecosystem for the modern AI engineer.</p>
+            <p className="text-gray-400 max-w-xl mx-auto">A complete ecosystem for the modern AI engineer. Every feature below is either live in your dashboard or coming very soon.</p>
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[
-              { title: 'Dataset Engine', desc: 'Drag-and-drop datasets, auto-cleaning, and versioning for training consistency.', icon: Database },
-              { title: 'Training Orchestrator', desc: 'Scalable GPU clusters with real-time logs and checkpoint management.', icon: Cpu },
-              { title: 'API Deployment', desc: 'One-click deployment to low-latency edge endpoints with automatic scaling.', icon: Rocket },
-              { title: 'Secure Gateway', desc: 'Enterprise-grade security with RBAC, audit logs, and encrypted API keys.', icon: Shield },
-              { title: 'Global Reach', desc: 'Deploy models globally with multi-region support and low-latency routing.', icon: Globe },
-              { title: 'Team Sync', desc: 'Collaborate with your team in real-time with shared environments.', icon: Layers },
+              {
+                title: 'Dataset Engine',
+                desc: 'Upload, version, and auto-clean training data at scale.',
+                icon: Database,
+                status: 'live',
+                href: '/dashboard/datasets',
+                color: 'from-blue-500/10 to-transparent',
+                border: 'hover:border-blue-500/30',
+                iconColor: 'text-blue-400',
+                iconBg: 'bg-blue-500/10 border-blue-500/20',
+                bullets: ['CSV / JSON / Parquet upload', 'Auto schema validation & cleaning', 'Dataset versioning with diff viewer', 'Train/validation auto-split'],
+              },
+              {
+                title: 'Training Orchestrator',
+                desc: 'Fine-tune LLMs with LoRA, visualize loss curves in real time.',
+                icon: Cpu,
+                status: 'live',
+                href: '/dashboard/training',
+                color: 'from-purple-500/10 to-transparent',
+                border: 'hover:border-purple-500/30',
+                iconColor: 'text-purple-400',
+                iconBg: 'bg-purple-500/10 border-purple-500/20',
+                bullets: ['LoRA / QLoRA fine-tuning configs', 'Interactive pipeline visualizer', 'Live loss / accuracy tracking', 'Checkpoint auto-save & restore'],
+              },
+              {
+                title: 'Model Playground',
+                desc: 'Test, benchmark, and compare models side-by-side.',
+                icon: MessageSquare,
+                status: 'live',
+                href: '/dashboard/playground',
+                color: 'from-pink-500/10 to-transparent',
+                border: 'hover:border-pink-500/30',
+                iconColor: 'text-pink-400',
+                iconBg: 'bg-pink-500/10 border-pink-500/20',
+                bullets: ['Chat with any fine-tuned model', 'Side-by-side Model Arena', 'Latency & token usage telemetry', 'Confidence scoring per response'],
+              },
+              {
+                title: 'API Deployments',
+                desc: 'One-click deploy to low-latency edge endpoints with auto-scaling.',
+                icon: Rocket,
+                status: 'live',
+                href: '/dashboard/deployments',
+                color: 'from-green-500/10 to-transparent',
+                border: 'hover:border-green-500/30',
+                iconColor: 'text-green-400',
+                iconBg: 'bg-green-500/10 border-green-500/20',
+                bullets: ['Globally distributed endpoints', 'Real-time RPS & latency monitoring', 'Sleep / wake auto-scaling', 'One-click rollback'],
+              },
+              {
+                title: 'Secure Gateway',
+                desc: 'Enterprise-grade API keys with RBAC scopes and audit logs.',
+                icon: Shield,
+                status: 'live',
+                href: '/dashboard/security',
+                color: 'from-amber-500/10 to-transparent',
+                border: 'hover:border-amber-500/30',
+                iconColor: 'text-amber-400',
+                iconBg: 'bg-amber-500/10 border-amber-500/20',
+                bullets: ['Scoped API key generation', 'Per-key usage analytics', 'Instant key revocation', 'Encrypted key storage'],
+              },
+              {
+                title: 'Team Collaboration',
+                desc: 'Shared workspaces, role management, and real-time co-editing.',
+                icon: Globe,
+                status: 'soon',
+                href: null,
+                color: 'from-white/5 to-transparent',
+                border: 'hover:border-white/10',
+                iconColor: 'text-gray-500',
+                iconBg: 'bg-white/5 border-white/10',
+                bullets: ['Multi-user workspaces', 'Role-based access (Admin/Editor/Viewer)', 'Activity feed & audit trail', 'Shared model registry'],
+              },
             ].map((f) => (
-              <div key={f.title} className="glass p-8 rounded-3xl border border-white/5 hover:border-purple-500/30 transition-all duration-500 group">
-                <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center mb-6 group-hover:premium-gradient transition-all duration-500">
-                  <f.icon className="w-6 h-6 text-purple-400 group-hover:text-white transition-colors" />
+              <div
+                key={f.title}
+                className={`relative glass p-7 rounded-3xl border border-white/5 ${f.border} transition-all duration-500 group bg-gradient-to-b ${f.color} flex flex-col`}
+              >
+                {/* Status badge */}
+                <div className="absolute top-5 right-5">
+                  {f.status === 'live' ? (
+                    <span className="flex items-center gap-1.5 text-[9px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-full bg-green-500/10 text-green-400 border border-green-500/20">
+                      <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+                      Live
+                    </span>
+                  ) : (
+                    <span className="text-[9px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-full bg-white/5 text-gray-500 border border-white/10">
+                      Coming Soon
+                    </span>
+                  )}
                 </div>
-                <h3 className="text-xl font-bold mb-3">{f.title}</h3>
-                <p className="text-gray-400 leading-relaxed">{f.desc}</p>
+
+                {/* Icon */}
+                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-5 border ${f.iconBg}`}>
+                  <f.icon className={`w-6 h-6 ${f.iconColor}`} />
+                </div>
+
+                <h3 className="text-lg font-bold mb-2 text-white">{f.title}</h3>
+                <p className="text-gray-400 text-sm leading-relaxed mb-5">{f.desc}</p>
+
+                {/* Feature bullets */}
+                <ul className="space-y-2 mb-6 flex-1">
+                  {f.bullets.map((b) => (
+                    <li key={b} className="flex items-start gap-2 text-xs text-gray-500">
+                      <span className={`mt-0.5 w-1.5 h-1.5 rounded-full shrink-0 ${f.iconColor} bg-current opacity-60`} />
+                      {b}
+                    </li>
+                  ))}
+                </ul>
+
+                {/* CTA */}
+                {f.href ? (
+                  <Link
+                    href={f.href}
+                    className={`mt-auto inline-flex items-center gap-2 text-xs font-semibold ${f.iconColor} group-hover:underline`}
+                  >
+                    Open {f.title}
+                    <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                  </Link>
+                ) : (
+                  <span className="mt-auto text-xs text-gray-600 font-mono">In development</span>
+                )}
               </div>
             ))}
           </div>
