@@ -99,20 +99,132 @@ export default function LandingPage() {
           </motion.div>
 
           {/* Hero Image / Dashboard Preview */}
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.4 }}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 30 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ delay: 0.4, duration: 0.7 }}
             className="mt-20 relative"
           >
-            <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent z-10" />
-            <div className="glass rounded-3xl border border-white/10 p-4 shadow-2xl">
-               <div className="bg-[#050505] rounded-2xl h-[500px] w-full flex items-center justify-center border border-white/5">
-                  <div className="flex flex-col items-center gap-4 text-gray-600">
-                    <Layers className="w-16 h-16 opacity-20" />
-                    <p className="text-sm uppercase tracking-widest font-mono">Infrastructure Dashboard Preview</p>
+            {/* Fade to black at bottom */}
+            <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-black to-transparent z-10 pointer-events-none rounded-b-3xl" />
+            <div className="glass rounded-3xl border border-white/10 p-3 shadow-[0_0_80px_-20px_rgba(168,85,247,0.3)]">
+              {/* Mock browser chrome */}
+              <div className="flex items-center gap-2 px-4 pb-3 pt-1 border-b border-white/5">
+                <span className="w-3 h-3 rounded-full bg-red-500/60" />
+                <span className="w-3 h-3 rounded-full bg-yellow-500/60" />
+                <span className="w-3 h-3 rounded-full bg-green-500/60" />
+                <div className="ml-4 flex-1 bg-white/5 rounded-lg h-5 text-[10px] text-gray-600 font-mono flex items-center px-3">
+                  nemix-jjjj.vercel.app/dashboard
+                </div>
+              </div>
+
+              {/* Dashboard shell */}
+              <div className="flex h-[460px] overflow-hidden rounded-2xl">
+
+                {/* Sidebar */}
+                <div className="w-48 shrink-0 bg-[#080808] border-r border-white/5 flex flex-col p-4 gap-1">
+                  <div className="flex items-center gap-2 mb-6 px-2">
+                    <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center">
+                      <Zap className="w-4 h-4 text-white" />
+                    </div>
+                    <span className="font-bold text-sm">Nemix</span>
                   </div>
-               </div>
+                  {[
+                    { label: 'Dashboard', icon: Layers, active: true },
+                    { label: 'Datasets', icon: Database, active: false },
+                    { label: 'Models', icon: Cpu, active: false },
+                    { label: 'Training', icon: Rocket, active: false },
+                    { label: 'Playground', icon: Globe, active: false },
+                  ].map((item) => (
+                    <div key={item.label} className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium transition-all ${item.active ? 'bg-purple-500/10 text-purple-300 border border-purple-500/20' : 'text-gray-500'}`}>
+                      <item.icon className="w-3.5 h-3.5" />
+                      {item.label}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Main content */}
+                <div className="flex-1 bg-[#050505] p-5 overflow-hidden flex flex-col gap-4">
+
+                  {/* Top bar */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs text-gray-500 font-mono uppercase tracking-wider">Overview</p>
+                      <h2 className="text-sm font-bold text-white">AI Infrastructure Dashboard</h2>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-green-500/10 border border-green-500/20">
+                        <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+                        <span className="text-[10px] text-green-400 font-mono">LIVE</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Stats row */}
+                  <div className="grid grid-cols-4 gap-3">
+                    {[
+                      { label: 'Models', value: '12', delta: '+2', color: 'from-purple-500/20 to-purple-500/5', border: 'border-purple-500/20', text: 'text-purple-400' },
+                      { label: 'Datasets', value: '38', delta: '+5', color: 'from-blue-500/20 to-blue-500/5', border: 'border-blue-500/20', text: 'text-blue-400' },
+                      { label: 'API Calls', value: '1.2M', delta: '+18%', color: 'from-emerald-500/20 to-emerald-500/5', border: 'border-emerald-500/20', text: 'text-emerald-400' },
+                      { label: 'GPU hrs', value: '847', delta: 'active', color: 'from-pink-500/20 to-pink-500/5', border: 'border-pink-500/20', text: 'text-pink-400' },
+                    ].map((stat) => (
+                      <div key={stat.label} className={`rounded-xl p-3 border ${stat.border} bg-gradient-to-b ${stat.color}`}>
+                        <p className="text-[9px] text-gray-500 uppercase tracking-wider font-mono">{stat.label}</p>
+                        <p className={`text-lg font-bold mt-0.5 ${stat.text}`}>{stat.value}</p>
+                        <p className="text-[9px] text-gray-600 mt-0.5">{stat.delta} this week</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Chart + Activity */}
+                  <div className="grid grid-cols-3 gap-3 flex-1 min-h-0">
+                    {/* Fake sparkline chart */}
+                    <div className="col-span-2 rounded-xl border border-white/5 bg-white/[0.02] p-3 flex flex-col">
+                      <p className="text-[9px] text-gray-500 uppercase tracking-wider font-mono mb-3">Training Loss · Epoch Progress</p>
+                      <div className="flex-1 relative">
+                        <svg viewBox="0 0 300 80" className="w-full h-full" preserveAspectRatio="none">
+                          <defs>
+                            <linearGradient id="heroChartGrad" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="0%" stopColor="#a855f7" stopOpacity={0.3} />
+                              <stop offset="100%" stopColor="#a855f7" stopOpacity={0} />
+                            </linearGradient>
+                          </defs>
+                          <path d="M0,70 C30,65 50,55 80,40 S130,20 160,15 S220,10 260,8 S290,7 300,7" fill="none" stroke="#a855f7" strokeWidth="2" strokeLinecap="round"/>
+                          <path d="M0,70 C30,65 50,55 80,40 S130,20 160,15 S220,10 260,8 S290,7 300,7 L300,80 L0,80 Z" fill="url(#heroChartGrad)"/>
+                          {/* Dot at end */}
+                          <circle cx="300" cy="7" r="3" fill="#a855f7" />
+                          <circle cx="300" cy="7" r="6" fill="#a855f7" fillOpacity="0.2" />
+                        </svg>
+                      </div>
+                      <div className="flex justify-between mt-2">
+                        {['Ep 1','Ep 2','Ep 3','Ep 4','Ep 5','Ep 6'].map(e => (
+                          <span key={e} className="text-[8px] text-gray-600 font-mono">{e}</span>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Recent jobs */}
+                    <div className="rounded-xl border border-white/5 bg-white/[0.02] p-3 flex flex-col gap-2 overflow-hidden">
+                      <p className="text-[9px] text-gray-500 uppercase tracking-wider font-mono">Recent Jobs</p>
+                      {[
+                        { name: 'llama3-finetune', status: 'running', color: 'text-green-400', dot: 'bg-green-400' },
+                        { name: 'gpt2-sentiment', status: 'done', color: 'text-gray-400', dot: 'bg-gray-600' },
+                        { name: 'clip-vision-v2', status: 'queued', color: 'text-yellow-400', dot: 'bg-yellow-400' },
+                        { name: 'bert-ner-run', status: 'done', color: 'text-gray-400', dot: 'bg-gray-600' },
+                      ].map((job) => (
+                        <div key={job.name} className="flex items-center justify-between py-1.5 border-b border-white/[0.04] last:border-0">
+                          <div className="flex items-center gap-1.5">
+                            <span className={`w-1.5 h-1.5 rounded-full ${job.dot} shrink-0`} />
+                            <span className="text-[9px] text-gray-300 font-mono truncate max-w-[85px]">{job.name}</span>
+                          </div>
+                          <span className={`text-[8px] font-mono ${job.color}`}>{job.status}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                </div>
+              </div>
             </div>
           </motion.div>
         </div>
