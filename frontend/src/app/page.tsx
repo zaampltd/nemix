@@ -23,7 +23,7 @@ export default function LandingPage() {
             <div className="w-10 h-10 rounded-xl premium-gradient flex items-center justify-center shadow-[0_0_20px_-5px_#a855f7]">
               <Zap className="w-6 h-6 text-white" />
             </div>
-            <span>AI Forge</span>
+            <span>Nemix</span>
           </div>
           
           <div className="hidden md:flex items-center gap-8 text-sm font-medium text-gray-400">
@@ -165,9 +165,9 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-8">
           <div className="flex items-center gap-2 font-bold text-xl">
             <Zap className="w-5 h-5 text-purple-400" />
-            <span>AI Forge</span>
+            <span>Nemix</span>
           </div>
-          <p className="text-gray-500 text-sm">© 2026 AI Forge Infrastructure Inc. All rights reserved.</p>
+          <p className="text-gray-500 text-sm">© 2026 Nemix Infrastructure Inc. All rights reserved.</p>
           <div className="flex gap-6 text-gray-500 text-sm">
             <a href="#" className="hover:text-white">Privacy</a>
             <a href="#" className="hover:text-white">Terms</a>

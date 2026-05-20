@@ -126,7 +126,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <div className="w-8 h-8 rounded-lg premium-gradient flex items-center justify-center">
               <Zap className="w-5 h-5 text-white" />
             </div>
-            <span>AI Forge</span>
+            <span>Nemix</span>
           </Link>
         </div>
         <SidebarContent />
@@ -155,7 +155,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   <div className="w-8 h-8 rounded-lg premium-gradient flex items-center justify-center">
                     <Zap className="w-5 h-5 text-white" />
                   </div>
-                  <span>AI Forge</span>
+                  <span>Nemix</span>
                 </div>
                 <button onClick={() => setIsMobileMenuOpen(false)} className="p-1 text-gray-500 hover:text-white">
                   <X className="w-5 h-5" />
@@ -173,7 +173,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <header className="h-16 border-b border-white/5 flex items-center justify-between px-6 md:hidden">
           <Link href="/dashboard" className="flex items-center gap-2 font-bold text-lg">
             <Zap className="w-5 h-5 text-purple-400" />
-            <span>AI Forge</span>
+            <span>Nemix</span>
           </Link>
           <button onClick={() => setIsMobileMenuOpen(true)} className="p-1 text-gray-400 hover:text-white">
             <Menu className="w-6 h-6" />

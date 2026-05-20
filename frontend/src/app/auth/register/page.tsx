@@ -80,7 +80,7 @@ export default function RegisterPage() {
             <div className="w-10 h-10 rounded-xl premium-gradient flex items-center justify-center shadow-[0_0_20px_-5px_#a855f7]">
               <Zap className="w-6 h-6 text-white" />
             </div>
-            <span>AI Forge</span>
+            <span>Nemix</span>
           </Link>
           <h1 className="text-2xl font-bold mb-2">Create Account</h1>
           <p className="text-gray-500">Join the next generation of AI builders</p>

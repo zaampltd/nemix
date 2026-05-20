@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AI Forge — Industrial Grade AI Training Platform",
-  description: "Build, train, and deploy production-ready AI models in minutes. From fine-tuning LLMs to custom computer vision, AI Forge provides the infrastructure so you can focus on innovation.",
+  title: "Nemix — Industrial Grade AI Training Platform",
+  description: "Build, train, and deploy production-ready AI models in minutes. From fine-tuning LLMs to custom computer vision, Nemix provides the infrastructure so you can focus on innovation.",
 };
 
 export default function RootLayout({
