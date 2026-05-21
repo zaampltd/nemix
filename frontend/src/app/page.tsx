@@ -109,11 +109,10 @@ export default function LandingPage() {
           </Link>
 
           <nav style={{ display: "flex", alignItems: "center", gap: "2px" }}>
-            {["Features", "Pricing", "Docs", "Blog"].map(item => (
-              <a key={item} href={`#${item.toLowerCase()}`} style={{ padding: "7px 14px", fontSize: "14px", color: "var(--md-on-surface-var)", borderRadius: "8px", textDecoration: "none", fontWeight: 500 }}>
-                {item}
-              </a>
-            ))}
+            <Link href="/docs" style={{ padding: "7px 14px", fontSize: "14px", color: "var(--md-on-surface-var)", borderRadius: "8px", textDecoration: "none", fontWeight: 500 }}>Docs</Link>
+            <Link href="/blog" style={{ padding: "7px 14px", fontSize: "14px", color: "var(--md-on-surface-var)", borderRadius: "8px", textDecoration: "none", fontWeight: 500 }}>Blog</Link>
+            <a href="#pricing" style={{ padding: "7px 14px", fontSize: "14px", color: "var(--md-on-surface-var)", borderRadius: "8px", textDecoration: "none", fontWeight: 500 }}>Pricing</a>
+            <a href="#features" style={{ padding: "7px 14px", fontSize: "14px", color: "var(--md-on-surface-var)", borderRadius: "8px", textDecoration: "none", fontWeight: 500 }}>Features</a>
           </nav>
 
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
