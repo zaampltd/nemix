@@ -7,16 +7,16 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
   loading?: boolean;
 }
 
-export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant = 'primary', size = 'md', loading, children, ...props }, ref) => {
-    const variants = {
-      primary: 'premium-gradient text-white shadow-[0_0_15px_-5px_#a855f7] hover:opacity-90',
-      secondary: 'bg-white/10 text-white hover:bg-white/15',
-      outline: 'border border-white/10 text-white hover:bg-white/5',
-      ghost: 'text-gray-400 hover:text-white hover:bg-white/5',
-      danger: 'bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20',
-    };
+const VARIANT_STYLES: Record<string, React.CSSProperties> = {
+  primary:   { background: "var(--md-primary)", color: "var(--md-on-primary)" },
+  secondary: { background: "var(--md-surface-2)", color: "var(--md-on-surface)", border: "1px solid var(--md-outline)" },
+  outline:   { background: "transparent", color: "var(--md-on-surface)", border: "1px solid var(--md-outline)" },
+  ghost:     { background: "transparent", color: "var(--md-on-surface-var)" },
+  danger:    { background: "var(--md-error-cont)", color: "var(--md-error)", border: "1px solid var(--md-outline)" },
+};
 
+export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ className, variant = 'primary', size = 'md', loading, children, style, ...props }, ref) => {
     const sizes = {
       sm: 'px-3 py-1.5 text-xs',
       md: 'px-5 py-2.5 text-sm',
@@ -29,15 +29,16 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         ref={ref}
         disabled={loading || props.disabled}
         className={cn(
-          'inline-flex items-center justify-center rounded-xl font-bold transition-all active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none',
-          variants[variant],
+          'inline-flex items-center justify-center rounded-xl font-semibold transition-opacity active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none hover:opacity-90',
           sizes[size],
           className
         )}
+        style={{ ...VARIANT_STYLES[variant], ...style }}
         {...props}
       >
         {loading ? (
-          <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+          <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-t-transparent"
+            style={{ borderColor: "currentColor", borderTopColor: "transparent" }} />
         ) : null}
         {children}
       </button>

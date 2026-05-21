@@ -1,8 +1,8 @@
 "use client";
-
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
 import { Zap, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -16,13 +16,9 @@ function LoginForm() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [justRegistered, setJustRegistered] = useState(false);
-
-  useEffect(() => {
-    if (searchParams.get('registered') === 'true') {
-      setJustRegistered(true);
-    }
-  }, [searchParams]);
+  const [justRegistered, setJustRegistered] = useState(
+    () => searchParams.get('registered') === 'true'
+  );
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,121 +35,78 @@ function LoginForm() {
       localStorage.removeItem('demo_user');
       router.push('/dashboard');
     } catch (err: any) {
-      const isNetworkError = !err.response;
-
-      if (isNetworkError) {
+      if (!err.response) {
         const localUsers: any[] = JSON.parse(localStorage.getItem('local_users') || '[]');
-
-        // 1. Exact email + password match
-        let match = localUsers.find((u: any) => u.email === email && u.password === password);
-
-        // 2. Email-only match (user may have forgotten exact password)
-        if (!match) match = localUsers.find((u: any) => u.email === email);
-
-        // 3. No local account at all — create one on the fly (offline mode)
+        let match = localUsers.find((u: any) => u.email === email && u.password === password)
+          || localUsers.find((u: any) => u.email === email);
         if (!match) {
           match = { email, password, full_name: email.split('@')[0] };
           localStorage.setItem('local_users', JSON.stringify([match, ...localUsers]));
         }
-
-        const user = {
-          token: `local-token-${match.email}`,
-          email: match.email,
-          full_name: match.full_name,
-        };
+        const user = { token: `local-token-${match.email}`, email: match.email, full_name: match.full_name };
         localStorage.setItem('token', user.token);
         localStorage.setItem('current_user', JSON.stringify(user));
         router.push('/dashboard');
         return;
-      } else {
-        setError(err.response?.data?.detail || 'Incorrect email or password.');
       }
+      setError(err.response?.data?.detail || 'Incorrect email or password.');
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center p-6">
-      <div className="absolute inset-0 bg-purple-500/5 blur-[120px] rounded-full -z-10" />
-
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-md"
-      >
-        <div className="text-center mb-10">
-          <Link href="/" className="inline-flex items-center gap-2 font-bold text-3xl mb-8 tracking-tighter">
-            <div className="w-10 h-10 rounded-xl premium-gradient flex items-center justify-center shadow-[0_0_20px_-5px_#a855f7]">
-              <Zap className="w-6 h-6 text-white" />
+    <div className="min-h-screen flex items-center justify-center p-6" style={{ background: 'var(--md-surface)' }}>
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
+        <div className="text-center mb-8">
+          <Link href="/" className="inline-flex items-center gap-2.5 font-bold text-2xl mb-6 tracking-tight" style={{ color: 'var(--md-on-surface)' }}>
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'var(--md-primary)' }}>
+              <Zap className="w-5 h-5" style={{ color: 'var(--md-on-primary)' }} />
             </div>
-            <span>Nemix</span>
+            Nemix
           </Link>
-          <h1 className="text-2xl font-bold mb-2">Welcome Back</h1>
-          <p className="text-gray-500">Sign in to manage your AI projects</p>
+          <h1 className="text-2xl font-bold mb-2" style={{ color: 'var(--md-on-surface)' }}>Welcome back</h1>
+          <p style={{ color: 'var(--md-on-surface-var)' }}>Sign in to manage your AI projects</p>
         </div>
 
         <AnimatePresence>
           {justRegistered && (
-            <motion.div
-              initial={{ opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              className="flex items-center gap-3 mb-6 p-4 rounded-2xl bg-green-500/10 border border-green-500/20 text-green-400 text-sm"
-            >
-              <CheckCircle2 className="w-5 h-5 shrink-0" />
-              <span>Account created successfully! Sign in below.</span>
+            <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+              className="flex items-center gap-3 mb-6 p-4 rounded-2xl"
+              style={{ background: 'var(--md-success-cont)', border: '1px solid var(--md-outline)' }}>
+              <CheckCircle2 className="w-5 h-5 shrink-0" style={{ color: 'var(--md-success)' }} />
+              <span className="text-sm" style={{ color: 'var(--md-success)' }}>Account created successfully! Sign in below.</span>
             </motion.div>
           )}
-
         </AnimatePresence>
 
-        <form onSubmit={handleLogin} className="space-y-6 glass p-8 rounded-3xl border-white/5 shadow-2xl">
-          <Input
-            label="Email Address"
-            type="email"
-            placeholder="name@company.com"
-            value={email}
-            onChange={(e) => { setEmail(e.target.value); setError(''); }}
-            required
-          />
+        <form onSubmit={handleLogin} className="space-y-5 p-8 rounded-3xl"
+          style={{ background: 'var(--md-surface-1)', border: '1px solid var(--md-outline)', boxShadow: 'var(--shadow-2)' }}>
+          <Input label="Email Address" type="email" placeholder="name@company.com"
+            value={email} onChange={e => { setEmail(e.target.value); setError(''); }} required />
 
           <div className="space-y-2">
             <div className="flex items-center justify-between px-1">
-              <label className="text-sm font-medium text-gray-400">Password</label>
-              <Link href="#" className="text-xs text-purple-400 hover:underline">Forgot password?</Link>
+              <label className="text-sm font-medium" style={{ color: 'var(--md-on-surface-var)' }}>Password</label>
+              <Link href="#" className="text-xs hover:underline" style={{ color: 'var(--md-primary)' }}>Forgot password?</Link>
             </div>
-            <Input
-              type="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => { setPassword(e.target.value); setError(''); }}
-              required
-            />
+            <Input type="password" placeholder="••••••••"
+              value={password} onChange={e => { setPassword(e.target.value); setError(''); }} required />
           </div>
 
           <AnimatePresence>
             {error && (
-              <motion.p
-                key="error"
-                initial={{ opacity: 0, y: -6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                className="text-sm text-red-400 text-center"
-              >
+              <motion.p key="error" initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                className="text-sm text-center" style={{ color: 'var(--md-error)' }}>
                 {error}
               </motion.p>
             )}
           </AnimatePresence>
 
-          <Button type="submit" className="w-full h-12" loading={loading}>
-            Sign In
-          </Button>
+          <Button type="submit" className="w-full h-12" loading={loading}>Sign In</Button>
 
-          <p className="text-center text-sm text-gray-500">
+          <p className="text-center text-sm" style={{ color: 'var(--md-on-surface-var)' }}>
             Don&apos;t have an account?{' '}
-            <Link href="/auth/register" className="text-purple-400 font-bold hover:underline">
-              Sign up
-            </Link>
+            <Link href="/auth/register" className="font-bold hover:underline" style={{ color: 'var(--md-primary)' }}>Sign up</Link>
           </p>
         </form>
       </motion.div>
@@ -163,7 +116,7 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-black" />}>
+    <Suspense fallback={<div className="min-h-screen" style={{ background: 'var(--md-surface)' }} />}>
       <LoginForm />
     </Suspense>
   );

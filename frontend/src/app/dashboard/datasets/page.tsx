@@ -46,10 +46,10 @@ function fileIcon(type: string) {
   return <File className="w-6 h-6" />;
 }
 
-function fileTypeColor(type: string) {
-  if (type === 'csv')  return 'text-green-400 bg-green-500/10';
-  if (type === 'json') return 'text-blue-400 bg-blue-500/10';
-  return 'text-orange-400 bg-orange-500/10';
+function fileTypeColor(type: string): React.CSSProperties {
+  if (type === 'csv')  return { color: 'var(--md-success)', background: 'var(--md-success-cont)' };
+  if (type === 'json') return { color: 'var(--md-primary)', background: 'var(--md-primary-container)' };
+  return { color: 'var(--md-warning)', background: 'var(--md-warning-cont)' };
 }
 
 // Estimate row count from raw text
@@ -194,8 +194,8 @@ export default function DatasetsPage() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight mb-1">Datasets</h1>
-            <p className="text-gray-400">Manage your training data and source files.</p>
+            <h1 className="text-xl font-semibold mb-1" style={{ color: 'var(--md-on-surface)' }}>Datasets</h1>
+            <p className="text-sm" style={{ color: 'var(--md-on-surface-var)' }}>Manage your training data and source files.</p>
           </div>
           <Button onClick={() => setIsModalOpen(true)} className="gap-2">
             <Plus className="w-4 h-4" />
@@ -211,22 +211,23 @@ export default function DatasetsPage() {
               { label: 'Total Size', value: formatBytes(datasets.reduce((s, d) => s + d.size_bytes, 0)) },
               { label: 'Total Rows', value: datasets.reduce((s, d) => s + d.row_count, 0).toLocaleString() },
             ].map(stat => (
-              <div key={stat.label} className="glass p-4 rounded-2xl border border-white/5 text-center">
-                <p className="text-2xl font-bold">{stat.value}</p>
-                <p className="text-xs text-gray-500 mt-1 uppercase tracking-wider">{stat.label}</p>
+              <div key={stat.label} className="rounded-2xl p-4 text-center" style={{ background: 'var(--md-surface-1)', border: '1px solid var(--md-outline)', boxShadow: 'var(--shadow-1)' }}>
+                <p className="text-2xl font-bold" style={{ color: 'var(--md-on-surface)' }}>{stat.value}</p>
+                <p className="text-xs mt-1 uppercase tracking-wider" style={{ color: 'var(--md-on-surface-var)' }}>{stat.label}</p>
               </div>
             ))}
           </div>
         )}
 
         {/* Search & Filter */}
-        <div className="glass p-4 rounded-2xl flex flex-col sm:flex-row gap-4">
+        <div className="rounded-2xl p-4 flex flex-col sm:flex-row gap-4" style={{ background: 'var(--md-surface-1)', border: '1px solid var(--md-outline)' }}>
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--md-on-surface-var)' }} />
             <input
               type="text"
               placeholder="Search datasets..."
-              className="w-full bg-transparent border-none outline-none text-sm pl-10 text-white placeholder-gray-600"
+              className="w-full bg-transparent border-none outline-none text-sm pl-10"
+              style={{ color: 'var(--md-on-surface)' }}
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
             />
@@ -236,12 +237,11 @@ export default function DatasetsPage() {
               <button
                 key={type}
                 onClick={() => setFilterType(type)}
-                className={cn(
-                  'px-3 py-1.5 rounded-lg text-xs font-medium uppercase tracking-wider transition-all',
-                  filterType === type
-                    ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
-                    : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'
-                )}
+                className="px-3 py-1.5 rounded-lg text-xs font-medium uppercase tracking-wider transition-all"
+                style={{
+                  background: filterType === type ? 'var(--md-primary-container)' : 'transparent',
+                  color: filterType === type ? 'var(--md-on-primary-cont)' : 'var(--md-on-surface-var)',
+                }}
               >
                 {type}
               </button>
@@ -251,78 +251,59 @@ export default function DatasetsPage() {
 
         {/* Dataset Grid */}
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-24 glass rounded-3xl">
-            <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin mb-4" />
-            <p className="text-gray-500 text-sm">Loading datasets...</p>
+          <div className="flex flex-col items-center justify-center py-24 rounded-3xl" style={{ background: 'var(--md-surface-1)', border: '1px solid var(--md-outline)' }}>
+            <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin mb-4" style={{ borderColor: 'var(--md-primary)', borderTopColor: 'transparent' }} />
+            <p className="text-sm" style={{ color: 'var(--md-on-surface-var)' }}>Loading datasets...</p>
           </div>
         ) : filtered.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <AnimatePresence>
               {filtered.map(dataset => (
-                <motion.div
-                  layout
-                  key={dataset.id}
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  className="glass p-6 rounded-2xl border border-white/5 hover:border-purple-500/20 transition-all group flex flex-col"
+                <motion.div layout key={dataset.id}
+                  initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}
+                  className="rounded-2xl p-6 transition-all group flex flex-col"
+                  style={{ background: 'var(--md-surface-1)', border: '1px solid var(--md-outline)', boxShadow: 'var(--shadow-1)' }}
                 >
-                  {/* Card Header */}
                   <div className="flex items-start justify-between mb-4">
-                    <div className={cn('p-3 rounded-xl', fileTypeColor(dataset.file_type))}>
+                    <div className="p-3 rounded-xl" style={fileTypeColor(dataset.file_type)}>
                       {fileIcon(dataset.file_type)}
                     </div>
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       {dataset.preview && dataset.preview.length > 0 && (
-                        <button
-                          onClick={() => setPreviewDataset(dataset)}
-                          className="p-2 text-gray-400 hover:text-blue-400 hover:bg-blue-400/10 rounded-lg transition-all"
-                          title="Preview"
-                        >
+                        <button onClick={() => setPreviewDataset(dataset)}
+                          className="p-2 rounded-lg transition-all" style={{ color: 'var(--md-on-surface-var)' }} title="Preview">
                           <Eye className="w-4 h-4" />
                         </button>
                       )}
-                      <button
-                        onClick={() => handleDelete(dataset)}
-                        className="p-2 text-gray-400 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all"
-                        title="Delete"
-                      >
+                      <button onClick={() => handleDelete(dataset)}
+                        className="p-2 rounded-lg transition-all" style={{ color: 'var(--md-on-surface-var)' }} title="Delete">
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
                   </div>
 
-                  {/* Name & Description */}
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-bold text-lg truncate">{dataset.name}</h3>
+                      <h3 className="font-bold text-lg truncate" style={{ color: 'var(--md-on-surface)' }}>{dataset.name}</h3>
                       {dataset.local && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-400 uppercase tracking-wider shrink-0">local</span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded uppercase tracking-wider shrink-0"
+                          style={{ background: 'var(--md-primary-container)', color: 'var(--md-on-primary-cont)' }}>local</span>
                       )}
                     </div>
-                    <p className="text-sm text-gray-500 line-clamp-2 mb-4 min-h-[2.5rem]">
+                    <p className="text-sm line-clamp-2 mb-4 min-h-[2.5rem]" style={{ color: 'var(--md-on-surface-var)' }}>
                       {dataset.description || 'No description provided.'}
                     </p>
                   </div>
 
-                  {/* Stats */}
-                  <div className="grid grid-cols-3 gap-3 pt-4 border-t border-white/5">
-                    <div>
-                      <p className="text-[10px] uppercase tracking-wider text-gray-600 mb-1">Type</p>
-                      <p className="text-sm font-semibold uppercase">{dataset.file_type}</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] uppercase tracking-wider text-gray-600 mb-1">Rows</p>
-                      <p className="text-sm font-semibold">{dataset.row_count.toLocaleString()}</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] uppercase tracking-wider text-gray-600 mb-1">Size</p>
-                      <p className="text-sm font-semibold">{formatBytes(dataset.size_bytes)}</p>
-                    </div>
+                  <div className="grid grid-cols-3 gap-3 pt-4" style={{ borderTop: '1px solid var(--md-outline-var)' }}>
+                    {[['Type', dataset.file_type.toUpperCase()], ['Rows', dataset.row_count.toLocaleString()], ['Size', formatBytes(dataset.size_bytes)]].map(([l, v]) => (
+                      <div key={l}>
+                        <p className="text-[10px] uppercase tracking-wider mb-1" style={{ color: 'var(--md-on-surface-var)' }}>{l}</p>
+                        <p className="text-sm font-semibold" style={{ color: 'var(--md-on-surface)' }}>{v}</p>
+                      </div>
+                    ))}
                   </div>
-
-                  {/* Date */}
-                  <p className="text-[10px] text-gray-600 mt-3">
+                  <p className="text-[10px] mt-3" style={{ color: 'var(--md-on-surface-var)' }}>
                     Added {new Date(dataset.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                   </p>
                 </motion.div>
@@ -330,10 +311,10 @@ export default function DatasetsPage() {
             </AnimatePresence>
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center py-24 glass rounded-3xl border-dashed border-white/10">
-            <Database className="w-14 h-14 text-gray-700 mb-5" />
-            <h3 className="text-xl font-bold mb-2">No datasets yet</h3>
-            <p className="text-gray-500 mb-8 text-center max-w-xs">
+          <div className="flex flex-col items-center justify-center py-24 rounded-3xl" style={{ border: '1px dashed var(--md-outline)' }}>
+            <Database className="w-14 h-14 mb-5" style={{ color: 'var(--md-outline)' }} />
+            <h3 className="text-xl font-bold mb-2" style={{ color: 'var(--md-on-surface)' }}>No datasets yet</h3>
+            <p className="mb-8 text-center max-w-xs" style={{ color: 'var(--md-on-surface-var)' }}>
               Upload a CSV, JSON, or TXT file to start building your training pipeline.
             </p>
             <Button onClick={() => setIsModalOpen(true)} className="gap-2">
@@ -351,24 +332,24 @@ export default function DatasetsPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+              className="absolute inset-0 backdrop-blur-sm"
+              style={{ background: 'var(--md-scrim)' }}
               onClick={() => !isUploading && setIsModalOpen(false)}
             />
             <motion.div
               initial={{ scale: 0.95, opacity: 0, y: 10 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.95, opacity: 0, y: 10 }}
-              className="relative w-full max-w-lg bg-[#0a0a0a] border border-white/10 rounded-3xl p-8 shadow-2xl"
+              className="relative w-full max-w-lg rounded-3xl p-8"
+              style={{ background: 'var(--md-surface-1)', border: '1px solid var(--md-outline)', boxShadow: 'var(--shadow-3)' }}
             >
               <div className="flex items-center justify-between mb-8">
                 <div>
-                  <h2 className="text-2xl font-bold">Upload Dataset</h2>
-                  <p className="text-gray-500 text-sm mt-1">CSV, JSON, or TXT — up to 50 MB</p>
+                  <h2 className="text-2xl font-bold" style={{ color: 'var(--md-on-surface)' }}>Upload Dataset</h2>
+                  <p className="text-sm mt-1" style={{ color: 'var(--md-on-surface-var)' }}>CSV, JSON, or TXT — up to 50 MB</p>
                 </div>
-                <button
-                  onClick={() => !isUploading && setIsModalOpen(false)}
-                  className="p-2 text-gray-500 hover:text-white hover:bg-white/10 rounded-xl transition-all"
-                >
+                <button onClick={() => !isUploading && setIsModalOpen(false)}
+                  className="p-2 rounded-xl transition-all" style={{ color: 'var(--md-on-surface-var)' }}>
                   <X className="w-5 h-5" />
                 </button>
               </div>
@@ -376,12 +357,11 @@ export default function DatasetsPage() {
               <form onSubmit={handleUpload} className="space-y-5">
                 {/* Drop Zone */}
                 <div
-                  className={cn(
-                    'border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center transition-all cursor-pointer select-none',
-                    dragOver ? 'border-purple-400 bg-purple-500/10' :
-                    selectedFile ? 'border-green-500/50 bg-green-500/5' :
-                    'border-white/10 hover:border-white/25 hover:bg-white/[0.02]'
-                  )}
+                  className="border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center transition-all cursor-pointer select-none"
+                  style={{
+                    borderColor: dragOver ? 'var(--md-primary)' : selectedFile ? 'var(--md-success)' : 'var(--md-outline)',
+                    background: dragOver ? 'var(--md-primary-container)' : selectedFile ? 'var(--md-success-cont)' : 'var(--md-surface-2)',
+                  }}
                   onClick={() => fileInputRef.current?.click()}
                   onDragOver={e => { e.preventDefault(); setDragOver(true); }}
                   onDragLeave={() => setDragOver(false)}
@@ -389,34 +369,23 @@ export default function DatasetsPage() {
                 >
                   {selectedFile ? (
                     <>
-                      <CheckCircle2 className="w-10 h-10 text-green-400 mb-3" />
-                      <p className="text-sm font-bold text-white">{selectedFile.name}</p>
-                      <p className="text-xs text-gray-500 mt-1">{formatBytes(selectedFile.size)}</p>
-                      <button
-                        type="button"
-                        onClick={e => { e.stopPropagation(); setSelectedFile(null); }}
-                        className="mt-3 text-xs text-gray-500 hover:text-red-400 transition-colors"
-                      >
-                        Remove file
-                      </button>
+                      <CheckCircle2 className="w-10 h-10 mb-3" style={{ color: 'var(--md-success)' }} />
+                      <p className="text-sm font-bold" style={{ color: 'var(--md-on-surface)' }}>{selectedFile.name}</p>
+                      <p className="text-xs mt-1" style={{ color: 'var(--md-on-surface-var)' }}>{formatBytes(selectedFile.size)}</p>
+                      <button type="button" onClick={e => { e.stopPropagation(); setSelectedFile(null); }}
+                        className="mt-3 text-xs transition-colors" style={{ color: 'var(--md-error)' }}>Remove file</button>
                     </>
                   ) : (
                     <>
-                      <Upload className={cn('w-10 h-10 mb-3', dragOver ? 'text-purple-400' : 'text-gray-600')} />
-                      <p className="text-sm font-bold">
+                      <Upload className="w-10 h-10 mb-3" style={{ color: dragOver ? 'var(--md-primary)' : 'var(--md-on-surface-var)' }} />
+                      <p className="text-sm font-bold" style={{ color: 'var(--md-on-surface)' }}>
                         {dragOver ? 'Drop it here!' : 'Click or drag & drop'}
                       </p>
-                      <p className="text-xs text-gray-500 mt-1">Supports CSV, JSON, TXT</p>
+                      <p className="text-xs mt-1" style={{ color: 'var(--md-on-surface-var)' }}>Supports CSV, JSON, TXT</p>
                     </>
                   )}
-                  <input
-                    ref={fileInputRef}
-                    id="file-upload"
-                    type="file"
-                    className="hidden"
-                    accept=".csv,.json,.txt,.tsv"
-                    onChange={handleFileSelect}
-                  />
+                  <input ref={fileInputRef} id="file-upload" type="file" className="hidden"
+                    accept=".csv,.json,.txt,.tsv" onChange={handleFileSelect} />
                 </div>
 
                 <Input
@@ -428,9 +397,10 @@ export default function DatasetsPage() {
                 />
 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-400 px-1">Description <span className="text-gray-600">(optional)</span></label>
+                  <label className="text-sm font-medium px-1" style={{ color: 'var(--md-on-surface-var)' }}>Description <span style={{ opacity: 0.6 }}>(optional)</span></label>
                   <textarea
-                    className="w-full h-20 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all resize-none placeholder-gray-600"
+                    className="w-full h-20 rounded-xl px-4 py-3 text-sm transition-all resize-none"
+                    style={{ background: 'var(--md-surface-2)', border: '1px solid var(--md-outline)', color: 'var(--md-on-surface)' }}
                     placeholder="What does this dataset contain?"
                     value={uploadDesc}
                     onChange={e => setUploadDesc(e.target.value)}
@@ -438,7 +408,7 @@ export default function DatasetsPage() {
                 </div>
 
                 {uploadError && (
-                  <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 flex gap-3 text-red-400 text-sm">
+                  <div className="p-4 rounded-xl flex gap-3 text-sm" style={{ background: 'var(--md-error-cont)', border: '1px solid var(--md-outline)', color: 'var(--md-error)' }}>
                     <AlertCircle className="w-5 h-5 shrink-0" />
                     <p>{uploadError}</p>
                   </div>
@@ -477,47 +447,49 @@ export default function DatasetsPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+              className="absolute inset-0 backdrop-blur-sm"
+              style={{ background: 'var(--md-scrim)' }}
               onClick={() => setPreviewDataset(null)}
             />
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="relative w-full max-w-3xl bg-[#0a0a0a] border border-white/10 rounded-3xl p-6 shadow-2xl max-h-[80vh] flex flex-col"
+              className="relative w-full max-w-3xl rounded-3xl p-6 max-h-[80vh] flex flex-col"
+              style={{ background: 'var(--md-surface-1)', border: '1px solid var(--md-outline)', boxShadow: 'var(--shadow-3)' }}
             >
               <div className="flex items-center justify-between mb-5">
                 <div className="flex items-center gap-3">
-                  <div className={cn('p-2 rounded-lg', fileTypeColor(previewDataset.file_type))}>
+                  <div className="p-2 rounded-lg" style={fileTypeColor(previewDataset.file_type)}>
                     {fileIcon(previewDataset.file_type)}
                   </div>
                   <div>
-                    <h3 className="font-bold text-lg">{previewDataset.name}</h3>
-                    <p className="text-xs text-gray-500">{previewDataset.row_count.toLocaleString()} rows · {formatBytes(previewDataset.size_bytes)}</p>
+                    <h3 className="font-bold text-lg" style={{ color: 'var(--md-on-surface)' }}>{previewDataset.name}</h3>
+                    <p className="text-xs" style={{ color: 'var(--md-on-surface-var)' }}>{previewDataset.row_count.toLocaleString()} rows · {formatBytes(previewDataset.size_bytes)}</p>
                   </div>
                 </div>
-                <button onClick={() => setPreviewDataset(null)} className="p-2 text-gray-500 hover:text-white hover:bg-white/10 rounded-xl transition-all">
+                <button onClick={() => setPreviewDataset(null)} className="p-2 rounded-xl transition-all" style={{ color: 'var(--md-on-surface-var)' }}>
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
-              <div className="overflow-auto rounded-2xl border border-white/5 flex-1">
+              <div className="overflow-auto rounded-2xl flex-1" style={{ border: '1px solid var(--md-outline)' }}>
                 {previewDataset.preview && previewDataset.preview.length > 0 ? (
                   <table className="w-full text-left text-sm">
                     <thead>
-                      <tr className="border-b border-white/10 bg-white/[0.03]">
+                      <tr style={{ borderBottom: '1px solid var(--md-outline)', background: 'var(--md-surface-2)' }}>
                         {previewDataset.preview[0]?.map((col, i) => (
-                          <th key={i} className="px-4 py-3 text-xs text-gray-400 font-semibold uppercase tracking-wider whitespace-nowrap">
+                          <th key={i} className="px-4 py-3 text-xs font-semibold uppercase tracking-wider whitespace-nowrap" style={{ color: 'var(--md-on-surface-var)' }}>
                             {col}
                           </th>
                         ))}
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-white/5">
+                    <tbody>
                       {previewDataset.preview.slice(1).map((row, i) => (
-                        <tr key={i} className="hover:bg-white/[0.02] transition-colors">
+                        <tr key={i} style={{ borderBottom: '1px solid var(--md-outline-var)' }}>
                           {row.map((cell, j) => (
-                            <td key={j} className="px-4 py-3 text-gray-300 whitespace-nowrap max-w-[200px] truncate">
+                            <td key={j} className="px-4 py-3 whitespace-nowrap max-w-[200px] truncate" style={{ color: 'var(--md-on-surface)' }}>
                               {cell}
                             </td>
                           ))}
@@ -526,10 +498,10 @@ export default function DatasetsPage() {
                     </tbody>
                   </table>
                 ) : (
-                  <div className="p-8 text-center text-gray-500 text-sm">No preview available</div>
+                  <div className="p-8 text-center text-sm" style={{ color: 'var(--md-on-surface-var)' }}>No preview available</div>
                 )}
               </div>
-              <p className="text-xs text-gray-600 mt-3 text-center">Showing first 5 rows</p>
+              <p className="text-xs mt-3 text-center" style={{ color: 'var(--md-on-surface-var)' }}>Showing first 5 rows</p>
             </motion.div>
           </div>
         )}
