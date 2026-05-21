@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import os
 
 import models, database
-from api import auth, datasets, training, models_api, inference
+from api import auth, datasets, training, models_api, inference, payments
 
 # Create database tables
 models.Base.metadata.create_all(bind=database.engine)
@@ -25,6 +25,7 @@ app.include_router(datasets.router)
 app.include_router(training.router)
 app.include_router(models_api.router)
 app.include_router(inference.router)
+app.include_router(payments.router)
 
 @app.get("/")
 async def root():
