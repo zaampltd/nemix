@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Database, Cpu, Settings, LogOut,
   Menu, X, Zap, Layers, MessageSquare, Rocket, Shield,
   BarChart2, BookOpen, FlaskConical, Sun, Moon, ChevronRight,
-  GitBranch, Sliders, CreditCard,
+  GitBranch, Sliders, CreditCard, Users, Activity, Bell,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -39,9 +39,17 @@ const NAV_SECTIONS = [
     label: "Deploy",
     items: [
       { name: "Deployments", href: "/dashboard/deployments", icon: Rocket },
-      { name: "Security", href: "/dashboard/security", icon: Shield },
-      { name: "Billing", href: "/dashboard/billing", icon: CreditCard },
-      { name: "Settings", href: "/dashboard/settings", icon: Settings },
+      { name: "Monitoring",  href: "/dashboard/monitoring",  icon: Activity },
+      { name: "Security",    href: "/dashboard/security",    icon: Shield },
+      { name: "Billing",     href: "/dashboard/billing",     icon: CreditCard },
+      { name: "Settings",    href: "/dashboard/settings",    icon: Settings },
+    ],
+  },
+  {
+    label: "Workspace",
+    items: [
+      { name: "Team",          href: "/dashboard/team",          icon: Users },
+      { name: "Notifications", href: "/dashboard/notifications", icon: Bell },
     ],
   },
 ];
