@@ -1,47 +1,73 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Suspense } from 'react';
-import { Zap, CheckCircle2 } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
+import {
+  Zap, CheckCircle2, Eye, EyeOff, AlertCircle,
+  Star, ArrowRight, Lock, GitBranch, Globe,
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '@/lib/api';
 
+// ─── Testimonials shown on the left panel ─────────────────────────
+const TESTIMONIALS = [
+  { quote: "Nemix cut our deployment time from weeks to hours.", name: "Sarah Chen",    role: "ML Lead @ Vercel",    avatar: "SC", color: "#5b5bd6" },
+  { quote: "We fine-tuned and shipped in a single afternoon.",  name: "James Wilson",  role: "CTO @ Notion",        avatar: "JW", color: "#3dd68c" },
+  { quote: "The evaluation suite is genuinely world-class.",    name: "Amira Patel",   role: "AI Eng @ Stripe",     avatar: "AP", color: "#f59e0b" },
+];
+
+// ─── Key selling points on the left panel ────────────────────────
+const POINTS = [
+  "Fine-tune LLMs with LoRA / QLoRA",
+  "Deploy to global endpoints in 60 seconds",
+  "Real-time training loss curves",
+  "Built-in evaluation & benchmarking",
+];
+
+// ─── Shared input style ───────────────────────────────────────────
+const inp = (hasErr = false): React.CSSProperties => ({
+  width: '100%', height: '46px', borderRadius: '12px',
+  padding: '0 14px', fontSize: '0.875rem',
+  background: 'var(--md-surface-2)',
+  border: `1px solid ${hasErr ? 'var(--md-error)' : 'var(--md-outline)'}`,
+  color: 'var(--md-on-surface)', outline: 'none', transition: 'border-color 0.15s',
+});
+
+// ─── Login form inner (needs useSearchParams) ─────────────────────
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [email, setEmail] = useState('');
+
+  const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [justRegistered, setJustRegistered] = useState(
-    () => searchParams.get('registered') === 'true'
-  );
+  const [showPw, setShowPw]     = useState(false);
+  const [loading, setLoading]   = useState(false);
+  const [error, setError]       = useState('');
+  const [activeTestimonial, setActiveTestimonial] = useState(0);
+  const justRegistered = searchParams.get('registered') === 'true';
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setError('');
+    setLoading(true); setError('');
 
     const formData = new FormData();
     formData.append('username', email);
     formData.append('password', password);
 
     try {
-      const response = await api.post('/auth/login', formData);
-      localStorage.setItem('token', response.data.access_token);
+      const res = await api.post('/auth/login', formData);
+      localStorage.setItem('token', res.data.access_token);
       localStorage.removeItem('demo_user');
       router.push('/dashboard');
     } catch (err: any) {
       if (!err.response) {
-        const localUsers: any[] = JSON.parse(localStorage.getItem('local_users') || '[]');
-        let match = localUsers.find((u: any) => u.email === email && u.password === password)
-          || localUsers.find((u: any) => u.email === email);
+        // Offline / demo mode
+        const local: any[] = JSON.parse(localStorage.getItem('local_users') || '[]');
+        let match = local.find((u: any) => u.email === email && u.password === password)
+          || local.find((u: any) => u.email === email);
         if (!match) {
           match = { email, password, full_name: email.split('@')[0] };
-          localStorage.setItem('local_users', JSON.stringify([match, ...localUsers]));
+          localStorage.setItem('local_users', JSON.stringify([match, ...local]));
         }
         const user = { token: `local-token-${match.email}`, email: match.email, full_name: match.full_name };
         localStorage.setItem('token', user.token);
@@ -55,68 +81,215 @@ function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6" style={{ background: 'var(--md-surface)' }}>
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-2.5 font-bold text-2xl mb-6 tracking-tight" style={{ color: 'var(--md-on-surface)' }}>
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'var(--md-primary)' }}>
-              <Zap className="w-5 h-5" style={{ color: 'var(--md-on-primary)' }} />
-            </div>
-            Nemix
-          </Link>
-          <h1 className="text-2xl font-bold mb-2" style={{ color: 'var(--md-on-surface)' }}>Welcome back</h1>
-          <p style={{ color: 'var(--md-on-surface-var)' }}>Sign in to manage your AI projects</p>
+    <div style={{ minHeight: '100vh', display: 'grid', gridTemplateColumns: '1fr 1fr', background: 'var(--md-surface)' }}>
+
+      {/* ── Left panel (brand / social proof) ───────────────────── */}
+      <div style={{ background: 'var(--md-primary)', padding: '40px 48px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', position: 'relative', overflow: 'hidden' }}>
+
+        {/* Decorative blobs */}
+        <div style={{ position: 'absolute', top: '-80px', right: '-80px', width: '320px', height: '320px', borderRadius: '50%', background: 'rgba(255,255,255,0.06)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', bottom: '-60px', left: '-60px', width: '240px', height: '240px', borderRadius: '50%', background: 'rgba(255,255,255,0.04)', pointerEvents: 'none' }} />
+
+        {/* Logo */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', position: 'relative' }}>
+          <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Zap style={{ width: '18px', height: '18px', color: '#fff' }} />
+          </div>
+          <span style={{ fontSize: '18px', fontWeight: 800, color: '#fff' }}>Nemix</span>
         </div>
 
-        <AnimatePresence>
-          {justRegistered && (
-            <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-              className="flex items-center gap-3 mb-6 p-4 rounded-2xl"
-              style={{ background: 'var(--md-success-cont)', border: '1px solid var(--md-outline)' }}>
-              <CheckCircle2 className="w-5 h-5 shrink-0" style={{ color: 'var(--md-success)' }} />
-              <span className="text-sm" style={{ color: 'var(--md-success)' }}>Account created successfully! Sign in below.</span>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        <form onSubmit={handleLogin} className="space-y-5 p-8 rounded-3xl"
-          style={{ background: 'var(--md-surface-1)', border: '1px solid var(--md-outline)', boxShadow: 'var(--shadow-2)' }}>
-          <Input label="Email Address" type="email" placeholder="name@company.com"
-            value={email} onChange={e => { setEmail(e.target.value); setError(''); }} required />
-
-          <div className="space-y-2">
-            <div className="flex items-center justify-between px-1">
-              <label className="text-sm font-medium" style={{ color: 'var(--md-on-surface-var)' }}>Password</label>
-              <Link href="#" className="text-xs hover:underline" style={{ color: 'var(--md-primary)' }}>Forgot password?</Link>
-            </div>
-            <Input type="password" placeholder="••••••••"
-              value={password} onChange={e => { setPassword(e.target.value); setError(''); }} required />
+        {/* Middle: headline + bullets */}
+        <div style={{ position: 'relative' }}>
+          <h2 style={{ fontSize: 'clamp(26px, 3vw, 38px)', fontWeight: 800, color: '#fff', lineHeight: 1.15, letterSpacing: '-0.02em', marginBottom: '24px' }}>
+            The fastest way to<br />
+            <span style={{ opacity: 0.75 }}>ship AI models.</span>
+          </h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '40px' }}>
+            {POINTS.map((p, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <CheckCircle2 style={{ width: '12px', height: '12px', color: '#fff' }} />
+                </div>
+                <span style={{ fontSize: '14px', color: 'rgba(255,255,255,0.85)', fontWeight: 500 }}>{p}</span>
+              </div>
+            ))}
           </div>
 
+          {/* Stats mini row */}
+          <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
+            {[["50K+", "Models trained"], ["12K+", "Developers"], ["99.9%", "Uptime"]].map(([v, l]) => (
+              <div key={l}>
+                <p style={{ fontSize: '22px', fontWeight: 800, color: '#fff', letterSpacing: '-0.02em' }}>{v}</p>
+                <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', marginTop: '2px' }}>{l}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Testimonial */}
+        <div style={{ position: 'relative' }}>
+          <AnimatePresence mode="wait">
+            {TESTIMONIALS.map((t, i) => i === activeTestimonial && (
+              <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+                style={{ padding: '20px', borderRadius: '16px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)' }}>
+                {/* Stars */}
+                <div style={{ display: 'flex', gap: '3px', marginBottom: '12px' }}>
+                  {[...Array(5)].map((_, si) => <Star key={si} style={{ width: '13px', height: '13px', color: '#fbbf24', fill: '#fbbf24' }} />)}
+                </div>
+                <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.9)', lineHeight: 1.6, marginBottom: '16px' }}>"{t.quote}"</p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: t.color + '33', border: `2px solid ${t.color}66`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '12px', color: '#fff', flexShrink: 0 }}>
+                    {t.avatar}
+                  </div>
+                  <div>
+                    <p style={{ fontSize: '13px', fontWeight: 700, color: '#fff' }}>{t.name}</p>
+                    <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)' }}>{t.role}</p>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+          {/* Dots */}
+          <div style={{ display: 'flex', gap: '6px', marginTop: '14px' }}>
+            {TESTIMONIALS.map((_, i) => (
+              <button key={i} onClick={() => setActiveTestimonial(i)}
+                style={{ width: i === activeTestimonial ? '20px' : '7px', height: '7px', borderRadius: '100px', background: i === activeTestimonial ? '#fff' : 'rgba(255,255,255,0.3)', border: 'none', cursor: 'pointer', transition: 'all 0.3s' }} />
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Right panel (form) ───────────────────────────────────── */}
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '48px 40px', overflowY: 'auto' }}>
+        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} style={{ width: '100%', maxWidth: '400px' }}>
+
+          {/* Top link */}
+          <div style={{ textAlign: 'right', marginBottom: '32px' }}>
+            <span style={{ fontSize: '13px', color: 'var(--md-on-surface-var)' }}>Don't have an account? </span>
+            <Link href="/auth/register" style={{ fontSize: '13px', fontWeight: 700, color: 'var(--md-primary)', textDecoration: 'none' }}>
+              Sign up free →
+            </Link>
+          </div>
+
+          {/* Heading */}
+          <div style={{ marginBottom: '28px' }}>
+            <h1 style={{ fontSize: '26px', fontWeight: 800, color: 'var(--md-on-surface)', letterSpacing: '-0.025em', marginBottom: '6px' }}>
+              Welcome back 👋
+            </h1>
+            <p style={{ fontSize: '14px', color: 'var(--md-on-surface-var)' }}>Sign in to your Nemix workspace</p>
+          </div>
+
+          {/* Registration success */}
           <AnimatePresence>
-            {error && (
-              <motion.p key="error" initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                className="text-sm text-center" style={{ color: 'var(--md-error)' }}>
-                {error}
-              </motion.p>
+            {justRegistered && (
+              <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', padding: '12px 16px', borderRadius: '12px', background: 'var(--md-success-cont)', border: '1px solid var(--md-outline)' }}>
+                <CheckCircle2 style={{ width: '16px', height: '16px', color: 'var(--md-success)', flexShrink: 0 }} />
+                <span style={{ fontSize: '13px', color: 'var(--md-success)', fontWeight: 500 }}>Account created! Sign in below.</span>
+              </motion.div>
             )}
           </AnimatePresence>
 
-          <Button type="submit" className="w-full h-12" loading={loading}>Sign In</Button>
+          {/* OAuth buttons */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '24px' }}>
+            <button style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', height: '42px', borderRadius: '12px', border: '1px solid var(--md-outline)', background: 'var(--md-surface-1)', color: 'var(--md-on-surface)', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>
+              <GitBranch style={{ width: '16px', height: '16px' }} /> GitHub
+            </button>
+            <button style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', height: '42px', borderRadius: '12px', border: '1px solid var(--md-outline)', background: 'var(--md-surface-1)', color: 'var(--md-on-surface)', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>
+              <Globe style={{ width: '16px', height: '16px' }} /> Google
+            </button>
+          </div>
 
-          <p className="text-center text-sm" style={{ color: 'var(--md-on-surface-var)' }}>
-            Don&apos;t have an account?{' '}
-            <Link href="/auth/register" className="font-bold hover:underline" style={{ color: 'var(--md-primary)' }}>Sign up</Link>
-          </p>
-        </form>
-      </motion.div>
+          {/* Divider */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+            <div style={{ flex: 1, height: '1px', background: 'var(--md-outline)' }} />
+            <span style={{ fontSize: '12px', color: 'var(--md-on-surface-var)', fontWeight: 500 }}>or continue with email</span>
+            <div style={{ flex: 1, height: '1px', background: 'var(--md-outline)' }} />
+          </div>
+
+          {/* Form */}
+          <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '6px', color: 'var(--md-on-surface-var)' }}>Email Address</label>
+              <input type="email" required placeholder="you@company.com"
+                value={email} onChange={e => { setEmail(e.target.value); setError(''); }}
+                style={inp(!!error)} />
+            </div>
+
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--md-on-surface-var)' }}>Password</label>
+                <Link href="#" style={{ fontSize: '12px', color: 'var(--md-primary)', textDecoration: 'none', fontWeight: 600 }}>Forgot password?</Link>
+              </div>
+              <div style={{ position: 'relative' }}>
+                <input type={showPw ? 'text' : 'password'} required placeholder="••••••••"
+                  value={password} onChange={e => { setPassword(e.target.value); setError(''); }}
+                  style={{ ...inp(!!error), paddingRight: '44px' }} />
+                <button type="button" onClick={() => setShowPw(p => !p)}
+                  style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--md-on-surface-var)', display: 'flex', alignItems: 'center' }}>
+                  {showPw ? <EyeOff style={{ width: '16px', height: '16px' }} /> : <Eye style={{ width: '16px', height: '16px' }} />}
+                </button>
+              </div>
+            </div>
+
+            {/* Remember me */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <input type="checkbox" id="remember" style={{ width: '16px', height: '16px', borderRadius: '4px', accentColor: 'var(--md-primary)', cursor: 'pointer' }} />
+              <label htmlFor="remember" style={{ fontSize: '13px', color: 'var(--md-on-surface-var)', cursor: 'pointer' }}>Remember me for 30 days</label>
+            </div>
+
+            {/* Error */}
+            <AnimatePresence>
+              {error && (
+                <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                  style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 14px', borderRadius: '10px', background: 'var(--md-error-cont)' }}>
+                  <AlertCircle style={{ width: '15px', height: '15px', color: 'var(--md-error)', flexShrink: 0 }} />
+                  <span style={{ fontSize: '13px', color: 'var(--md-error)' }}>{error}</span>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Submit */}
+            <button type="submit" disabled={loading || !email || !password}
+              style={{ height: '46px', borderRadius: '12px', background: 'var(--md-primary)', color: 'var(--md-on-primary)', fontSize: '14px', fontWeight: 700, border: 'none', cursor: loading ? 'not-allowed' : 'pointer', opacity: (loading || !email || !password) ? 0.7 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', transition: 'opacity 0.15s' }}>
+              {loading
+                ? <><div style={{ width: '16px', height: '16px', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} /> Signing in...</>
+                : <><Lock style={{ width: '15px', height: '15px' }} /> Sign in</>}
+            </button>
+          </form>
+
+          {/* Avatar social proof */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '28px', paddingTop: '20px', borderTop: '1px solid var(--md-outline-var)' }}>
+            <div style={{ display: 'flex' }}>
+              {[["SC","#5b5bd6"],["JW","#3dd68c"],["AP","#f59e0b"]].map(([init, c], i) => (
+                <div key={init} style={{ width: '28px', height: '28px', borderRadius: '50%', background: (c as string) + '33', border: `2px solid var(--md-surface)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '9px', color: c as string, marginLeft: i > 0 ? '-8px' : 0 }}>
+                  {init}
+                </div>
+              ))}
+            </div>
+            <p style={{ fontSize: '12px', color: 'var(--md-on-surface-var)' }}>
+              Join <strong style={{ color: 'var(--md-on-surface)' }}>12,000+</strong> developers building with Nemix
+            </p>
+          </div>
+
+          {/* Trust badges */}
+          <div style={{ display: 'flex', gap: '16px', marginTop: '16px', flexWrap: 'wrap' }}>
+            {["🔒 SOC 2 Type II", "🇪🇺 GDPR Compliant", "⚡ 99.9% Uptime"].map(b => (
+              <span key={b} style={{ fontSize: '11px', color: 'var(--md-on-surface-var)', opacity: 0.6 }}>{b}</span>
+            ))}
+          </div>
+        </motion.div>
+      </div>
+
+      {/* Spin animation */}
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen" style={{ background: 'var(--md-surface)' }} />}>
+    <Suspense fallback={<div style={{ minHeight: '100vh', background: 'var(--md-surface)' }} />}>
       <LoginForm />
     </Suspense>
   );
