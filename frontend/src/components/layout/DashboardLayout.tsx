@@ -7,6 +7,7 @@ import {
   LayoutDashboard, Database, Cpu, Settings, LogOut,
   Menu, X, Zap, Layers, MessageSquare, Rocket, Shield,
   BarChart2, BookOpen, FlaskConical, Sun, Moon, ChevronRight,
+  GitBranch, Sliders,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -24,12 +25,14 @@ const NAV_SECTIONS = [
     ],
   },
   {
-    label: "Tools",
+    label: "AI Tools",
     items: [
       { name: "Model Hub", href: "/dashboard/hub", icon: BookOpen },
       { name: "Prompt Library", href: "/dashboard/prompts", icon: BookOpen },
       { name: "Evaluations", href: "/dashboard/evaluations", icon: FlaskConical },
       { name: "Analytics", href: "/dashboard/analytics", icon: BarChart2 },
+      { name: "Pipelines", href: "/dashboard/pipelines", icon: GitBranch },
+      { name: "Config Builder", href: "/dashboard/config", icon: Sliders },
     ],
   },
   {

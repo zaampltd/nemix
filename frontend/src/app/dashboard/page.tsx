@@ -47,14 +47,14 @@ export default function Dashboard() {
         {/* Header */}
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="flex items-start justify-between">
           <div>
-            <h1 className="text-xl font-semibold mb-1" style={{ color: '#f0f0f2' }}>
+            <h1 className="text-xl font-semibold mb-1" style={{ color: 'var(--md-on-surface)' }}>
               {greeting}{userName ? `, ${userName}` : ''}.
             </h1>
-            <p className="text-sm" style={{ color: '#8b8b99' }}>Here's what's happening in your workspace.</p>
+            <p className="text-sm" style={{ color: 'var(--md-on-surface-var)' }}>Here's what's happening in your workspace.</p>
           </div>
           <Link href="/dashboard/training"
             className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium text-white transition-opacity hover:opacity-90"
-            style={{ background: '#7c6af7' }}>
+            style={{ background: 'var(--md-primary)' }}>
             <Plus className="w-4 h-4" />
             New training run
           </Link>
@@ -71,15 +71,15 @@ export default function Dashboard() {
           ].map((s, i) => (
             <Link key={s.label} href={s.href}>
               <div className="rounded-xl p-4 transition-colors group cursor-pointer"
-                style={{ background: '#111114', border: '1px solid rgba(255,255,255,0.06)' }}
-                onMouseOver={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.11)')}
-                onMouseOut={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)')}>
+                style={{ background: 'var(--md-surface-1)', border: '1px solid var(--md-outline)' }}
+                onMouseOver={e => (e.currentTarget.style.borderColor = 'var(--md-primary)')}
+                onMouseOut={e => (e.currentTarget.style.borderColor = 'var(--md-outline)')}>
                 <div className="flex items-center justify-between mb-3">
-                  <p className="text-xs" style={{ color: '#55555f' }}>{s.label}</p>
-                  <ArrowUpRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: '#7c6af7' }} />
+                  <p className="text-xs" style={{ color: 'var(--md-on-surface-var)' }}>{s.label}</p>
+                  <ArrowUpRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: 'var(--md-primary)' }} />
                 </div>
-                <p className="text-2xl font-bold mb-1" style={{ color: '#f0f0f2' }}>{s.value}</p>
-                <p className="text-xs" style={{ color: '#55555f' }}>{s.delta}</p>
+                <p className="text-2xl font-bold mb-1" style={{ color: 'var(--md-on-surface)' }}>{s.value}</p>
+                <p className="text-xs" style={{ color: 'var(--md-on-surface-var)' }}>{s.delta}</p>
               </div>
             </Link>
           ))}
@@ -87,7 +87,7 @@ export default function Dashboard() {
 
         {/* Quick Actions */}
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-          <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: '#55555f' }}>Quick actions</p>
+          <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--md-on-surface-var)' }}>Quick actions</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
             {[
               { label: 'Upload Dataset', icon: Database, href: '/dashboard/datasets' },
@@ -99,11 +99,11 @@ export default function Dashboard() {
             ].map(a => (
               <Link key={a.label} href={a.href}>
                 <div className="rounded-xl p-3.5 flex flex-col items-center gap-2 text-center transition-colors cursor-pointer"
-                  style={{ background: '#111114', border: '1px solid rgba(255,255,255,0.06)' }}
-                  onMouseOver={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.11)')}
-                  onMouseOut={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)')}>
-                  <a.icon className="w-4.5 h-4.5" style={{ color: '#7c6af7' }} />
-                  <span className="text-[11px] font-medium leading-tight" style={{ color: '#8b8b99' }}>{a.label}</span>
+                  style={{ background: 'var(--md-surface-1)', border: '1px solid var(--md-outline)' }}
+                  onMouseOver={e => (e.currentTarget.style.borderColor = 'var(--md-primary)')}
+                  onMouseOut={e => (e.currentTarget.style.borderColor = 'var(--md-outline)')}>
+                  <a.icon className="w-4.5 h-4.5" style={{ color: 'var(--md-primary)' }} />
+                  <span className="text-[11px] font-medium leading-tight" style={{ color: 'var(--md-on-surface-var)' }}>{a.label}</span>
                 </div>
               </Link>
             ))}
@@ -115,14 +115,14 @@ export default function Dashboard() {
           className="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
           {/* Chart */}
-          <div className="lg:col-span-2 rounded-xl p-5" style={{ background: '#111114', border: '1px solid rgba(255,255,255,0.06)' }}>
+          <div className="lg:col-span-2 rounded-xl p-5" style={{ background: 'var(--md-surface-1)', border: '1px solid var(--md-outline)' }}>
             <div className="flex items-center justify-between mb-5">
               <div>
-                <p className="text-sm font-semibold mb-0.5" style={{ color: '#f0f0f2' }}>Training performance</p>
-                <p className="text-xs" style={{ color: '#55555f' }}>llama3-sentiment-v2 · Last run · 5 epochs</p>
+                <p className="text-sm font-semibold mb-0.5" style={{ color: 'var(--md-on-surface)' }}>Training performance</p>
+                <p className="text-xs" style={{ color: 'var(--md-on-surface-var)' }}>llama3-sentiment-v2 · Last run · 5 epochs</p>
               </div>
               <Link href="/dashboard/training/visualizer" className="flex items-center gap-1 text-xs transition-colors"
-                style={{ color: '#7c6af7' }}>
+                style={{ color: 'var(--md-primary)' }}>
                 Full view <ChevronRight className="w-3.5 h-3.5" />
               </Link>
             </div>
@@ -131,55 +131,55 @@ export default function Dashboard() {
               <svg viewBox="0 0 560 140" className="w-full h-full" preserveAspectRatio="none">
                 <defs>
                   <linearGradient id="lossGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#7c6af7" stopOpacity="0.2" />
-                    <stop offset="100%" stopColor="#7c6af7" stopOpacity="0" />
+                    <stop offset="0%" stopColor="var(--md-primary)" stopOpacity="0.2" />
+                    <stop offset="100%" stopColor="var(--md-primary)" stopOpacity="0" />
                   </linearGradient>
                   <linearGradient id="accGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#3dd68c" stopOpacity="0.15" />
-                    <stop offset="100%" stopColor="#3dd68c" stopOpacity="0" />
+                    <stop offset="0%" stopColor="var(--md-success)" stopOpacity="0.15" />
+                    <stop offset="100%" stopColor="var(--md-success)" stopOpacity="0" />
                   </linearGradient>
                 </defs>
                 {[0, 35, 70, 105, 140].map(y => (
-                  <line key={y} x1="0" y1={y} x2="560" y2={y} stroke="rgba(255,255,255,0.04)" strokeWidth="1" />
+                  <line key={y} x1="0" y1={y} x2="560" y2={y} stroke="var(--md-outline)" strokeOpacity="0.5" strokeWidth="1" />
                 ))}
                 {/* Loss */}
-                <path d="M0,125 C80,108 160,85 240,58 S380,22 480,12 S530,10 560,8" fill="none" stroke="#7c6af7" strokeWidth="2" strokeLinecap="round" />
+                <path d="M0,125 C80,108 160,85 240,58 S380,22 480,12 S530,10 560,8" fill="none" stroke="var(--md-primary)" strokeWidth="2" strokeLinecap="round" />
                 <path d="M0,125 C80,108 160,85 240,58 S380,22 480,12 S530,10 560,8 L560,140 L0,140Z" fill="url(#lossGrad)" />
                 {/* Accuracy dashed */}
-                <path d="M0,135 C80,125 160,108 240,88 S380,58 480,38 S530,30 560,26" fill="none" stroke="#3dd68c" strokeWidth="1.5" strokeDasharray="5 3" strokeLinecap="round" />
-                <circle cx="560" cy="8" r="3" fill="#7c6af7" />
-                <circle cx="560" cy="26" r="2.5" fill="#3dd68c" />
+                <path d="M0,135 C80,125 160,108 240,88 S380,58 480,38 S530,30 560,26" fill="none" stroke="var(--md-success)" strokeWidth="1.5" strokeDasharray="5 3" strokeLinecap="round" />
+                <circle cx="560" cy="8" r="3" fill="var(--md-primary)" />
+                <circle cx="560" cy="26" r="2.5" fill="var(--md-success)" />
               </svg>
             </div>
 
-            <div className="flex items-center gap-5 mt-4 pt-4" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-              <div className="flex items-center gap-2 text-xs" style={{ color: '#55555f' }}>
-                <span className="w-3.5 h-0.5 rounded" style={{ background: '#7c6af7', display: 'inline-block' }} />
+            <div className="flex items-center gap-5 mt-4 pt-4" style={{ borderTop: '1px solid var(--md-outline-var)' }}>
+              <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--md-on-surface-var)' }}>
+                <span className="w-3.5 h-0.5 rounded" style={{ background: 'var(--md-primary)', display: 'inline-block' }} />
                 Loss — 0.08
               </div>
-              <div className="flex items-center gap-2 text-xs" style={{ color: '#55555f' }}>
-                <span className="w-3.5 rounded" style={{ borderTop: '1.5px dashed #3dd68c', display: 'inline-block' }} />
+              <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--md-on-surface-var)' }}>
+                <span className="w-3.5 rounded" style={{ borderTop: '1.5px dashed var(--md-success)', display: 'inline-block' }} />
                 Accuracy — 98.2%
               </div>
             </div>
           </div>
 
           {/* Activity */}
-          <div className="rounded-xl p-5" style={{ background: '#111114', border: '1px solid rgba(255,255,255,0.06)' }}>
-            <p className="text-sm font-semibold mb-4" style={{ color: '#f0f0f2' }}>Recent activity</p>
+          <div className="rounded-xl p-5" style={{ background: 'var(--md-surface-1)', border: '1px solid var(--md-outline)' }}>
+            <p className="text-sm font-semibold mb-4" style={{ color: 'var(--md-on-surface)' }}>Recent activity</p>
             <div className="space-y-0.5">
               {ACTIVITIES.map(item => (
-                <div key={item.id} className="flex items-start gap-2.5 py-2.5" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                <div key={item.id} className="flex items-start gap-2.5 py-2.5" style={{ borderBottom: '1px solid var(--md-outline-var)' }}>
                   <div className="mt-0.5 shrink-0">
-                    {item.status === 'completed' && <CheckCircle2 className="w-3.5 h-3.5" style={{ color: '#3dd68c' }} />}
-                    {item.status === 'failed' && <AlertCircle className="w-3.5 h-3.5" style={{ color: '#e5534b' }} />}
-                    {item.status === 'running' && <Zap className="w-3.5 h-3.5" style={{ color: '#7c6af7' }} />}
+                    {item.status === 'completed' && <CheckCircle2 className="w-3.5 h-3.5" style={{ color: 'var(--md-success)' }} />}
+                    {item.status === 'failed' && <AlertCircle className="w-3.5 h-3.5" style={{ color: 'var(--md-error)' }} />}
+                    {item.status === 'running' && <Zap className="w-3.5 h-3.5" style={{ color: 'var(--md-primary)' }} />}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium leading-tight" style={{ color: '#f0f0f2' }}>{item.action}</p>
-                    <p className="text-[10px] font-mono truncate mt-0.5" style={{ color: '#55555f' }}>{item.target}</p>
+                    <p className="text-xs font-medium leading-tight" style={{ color: 'var(--md-on-surface)' }}>{item.action}</p>
+                    <p className="text-[10px] font-mono truncate mt-0.5" style={{ color: 'var(--md-on-surface-var)' }}>{item.target}</p>
                   </div>
-                  <span className="text-[10px] shrink-0 mt-0.5" style={{ color: '#2e2e35' }}>{item.time}</span>
+                  <span className="text-[10px] shrink-0 mt-0.5" style={{ color: 'var(--md-on-surface-var)', opacity: 0.6 }}>{item.time}</span>
                 </div>
               ))}
             </div>
@@ -191,8 +191,8 @@ export default function Dashboard() {
           className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
           {/* System status */}
-          <div className="rounded-xl p-5" style={{ background: '#111114', border: '1px solid rgba(255,255,255,0.06)' }}>
-            <p className="text-sm font-semibold mb-4" style={{ color: '#f0f0f2' }}>System status</p>
+          <div className="rounded-xl p-5" style={{ background: 'var(--md-surface-1)', border: '1px solid var(--md-outline)' }}>
+            <p className="text-sm font-semibold mb-4" style={{ color: 'var(--md-on-surface)' }}>System status</p>
             <div className="space-y-1">
               {[
                 { name: 'Training Engine', latency: '12ms' },
@@ -200,14 +200,14 @@ export default function Dashboard() {
                 { name: 'Dataset Storage', latency: '3ms' },
                 { name: 'Model Registry', latency: '5ms' },
               ].map(svc => (
-                <div key={svc.name} className="flex items-center justify-between py-2.5" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                <div key={svc.name} className="flex items-center justify-between py-2.5" style={{ borderBottom: '1px solid var(--md-outline-var)' }}>
                   <div className="flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#3dd68c' }} />
-                    <span className="text-sm" style={{ color: '#8b8b99' }}>{svc.name}</span>
+                    <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--md-success)' }} />
+                    <span className="text-sm" style={{ color: 'var(--md-on-surface-var)' }}>{svc.name}</span>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="text-xs font-mono" style={{ color: '#55555f' }}>{svc.latency}</span>
-                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded" style={{ background: 'rgba(61,214,140,0.08)', color: '#3dd68c' }}>
+                    <span className="text-xs font-mono" style={{ color: 'var(--md-on-surface-var)' }}>{svc.latency}</span>
+                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded" style={{ background: 'var(--md-success-cont)', color: 'var(--md-success)' }}>
                       operational
                     </span>
                   </div>
@@ -217,10 +217,10 @@ export default function Dashboard() {
           </div>
 
           {/* Active jobs */}
-          <div className="rounded-xl p-5" style={{ background: '#111114', border: '1px solid rgba(255,255,255,0.06)' }}>
+          <div className="rounded-xl p-5" style={{ background: 'var(--md-surface-1)', border: '1px solid var(--md-outline)' }}>
             <div className="flex items-center justify-between mb-4">
-              <p className="text-sm font-semibold" style={{ color: '#f0f0f2' }}>Active training jobs</p>
-              <Link href="/dashboard/training" className="flex items-center gap-1 text-xs" style={{ color: '#7c6af7' }}>
+              <p className="text-sm font-semibold" style={{ color: 'var(--md-on-surface)' }}>Active training jobs</p>
+              <Link href="/dashboard/training" className="flex items-center gap-1 text-xs" style={{ color: 'var(--md-primary)' }}>
                 View all <ChevronRight className="w-3.5 h-3.5" />
               </Link>
             </div>
@@ -232,21 +232,21 @@ export default function Dashboard() {
                 <div key={job.name}>
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#7c6af7' }} />
-                      <span className="text-xs font-mono" style={{ color: '#8b8b99' }}>{job.name}</span>
+                      <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--md-primary)' }} />
+                      <span className="text-xs font-mono" style={{ color: 'var(--md-on-surface-var)' }}>{job.name}</span>
                     </div>
-                    <span className="text-[10px] font-mono" style={{ color: '#55555f' }}>Epoch {job.epoch} · {job.eta} left</span>
+                    <span className="text-[10px] font-mono" style={{ color: 'var(--md-on-surface-var)' }}>Epoch {job.epoch} · {job.eta} left</span>
                   </div>
-                  <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                  <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--md-surface-3)' }}>
                     <motion.div
                       initial={{ width: 0 }}
                       animate={{ width: `${job.progress}%` }}
                       transition={{ duration: 0.8, ease: 'easeOut' }}
                       className="h-full rounded-full"
-                      style={{ background: '#7c6af7' }}
+                      style={{ background: 'var(--md-primary)' }}
                     />
                   </div>
-                  <p className="text-[10px] mt-1 font-mono" style={{ color: '#55555f' }}>{job.progress}%</p>
+                  <p className="text-[10px] mt-1 font-mono" style={{ color: 'var(--md-on-surface-var)' }}>{job.progress}%</p>
                 </div>
               ))}
             </div>
