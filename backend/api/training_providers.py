@@ -241,51 +241,28 @@ class HuggingFaceProvider(TrainingProvider):
         }
 
 
-# ─── Simulated provider (no API key needed, demo mode) ───────────────
-class SimulatedProvider(TrainingProvider):
-    """
-    Realistic simulation that runs locally — no API key needed.
-    Simulates a real training run with loss curves and epoch logs.
-    Used when no external API key is configured.
-    """
-    name = "simulated"
-
-    def start_job(self, config: Dict) -> Dict:
-        job_id = str(uuid.uuid4())
-        return {
-            "external_id": job_id,
-            "status": "pending",
-            "provider": self.name,
-        }
-
-    def get_status(self, external_id: str) -> Dict:
-        # Status is managed by run_simulated_training thread
-        return {"external_id": external_id, "status": "training", "progress": 50.0, "logs": [], "provider": self.name}
-
 
 # ─── Provider factory ─────────────────────────────────────────────────
 def get_provider(user_settings: Dict) -> TrainingProvider:
     """
     Pick the best available provider based on user's API keys.
-    Priority: Together AI > Hugging Face > Simulated (demo)
+    Priority: Together AI > Hugging Face.
+    Raises ValueError if no API key is configured.
     """
     together_key = user_settings.get("together_api_key") or os.getenv("TOGETHER_API_KEY", "")
     hf_token = user_settings.get("hf_token") or os.getenv("HF_TOKEN", "")
     hf_username = user_settings.get("hf_username") or os.getenv("HF_USERNAME", "")
 
-    if together_key and together_key.startswith(""):
-        try:
-            return TogetherAIProvider(together_key)
-        except Exception:
-            pass
+    if together_key:
+        return TogetherAIProvider(together_key)
 
     if hf_token and hf_username:
-        try:
-            return HuggingFaceProvider(hf_token, hf_username)
-        except Exception:
-            pass
+        return HuggingFaceProvider(hf_token, hf_username)
 
-    return SimulatedProvider()
+    raise ValueError(
+        "No API key configured. Please add your Together AI key or Hugging Face token "
+        "in the Training Provider panel to start real training."
+    )
 
 
 # ─── Main orchestrator ───────────────────────────────────────────────
@@ -369,7 +346,10 @@ def _run_training(
         elif use_hf:
             _run_with_hf(job, db, log, set_progress, hf_token, base_model, dataset_rec, epochs)
         else:
-            _run_simulated(job, db, log, set_progress, model_name, dataset_name, base_model, epochs)
+            raise ValueError(
+                "No API key configured. Add your Together AI or Hugging Face key "
+                "in the Training Provider panel before starting a job."
+            )
 
         # Finalize
         job.status = "completed"

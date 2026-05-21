@@ -53,7 +53,7 @@ export default function TrainingPage() {
   const [loading, setLoading] = useState(true);
   const [activeJob, setActiveJob] = useState<Job | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedProvider, setSelectedProvider] = useState('auto');
+  const [selectedProvider, setSelectedProvider] = useState('together_ai');
   
   // Model states
   const [localModels, setLocalModels] = useState<LocalModel[]>([]);

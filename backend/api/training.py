@@ -147,38 +147,27 @@ def list_providers(current_user: models.User = Depends(get_current_user)):
     import os
     return [
         {
-            "id": "auto",
-            "name": "Auto (recommended)",
-            "description": "Automatically picks the best available provider.",
-            "requires_key": False,
-            "free": True,
-        },
-        {
             "id": "together_ai",
             "name": "Together AI",
-            "description": "Real fine-tuning via Together AI API. $5 free credits on signup.",
+            "logo": "🔥",
+            "description": "Real GPU fine-tuning. Supports LLaMA 3, Mistral, GPT-2 and more.",
             "signup_url": "https://api.together.ai",
             "requires_key": True,
             "env_var": "TOGETHER_API_KEY",
             "configured": bool(os.getenv("TOGETHER_API_KEY", "")),
-            "free_tier": "$5 free credits",
+            "free_tier": "$5 free credits on signup",
+            "recommended": True,
         },
         {
             "id": "huggingface",
             "name": "Hugging Face AutoTrain",
+            "logo": "🤗",
             "description": "Fine-tune with Hugging Face AutoTrain. Free CPU tier available.",
             "signup_url": "https://huggingface.co/settings/tokens",
             "requires_key": True,
             "env_var": "HF_TOKEN",
             "configured": bool(os.getenv("HF_TOKEN", "")),
-            "free_tier": "Free CPU training",
-        },
-        {
-            "id": "simulated",
-            "name": "Demo / Simulated",
-            "description": "High-fidelity training simulation. No API key needed. Perfect for testing.",
-            "requires_key": False,
-            "free": True,
+            "free_tier": "Free CPU training available",
         },
     ]
 
