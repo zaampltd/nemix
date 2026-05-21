@@ -11,6 +11,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import api from '@/lib/api';
+import TrainingProviderPanel from '@/components/training/TrainingProviderPanel';
 
 interface Job {
   id: number;
@@ -52,6 +53,7 @@ export default function TrainingPage() {
   const [loading, setLoading] = useState(true);
   const [activeJob, setActiveJob] = useState<Job | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedProvider, setSelectedProvider] = useState('auto');
   
   // Model states
   const [localModels, setLocalModels] = useState<LocalModel[]>([]);
@@ -326,6 +328,12 @@ export default function TrainingPage() {
             </Button>
           </div>
         </div>
+
+        {/* Provider configuration panel */}
+        <TrainingProviderPanel
+          selectedProvider={selectedProvider}
+          onProviderChange={setSelectedProvider}
+        />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Detail Panel */}
