@@ -2,7 +2,7 @@ import axios from 'axios';
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',
-  timeout: 5000, // Don't hang forever — fail fast after 5s
+  timeout: 60000, // 60s — enough for large dataset uploads
 });
 
 // ── Request interceptor: attach JWT token ──────────────────────────────────
@@ -16,24 +16,31 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// ── Response interceptor: silence network-down noise ──────────────────────
-// When the backend is offline every mounted page fires an AxiosError: Network Error.
-// We convert those to a quiet, typed error so catch blocks can distinguish
-// "server is offline" from real API errors without flooding the console.
+// ── Response interceptor ──────────────────────────────────────────────────
 let _offlineWarningShown = false;
 
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    const isNetworkError = !error.response; // no response = backend unreachable
+    const isNetworkError = !error.response;
 
     if (isNetworkError) {
       if (!_offlineWarningShown) {
-        console.warn('[API] Backend is offline (localhost:8000). Running in offline mode.');
+        console.warn('[API] Backend is offline. Running in offline/demo mode.');
         _offlineWarningShown = true;
       }
-      // Tag the error so pages can detect it without re-checking
       error.isOffline = true;
+    }
+
+    // Auto-redirect on 401 (expired/invalid token)
+    if (error.response?.status === 401 && typeof window !== 'undefined') {
+      const path = window.location.pathname;
+      // Only redirect if we're inside the dashboard (not on auth pages)
+      if (path.startsWith('/dashboard')) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('current_user');
+        window.location.href = '/auth/login?expired=true';
+      }
     }
 
     return Promise.reject(error);

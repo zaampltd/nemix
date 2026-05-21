@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Database, Cpu, Settings, LogOut,
   Menu, X, Zap, Layers, MessageSquare, Rocket, Shield,
   BarChart2, BookOpen, FlaskConical, Sun, Moon, ChevronRight,
-  GitBranch, Sliders, CreditCard, Users, Activity, Bell,
+  GitBranch, Sliders, CreditCard, Users, Activity, Bell, Webhook,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -40,13 +40,14 @@ const NAV_SECTIONS = [
     items: [
       { name: "Deployments", href: "/dashboard/deployments", icon: Rocket },
       { name: "Monitoring",  href: "/dashboard/monitoring",  icon: Activity },
+      { name: "Webhooks",    href: "/dashboard/webhooks",    icon: Webhook },
       { name: "Security",    href: "/dashboard/security",    icon: Shield },
       { name: "Billing",     href: "/dashboard/billing",     icon: CreditCard },
       { name: "Settings",    href: "/dashboard/settings",    icon: Settings },
     ],
   },
   {
-    label: "Workspace",
+    label: "Team",
     items: [
       { name: "Team",          href: "/dashboard/team",          icon: Users },
       { name: "Notifications", href: "/dashboard/notifications", icon: Bell },
@@ -66,8 +67,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) { router.push("/auth/login"); return; }
+    // Try loading from cache first for instant render
     const raw = localStorage.getItem("current_user");
     if (raw) { try { setUser(JSON.parse(raw)); } catch {} }
+    // Then refresh from API if we have a real token
+    if (!token.startsWith('local-token-')) {
+      import('@/lib/api').then(({ default: api }) => {
+        api.get('/auth/me').then(res => {
+          setUser(res.data);
+          localStorage.setItem('current_user', JSON.stringify(res.data));
+        }).catch(() => {});
+      });
+    }
   }, [router]);
 
   const handleLogout = () => {
@@ -218,11 +229,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <div className="flex items-center gap-2">
             <button onClick={toggle} className="p-2 rounded-xl transition-colors"
               style={{ color: "var(--md-on-surface-var)" }}>
-              {theme === "dark" ? <Sun className="w-4.5 h-4.5" /> : <Moon className="w-4.5 h-4.5" />}
+              {theme === "dark" ? <Sun className="w-[18px] h-[18px]" /> : <Moon className="w-[18px] h-[18px]" />}
             </button>
             <button onClick={() => setMobileOpen(true)} className="p-2 rounded-xl transition-colors"
               style={{ color: "var(--md-on-surface-var)" }}>
-              <Menu className="w-4.5 h-4.5" />
+              <Menu className="w-[18px] h-[18px]" />
             </button>
           </div>
         </header>

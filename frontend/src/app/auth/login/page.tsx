@@ -45,6 +45,7 @@ function LoginForm() {
   const [error, setError]       = useState('');
   const [activeTestimonial, setActiveTestimonial] = useState(0);
   const justRegistered = searchParams.get('registered') === 'true';
+  const sessionExpired = searchParams.get('expired') === 'true';
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,8 +57,17 @@ function LoginForm() {
 
     try {
       const res = await api.post('/auth/login', formData);
-      localStorage.setItem('token', res.data.access_token);
+      const token = res.data.access_token;
+      localStorage.setItem('token', token);
       localStorage.removeItem('demo_user');
+      // Fetch the full user profile so sidebar shows name/email
+      try {
+        const meRes = await api.get('/auth/me');
+        localStorage.setItem('current_user', JSON.stringify(meRes.data));
+      } catch {
+        // Fallback: store minimal user from email
+        localStorage.setItem('current_user', JSON.stringify({ email, full_name: email.split('@')[0] }));
+      }
       router.push('/dashboard');
     } catch (err: any) {
       if (!err.response) {
@@ -69,8 +79,8 @@ function LoginForm() {
           match = { email, password, full_name: email.split('@')[0] };
           localStorage.setItem('local_users', JSON.stringify([match, ...local]));
         }
-        const user = { token: `local-token-${match.email}`, email: match.email, full_name: match.full_name };
-        localStorage.setItem('token', user.token);
+        const user = { email: match.email, full_name: match.full_name };
+        localStorage.setItem('token', `local-token-${match.email}`);
         localStorage.setItem('current_user', JSON.stringify(user));
         router.push('/dashboard');
         return;
@@ -179,13 +189,20 @@ function LoginForm() {
             <p style={{ fontSize: '14px', color: 'var(--md-on-surface-var)' }}>Sign in to your Nemix workspace</p>
           </div>
 
-          {/* Registration success */}
+          {/* Registration success / session expired banners */}
           <AnimatePresence>
             {justRegistered && (
               <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
                 style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', padding: '12px 16px', borderRadius: '12px', background: 'var(--md-success-cont)', border: '1px solid var(--md-outline)' }}>
                 <CheckCircle2 style={{ width: '16px', height: '16px', color: 'var(--md-success)', flexShrink: 0 }} />
                 <span style={{ fontSize: '13px', color: 'var(--md-success)', fontWeight: 500 }}>Account created! Sign in below.</span>
+              </motion.div>
+            )}
+            {sessionExpired && !justRegistered && (
+              <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', padding: '12px 16px', borderRadius: '12px', background: 'var(--md-warning-cont)', border: '1px solid var(--md-outline)' }}>
+                <AlertCircle style={{ width: '16px', height: '16px', color: 'var(--md-warning)', flexShrink: 0 }} />
+                <span style={{ fontSize: '13px', color: 'var(--md-on-surface)', fontWeight: 500 }}>Your session expired. Please sign in again.</span>
               </motion.div>
             )}
           </AnimatePresence>

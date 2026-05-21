@@ -29,9 +29,9 @@ const S = {
 };
 
 export default function Dashboard() {
-  const [modelCount, setModelCount] = useState(12);
-  const [datasetCount, setDatasetCount] = useState(38);
-  const [activeJobs, setActiveJobs] = useState(2);
+  const [modelCount, setModelCount] = useState(0);
+  const [datasetCount, setDatasetCount] = useState(0);
+  const [activeJobs, setActiveJobs] = useState(0);
   const [userName, setUserName] = useState('');
   const [greeting, setGreeting] = useState('');
 
@@ -40,10 +40,12 @@ export default function Dashboard() {
     setGreeting(hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening');
     const raw = localStorage.getItem('current_user');
     if (raw) { try { const u = JSON.parse(raw); setUserName(u.full_name?.split(' ')[0] || ''); } catch {} }
-    api.get('/dashboard/stats').then(r => {
-      if (r.data?.model_count !== undefined) setModelCount(r.data.model_count);
-      if (r.data?.dataset_count !== undefined) setDatasetCount(r.data.dataset_count);
-      if (r.data?.active_jobs !== undefined) setActiveJobs(r.data.active_jobs);
+    // Fetch real counts from actual endpoints
+    api.get('/models').then(r => setModelCount(Array.isArray(r.data) ? r.data.length : 0)).catch(() => {});
+    api.get('/datasets').then(r => setDatasetCount(Array.isArray(r.data) ? r.data.length : 0)).catch(() => {});
+    api.get('/training/jobs').then(r => {
+      const running = (r.data || []).filter((j: any) => j.status === 'pending' || j.status === 'training');
+      setActiveJobs(running.length);
     }).catch(() => {});
   }, []);
 
