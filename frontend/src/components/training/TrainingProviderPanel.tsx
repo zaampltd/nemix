@@ -12,7 +12,7 @@ interface Props {
   onProviderChange: (p: string) => void;
 }
 
-// The fallback chain — OllamaFreeAPI is always first
+// The fallback chain — OllamaFreeAPI is always first, NVIDIA second
 const CHAIN = [
   {
     step: 1, label: "OllamaFreeAPI", model: "LLaMA 3 / Mistral / Gemma",
@@ -20,31 +20,38 @@ const CHAIN = [
     keyRequired: false, keyLabel: null,
   },
   {
-    step: 2, label: "Together AI", model: "LLaMA 3 8B",
+    step: 2, label: "NVIDIA NIM", model: "LLaMA 3.1 70B / Nemotron",
+    logo: "🟢", color: "#22c55e", why: "Free credits — powerful 70B models",
+    keyRequired: true, keyLabel: "nvidia",
+  },
+  {
+    step: 3, label: "Together AI", model: "LLaMA 3 8B",
     logo: "🔥", color: "#f59e0b", why: "Fallback: real GPU fine-tuning",
     keyRequired: true, keyLabel: "together",
   },
   {
-    step: 3, label: "Together AI", model: "Mistral 7B",
+    step: 4, label: "Together AI", model: "Mistral 7B",
     logo: "🔥", color: "#f59e0b", why: "Fallback: smaller model",
     keyRequired: true, keyLabel: "together",
   },
   {
-    step: 4, label: "Hugging Face", model: "BERT Base",
+    step: 5, label: "Hugging Face", model: "BERT Base",
     logo: "🤗", color: "#6366f1", why: "Fallback: free CPU training",
     keyRequired: true, keyLabel: "hf",
   },
   {
-    step: 5, label: "Hugging Face", model: "DistilBERT",
+    step: 6, label: "Hugging Face", model: "DistilBERT",
     logo: "🤗", color: "#6366f1", why: "Last resort: always works",
     keyRequired: true, keyLabel: "hf",
   },
 ];
 
 export default function TrainingProviderPanel({ selectedProvider, onProviderChange }: Props) {
+  const [nvidiaKey, setNvidiaKey]       = useState("");
   const [togetherKey, setTogetherKey]   = useState("");
   const [hfToken, setHfToken]           = useState("");
   const [hfUsername, setHfUsername]     = useState("");
+  const [showNvidia, setShowNvidia]     = useState(false);
   const [showTogether, setShowTogether] = useState(false);
   const [showHf, setShowHf]             = useState(false);
   const [saving, setSaving]             = useState(false);
@@ -54,6 +61,7 @@ export default function TrainingProviderPanel({ selectedProvider, onProviderChan
   useEffect(() => {
     try {
       const s = JSON.parse(localStorage.getItem("training_provider_keys") || "{}");
+      if (s.nvidia_api_key)   setNvidiaKey(s.nvidia_api_key);
       if (s.together_api_key) setTogetherKey(s.together_api_key);
       if (s.hf_token)         setHfToken(s.hf_token);
       if (s.hf_username)      setHfUsername(s.hf_username);
@@ -62,7 +70,7 @@ export default function TrainingProviderPanel({ selectedProvider, onProviderChan
 
   const handleSave = async () => {
     setSaving(true);
-    const keys = { together_api_key: togetherKey, hf_token: hfToken, hf_username: hfUsername };
+    const keys = { nvidia_api_key: nvidiaKey, together_api_key: togetherKey, hf_token: hfToken, hf_username: hfUsername };
     localStorage.setItem("training_provider_keys", JSON.stringify(keys));
     try { await api.post("/training/api-keys", keys); } catch {}
     setSaving(false);
@@ -70,13 +78,15 @@ export default function TrainingProviderPanel({ selectedProvider, onProviderChan
     setTimeout(() => setSaved(false), 3000);
   };
 
+  const hasNvidia  = !!nvidiaKey;
   const hasTogther = !!togetherKey;
   const hasHf      = !!(hfToken && hfUsername);
 
   const stepActive = (step: typeof CHAIN[0]) => {
     if (!step.keyRequired) return true; // OllamaFreeAPI always ready
+    if (step.keyLabel === "nvidia")   return hasNvidia;
     if (step.keyLabel === "together") return hasTogther;
-    if (step.keyLabel === "hf") return hasHf;
+    if (step.keyLabel === "hf")       return hasHf;
     return false;
   };
 
@@ -187,8 +197,22 @@ export default function TrainingProviderPanel({ selectedProvider, onProviderChan
                   🔑 Optional: Add API Keys for More Fallbacks
                 </p>
                 <p style={{ fontSize: "11px", color: "var(--md-on-surface-var)", margin: "0 0 14px 0" }}>
-                  OllamaFreeAPI already works without any key. Add keys below to unlock steps 2–5 as extra fallbacks.
+                  OllamaFreeAPI already works without any key. Add keys below to unlock steps 2–6 as extra fallbacks.
                 </p>
+
+                {/* NVIDIA NIM */}
+                <div style={{ marginBottom: "12px" }}>
+                  <label style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "11px", fontWeight: 700, marginBottom: "6px", color: "var(--md-on-surface-var)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                    <span>🟢 NVIDIA NIM <span style={{ color: hasNvidia ? "var(--md-success)" : "var(--md-on-surface-var)", fontWeight: hasNvidia ? 700 : 400, textTransform: "none" }}>{hasNvidia ? "✓ Connected" : "(enables step 2 — free credits)"}</span></span>
+                    <a href="https://build.nvidia.com" target="_blank" rel="noreferrer" style={{ fontSize: "11px", color: "var(--md-primary)", textDecoration: "none", fontWeight: 600, textTransform: "none", letterSpacing: 0 }}>Free key ↗</a>
+                  </label>
+                  <div style={{ position: "relative" }}>
+                    <input type={showNvidia ? "text" : "password"} value={nvidiaKey} onChange={e => setNvidiaKey(e.target.value)} placeholder="nvapi-xxxxxxxxxxxxxxxxxxxxxxxxxxxx" style={inp} />
+                    <button onClick={() => setShowNvidia(p => !p)} style={{ position: "absolute", right: "12px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "var(--md-on-surface-var)" }}>
+                      {showNvidia ? <EyeOff style={{ width: "14px", height: "14px" }} /> : <Eye style={{ width: "14px", height: "14px" }} />}
+                    </button>
+                  </div>
+                </div>
 
                 {/* Together AI */}
                 <div style={{ marginBottom: "12px" }}>
@@ -219,7 +243,7 @@ export default function TrainingProviderPanel({ selectedProvider, onProviderChan
                   <input type="text" value={hfUsername} onChange={e => setHfUsername(e.target.value)} placeholder="HF username (optional)" style={{ ...inp, paddingRight: "14px" }} />
                 </div>
 
-                {(togetherKey || hfToken) && (
+                {(nvidiaKey || togetherKey || hfToken) && (
                   <div style={{ display: "flex", alignItems: "center", gap: "12px", marginTop: "12px" }}>
                     <button onClick={handleSave} disabled={saving}
                       style={{ display: "flex", alignItems: "center", gap: "7px", padding: "8px 18px", borderRadius: "10px", background: "var(--md-primary)", color: "var(--md-on-primary)", fontSize: "13px", fontWeight: 700, border: "none", cursor: saving ? "not-allowed" : "pointer", opacity: saving ? 0.6 : 1 }}>
