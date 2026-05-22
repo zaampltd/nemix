@@ -40,9 +40,13 @@ export async function POST(req: Request) {
         "https://integrate.api.nvidia.com/v1/chat/completions",
         {
           method: "POST",
-          headers: { "Authorization": `Bearer ${nvidiaKey}`, "Content-Type": "application/json" },
+          headers: { 
+            "Authorization": `Bearer ${nvidiaKey}`, 
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+          },
           body: JSON.stringify({
-            model: "meta/llama3-8b-instruct",
+            model: "meta/llama-3.1-8b-instruct", // Updated to the latest 3.1 model
             messages: [
               { role: "system", content: systemPrompt || "You are a helpful AI." },
               { role: "user", content: message }
