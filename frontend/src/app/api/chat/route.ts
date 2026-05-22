@@ -4,7 +4,7 @@ import { doc, getDoc } from 'firebase/firestore';
 
 export async function POST(req: Request) {
   try {
-    const { message, systemPrompt, temperature } = await req.json();
+    const { message, chatHistory, systemPrompt, temperature } = await req.json();
 
     // 1. Fetch saved keys from Firebase using STRICT string matching
     const checkKey = async (providerName: string) => {
@@ -34,6 +34,28 @@ export async function POST(req: Request) {
       }
     };
 
+    // Format OpenAI messages array using Conversational History
+    const formattedMessages = chatHistory && Array.isArray(chatHistory)
+      ? [
+          { role: "system", content: systemPrompt || "You are a helpful AI." },
+          ...chatHistory.map((msg: any) => ({
+            role: msg.role === "user" ? "user" : "assistant",
+            content: msg.text
+          }))
+        ]
+      : [
+          { role: "system", content: systemPrompt || "You are a helpful AI." },
+          { role: "user", content: message }
+        ];
+
+    // Format Gemini contents using Conversational History
+    const geminiContents = chatHistory && Array.isArray(chatHistory)
+      ? chatHistory.map((msg: any) => ({
+          role: msg.role === "user" ? "user" : "model",
+          parts: [{ text: msg.text }]
+        }))
+      : [{ role: "user", parts: [{ text: message }] }];
+
     // 2. Route to first available provider
     if (nvidiaKey) {
       const data = await safeFetch(
@@ -47,10 +69,7 @@ export async function POST(req: Request) {
           },
           body: JSON.stringify({
             model: "meta/llama-3.1-8b-instruct", // Updated to the latest 3.1 model
-            messages: [
-              { role: "system", content: systemPrompt || "You are a helpful AI." },
-              { role: "user", content: message }
-            ],
+            messages: formattedMessages,
             temperature: parseFloat(temperature) || 0.7,
             max_tokens: 1024
           })
@@ -67,10 +86,7 @@ export async function POST(req: Request) {
           headers: { "Authorization": `Bearer ${groqKey}`, "Content-Type": "application/json" },
           body: JSON.stringify({
             model: "llama3-8b-8192",
-            messages: [
-              { role: "system", content: systemPrompt || "You are a helpful AI." },
-              { role: "user", content: message }
-            ],
+            messages: formattedMessages,
             temperature: parseFloat(temperature) || 0.7
           })
         },
@@ -86,7 +102,7 @@ export async function POST(req: Request) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             system_instruction: { parts: { text: systemPrompt || "You are a helpful AI." } },
-            contents: [{ parts: [{ text: message }] }],
+            contents: geminiContents,
             generationConfig: { temperature: parseFloat(temperature) || 0.7 }
           })
         },

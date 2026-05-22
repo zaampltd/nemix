@@ -65,6 +65,7 @@ export default function PlaygroundPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: userMessage,
+          chatHistory: [...messages, { role: "user", text: userMessage }],
           systemPrompt: systemPrompt, // using the state from the left panel
           temperature: temperature    // using the state from the left panel
         }),
