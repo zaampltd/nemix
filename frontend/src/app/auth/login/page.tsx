@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/context/AuthContext';
+import { BrandLogo } from "@/components/ui/BrandLogo";
 
 // ─── Testimonials shown on the left panel ─────────────────────────
 const TESTIMONIALS = [
@@ -150,7 +151,7 @@ function LoginForm() {
 
         {/* Logo */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', position: 'relative' }}>
-          <img src="/logo-simple.png" style={{ width: '30px', height: '30px', objectFit: 'contain' }} alt="Nemix Logo" />
+          <BrandLogo size={30} />
           <span className="brand-logotype" style={{ fontSize: '24px' }}>Nemix</span>
         </div>
 

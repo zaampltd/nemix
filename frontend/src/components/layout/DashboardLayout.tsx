@@ -12,6 +12,7 @@ import {
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "@/lib/theme";
+import { BrandLogo } from "@/components/ui/BrandLogo";
 
 const NAV_SECTIONS = [
   {
@@ -99,7 +100,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div className="flex items-center justify-between px-4 h-14"
         style={{ borderBottom: "1px solid var(--md-outline)" }}>
         <Link href="/dashboard" className="flex items-center gap-2.5 font-bold">
-          <img src="/logo-simple.png" className="w-[26px] h-[26px] object-contain shrink-0" alt="Nemix Logo" />
+          <BrandLogo size={26} />
           <span className="brand-logotype-adaptive text-[20px] tracking-tight">Nemix</span>
         </Link>
         {mobile && (
@@ -217,7 +218,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <header className="md:hidden h-14 flex items-center justify-between px-4"
           style={{ borderBottom: "1px solid var(--md-outline)", background: "var(--md-surface-1)" }}>
           <div className="flex items-center gap-2 font-bold">
-            <img src="/logo-simple.png" className="w-[22px] h-[22px] object-contain shrink-0" alt="Nemix Logo" />
+            <BrandLogo size={22} />
             <span className="brand-logotype-adaptive text-[17px] tracking-tight">Nemix</span>
           </div>
           <div className="flex items-center gap-2">

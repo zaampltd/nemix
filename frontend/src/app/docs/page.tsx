@@ -8,6 +8,7 @@ import {
   Key, Terminal, Play, AlertCircle, Info, Sun, Moon,
 } from "lucide-react";
 import { useTheme } from "@/lib/theme";
+import { BrandLogo } from "@/components/ui/BrandLogo";
 
 // ─── Sidebar structure ─────────────────────────────────────────────
 const NAV = [
@@ -680,7 +681,7 @@ export default function DocsPage() {
       <header style={{ borderBottom: "1px solid var(--md-outline)", background: "var(--md-surface-1)", position: "sticky", top: 0, zIndex: 50 }}>
         <div style={{ maxWidth: "1400px", margin: "0 auto", padding: "0 24px", height: "56px", display: "flex", alignItems: "center", gap: "16px" }}>
           <Link href="/" style={{ display: "flex", alignItems: "center", gap: "7px", textDecoration: "none", flexShrink: 0 }}>
-            <img src="/logo-simple.png" style={{ width: "22px", height: "22px", objectFit: "contain" }} alt="Nemix Logo" />
+            <BrandLogo size={22} />
             <span className="brand-logotype-adaptive" style={{ fontSize: "17px" }}>Nemix</span>
           </Link>
           <span style={{ color: "var(--md-outline)", fontSize: "18px" }}>/</span>

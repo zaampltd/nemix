@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { useTheme } from "@/lib/theme";
 import { motion } from "framer-motion";
+import { BrandLogo } from "@/components/ui/BrandLogo";
 
 // ─── Data ──────────────────────────────────────────────────────────
 
@@ -102,7 +103,7 @@ export default function LandingPage() {
       <header style={{ borderBottom: "1px solid var(--md-outline)", background: "var(--md-surface-1)", position: "sticky", top: 0, zIndex: 50 }}>
         <div style={{ ...W, height: "60px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <Link href="/" style={{ display: "flex", alignItems: "center", gap: "8px", textDecoration: "none" }}>
-            <img src="/logo-simple.png" style={{ width: "26px", height: "26px", objectFit: "contain" }} alt="Nemix Logo" />
+            <BrandLogo size={26} />
             <span className="brand-logotype-adaptive" style={{ fontSize: "20px" }}>Nemix</span>
           </Link>
 
@@ -439,7 +440,7 @@ export default function LandingPage() {
             {/* Brand */}
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "12px" }}>
-                <img src="/logo-simple.png" style={{ width: "22px", height: "22px", objectFit: "contain" }} alt="Nemix Logo" />
+                <BrandLogo size={22} />
                 <span className="brand-logotype-adaptive" style={{ fontSize: "17px" }}>Nemix</span>
               </div>
               <p style={{ fontSize: "13px", color: "var(--md-on-surface-var)", lineHeight: 1.6, maxWidth: "240px", marginBottom: "20px" }}>
