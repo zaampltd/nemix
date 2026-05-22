@@ -5,7 +5,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { 
   Shield, Key, Eye, EyeOff, Save, Database, Sparkles, 
-  Lock, CheckCircle2, HelpCircle, Activity, ExternalLink, Cpu, Zap 
+  Lock, CheckCircle2, Activity, ExternalLink, Cpu, Zap,
+  Brain, Terminal, Cloud, Sliders, GitBranch
 } from "lucide-react";
 
 interface Provider {
@@ -23,64 +24,56 @@ interface Provider {
 }
 
 export default function ProviderIntegrationsPage() {
-  // ─── State Management ──────────────────────────────────────────────────────
-  const [openRouterKey, setOpenRouterKey] = useState("");
-  const [groqKey, setGroqKey] = useState("");
-  const [geminiKey, setGeminiKey] = useState("");
+  // ─── State Management (All 10 Providers) ──────────────────────────────────
+  const [openaiKey, setOpenaiKey] = useState("");
   const [anthropicKey, setAnthropicKey] = useState("");
+  const [geminiKey, setGeminiKey] = useState("");
+  const [openrouterKey, setOpenrouterKey] = useState("");
+  const [groqKey, setGroqKey] = useState("");
+  const [nvidiaKey, setNvidiaKey] = useState("");
+  const [deepseekKey, setDeepseekKey] = useState("");
+  const [mistralKey, setMistralKey] = useState("");
+  const [huggingfaceKey, setHuggingfaceKey] = useState("");
+  const [cohereKey, setCohereKey] = useState("");
 
-  const [showOpenRouter, setShowOpenRouter] = useState(false);
-  const [showGroq, setShowGroq] = useState(false);
-  const [showGemini, setShowGemini] = useState(false);
+  const [showOpenai, setShowOpenai] = useState(false);
   const [showAnthropic, setShowAnthropic] = useState(false);
+  const [showGemini, setShowGemini] = useState(false);
+  const [showOpenrouter, setShowOpenrouter] = useState(false);
+  const [showGroq, setShowGroq] = useState(false);
+  const [showNvidia, setShowNvidia] = useState(false);
+  const [showDeepseek, setShowDeepseek] = useState(false);
+  const [showMistral, setShowMistral] = useState(false);
+  const [showHuggingface, setShowHuggingface] = useState(false);
+  const [showCohere, setShowCohere] = useState(false);
 
   const [connectionStates, setConnectionStates] = useState<Record<string, "idle" | "connecting" | "connected">>({
+    openai: "idle",
+    anthropic: "idle",
+    gemini: "idle",
     openrouter: "idle",
     groq: "idle",
-    gemini: "idle",
-    anthropic: "idle"
+    nvidia: "idle",
+    deepseek: "idle",
+    mistral: "idle",
+    huggingface: "idle",
+    cohere: "idle"
   });
 
   // ─── Providers Setup ───────────────────────────────────────────────────────
   const providers: Provider[] = [
     {
-      id: "openrouter",
-      name: "OpenRouter",
-      icon: Cpu,
-      placeholder: "sk-or-v1-...",
-      value: openRouterKey,
-      setValue: setOpenRouterKey,
-      show: showOpenRouter,
-      setShow: setShowOpenRouter,
-      color: "from-indigo-500 to-purple-600",
-      docUrl: "https://openrouter.ai/keys",
-      description: "Access hundreds of open-source models like Llama 3, Qwen, and Gemma at client edge."
-    },
-    {
-      id: "groq",
-      name: "Groq Cloud",
-      icon: Zap,
-      placeholder: "gsk_...",
-      value: groqKey,
-      setValue: setGroqKey,
-      show: showGroq,
-      setShow: setShowGroq,
-      color: "from-orange-500 to-amber-600",
-      docUrl: "https://console.groq.com/keys",
-      description: "Ultra blazing-fast inference speeds powered by local LPU hardware accelerators."
-    },
-    {
-      id: "gemini",
-      name: "Google Gemini",
+      id: "openai",
+      name: "OpenAI",
       icon: Sparkles,
-      placeholder: "AIzaSy...",
-      value: geminiKey,
-      setValue: setGeminiKey,
-      show: showGemini,
-      setShow: setShowGemini,
-      color: "from-blue-500 to-cyan-500",
-      docUrl: "https://aistudio.google.com/",
-      description: "Google's next-gen multimodal models featuring massive context execution windows."
+      placeholder: "sk-proj-...",
+      value: openaiKey,
+      setValue: setOpenaiKey,
+      show: showOpenai,
+      setShow: setShowOpenai,
+      color: "from-emerald-500 to-teal-600",
+      docUrl: "https://platform.openai.com/api-keys",
+      description: "Industry standard models including GPT-4o, GPT-4, and specialized reasoning agents."
     },
     {
       id: "anthropic",
@@ -91,9 +84,113 @@ export default function ProviderIntegrationsPage() {
       setValue: setAnthropicKey,
       show: showAnthropic,
       setShow: setShowAnthropic,
-      color: "from-amber-600 to-yellow-600",
+      color: "from-amber-600 to-orange-700",
       docUrl: "https://console.anthropic.com/",
-      description: "Anthropic's flagship reasoning models specializing in complex processing pipeline tasks."
+      description: "Anthropic's reasoning and coding intelligence suite featuring Claude 3.5 Sonnet."
+    },
+    {
+      id: "gemini",
+      name: "Google Gemini",
+      icon: Zap,
+      placeholder: "AIzaSy...",
+      value: geminiKey,
+      setValue: setGeminiKey,
+      show: showGemini,
+      setShow: setShowGemini,
+      color: "from-blue-500 to-indigo-600",
+      docUrl: "https://aistudio.google.com/",
+      description: "Google's powerful multimodal Gemini models featuring massive context execution windows."
+    },
+    {
+      id: "openrouter",
+      name: "OpenRouter",
+      icon: GitBranch,
+      placeholder: "sk-or-v1-...",
+      value: openrouterKey,
+      setValue: setOpenrouterKey,
+      show: showOpenrouter,
+      setShow: setShowOpenrouter,
+      color: "from-purple-500 to-fuchsia-600",
+      docUrl: "https://openrouter.ai/keys",
+      description: "Unified portal accessing hundreds of open-source models like Llama 3, Qwen, and Gemma."
+    },
+    {
+      id: "groq",
+      name: "Groq Cloud",
+      icon: Cpu,
+      placeholder: "gsk_...",
+      value: groqKey,
+      setValue: setGroqKey,
+      show: showGroq,
+      setShow: setShowGroq,
+      color: "from-orange-500 to-amber-600",
+      docUrl: "https://console.groq.com/keys",
+      description: "Ultra blazing-fast inference speeds powered by local LPU hardware accelerators."
+    },
+    {
+      id: "nvidia",
+      name: "Nvidia NIM",
+      icon: Database,
+      placeholder: "nvapi-...",
+      value: nvidiaKey,
+      setValue: setNvidiaKey,
+      show: showNvidia,
+      setShow: setShowNvidia,
+      color: "from-green-600 to-emerald-700",
+      docUrl: "https://build.nvidia.com/",
+      description: "Free hosted catalog of optimized models fine-tuned to execute at peak speeds."
+    },
+    {
+      id: "deepseek",
+      name: "DeepSeek",
+      icon: Brain,
+      placeholder: "sk-ds-...",
+      value: deepseekKey,
+      setValue: setDeepseekKey,
+      show: showDeepseek,
+      setShow: setShowDeepseek,
+      color: "from-blue-600 to-cyan-700",
+      docUrl: "https://platform.deepseek.com/",
+      description: "Extremely cost-effective intelligence with highly capable coding and math reasoning skills."
+    },
+    {
+      id: "mistral",
+      name: "Mistral AI",
+      icon: Cloud,
+      placeholder: "sk-ms-...",
+      value: mistralKey,
+      setValue: setMistralKey,
+      show: showMistral,
+      setShow: setShowMistral,
+      color: "from-orange-600 to-rose-600",
+      docUrl: "https://console.mistral.ai/",
+      description: "State-of-the-art open models built in Europe with native multilingual capability support."
+    },
+    {
+      id: "huggingface",
+      name: "Hugging Face",
+      icon: Sliders,
+      placeholder: "hf_...",
+      value: huggingfaceKey,
+      setValue: setHuggingfaceKey,
+      show: showHuggingface,
+      setShow: setShowHuggingface,
+      color: "from-yellow-500 to-amber-600",
+      docUrl: "https://huggingface.co/settings/tokens",
+      description: "Access thousands of community models, pipelines, and hosted inference endpoints."
+    },
+    {
+      id: "cohere",
+      name: "Cohere",
+      icon: Terminal,
+      placeholder: "co-...",
+      value: cohereKey,
+      setValue: setCohereKey,
+      show: showCohere,
+      setShow: setShowCohere,
+      color: "from-teal-600 to-cyan-800",
+      docUrl: "https://dashboard.cohere.com/api-keys",
+      description: "Leading enterprise search, retrieval, and language generation solutions optimized for RAG."
     }
   ];
 
@@ -109,10 +206,10 @@ export default function ProviderIntegrationsPage() {
     // Simulate premium visual connecting state
     setConnectionStates(prev => ({ ...prev, [providerId]: "connecting" }));
     
-    await new Promise(resolve => setTimeout(resolve, 1200));
+    await new Promise(resolve => setTimeout(resolve, 1000));
 
     setConnectionStates(prev => ({ ...prev, [providerId]: "connected" }));
-    alert(`${providerName} Key saved securely!`);
+    alert(`${providerName} key encrypted and saved securely!`);
   };
 
   return (
@@ -168,8 +265,8 @@ export default function ProviderIntegrationsPage() {
           </div>
         </motion.div>
 
-        {/* Responsive Grid Layout */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Responsive Grid Layout (4-column grid for enterprise view) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           <AnimatePresence>
             {providers.map((p, index) => {
               const status = connectionStates[p.id];
@@ -178,15 +275,15 @@ export default function ProviderIntegrationsPage() {
                   key={p.id}
                   initial={{ opacity: 0, y: 15 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 + index * 0.05 }}
-                  className="rounded-2xl p-6 border flex flex-col justify-between transition-all duration-300 hover:shadow-lg group relative"
+                  transition={{ delay: 0.05 + index * 0.03 }}
+                  className="rounded-2xl p-5 border flex flex-col justify-between transition-all duration-300 hover:shadow-lg group relative overflow-hidden"
                   style={{
                     background: "var(--md-surface-1)",
                     borderColor: "var(--md-outline)",
                   }}
                 >
                   {/* Subtle Glowing Background Blur */}
-                  <div className="absolute inset-0 rounded-2xl transition-opacity duration-300 opacity-0 group-hover:opacity-5 bg-gradient-to-tr from-purple-500 to-indigo-500 pointer-events-none" />
+                  <div className="absolute inset-0 rounded-2xl transition-opacity duration-300 opacity-0 group-hover:opacity-[0.03] bg-gradient-to-tr from-purple-500 to-indigo-500 pointer-events-none" />
 
                   <div className="space-y-4 relative z-10">
                     
@@ -197,11 +294,11 @@ export default function ProviderIntegrationsPage() {
                           <p.icon className="w-5 h-5" />
                         </div>
                         <div>
-                          <h3 className="text-sm font-bold" style={{ color: "var(--md-on-surface)" }}>
+                          <h3 className="text-xs font-bold truncate max-w-[120px]" style={{ color: "var(--md-on-surface)" }}>
                             {p.name}
                           </h3>
-                          <span className="text-[10px] opacity-75 font-semibold" style={{ color: "var(--md-on-surface-var)" }}>
-                            {p.id.toUpperCase()} SERVICE
+                          <span className="text-[9px] opacity-75 font-semibold" style={{ color: "var(--md-on-surface-var)" }}>
+                            {p.id.toUpperCase()}
                           </span>
                         </div>
                       </div>
@@ -210,7 +307,7 @@ export default function ProviderIntegrationsPage() {
                         href={p.docUrl} 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="text-[10px] font-bold inline-flex items-center gap-1 opacity-60 hover:opacity-100 transition-opacity uppercase tracking-wider"
+                        className="text-[9px] font-bold inline-flex items-center gap-0.5 opacity-60 hover:opacity-100 transition-opacity uppercase tracking-wider shrink-0"
                         style={{ color: "var(--md-primary)" }}
                       >
                         Docs <ExternalLink className="w-2.5 h-2.5" />
@@ -218,13 +315,13 @@ export default function ProviderIntegrationsPage() {
                     </div>
 
                     {/* Description */}
-                    <p className="text-xs min-h-[32px] leading-relaxed" style={{ color: "var(--md-on-surface-var)" }}>
+                    <p className="text-[11px] min-h-[48px] leading-relaxed" style={{ color: "var(--md-on-surface-var)" }}>
                       {p.description}
                     </p>
 
                     {/* API Key input and Show/Hide Toggle */}
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-bold uppercase tracking-wider block" style={{ color: "var(--md-on-surface-var)" }}>
+                      <label className="text-[9px] font-bold uppercase tracking-wider block" style={{ color: "var(--md-on-surface-var)" }}>
                         Secret API Key
                       </label>
                       <div className="relative">
@@ -233,7 +330,7 @@ export default function ProviderIntegrationsPage() {
                           value={p.value}
                           onChange={e => p.setValue(e.target.value)}
                           placeholder={p.placeholder}
-                          className="w-full pl-3.5 pr-10 py-2.5 rounded-xl text-xs font-mono outline-none border focus:border-[var(--md-primary)] transition-colors"
+                          className="w-full pl-3 pr-9 py-2 rounded-xl text-xs font-mono outline-none border focus:border-[var(--md-primary)] transition-colors"
                           style={{
                             background: "var(--md-surface-2)",
                             borderColor: "var(--md-outline)",
@@ -243,10 +340,10 @@ export default function ProviderIntegrationsPage() {
                         <button
                           type="button"
                           onClick={() => p.setShow(!p.show)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 opacity-50 hover:opacity-100 transition-opacity"
+                          className="absolute right-2.5 top-1/2 -translate-y-1/2 opacity-50 hover:opacity-100 transition-opacity"
                           style={{ color: "var(--md-on-surface)" }}
                         >
-                          {p.show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          {p.show ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                         </button>
                       </div>
                     </div>
@@ -254,17 +351,17 @@ export default function ProviderIntegrationsPage() {
                   </div>
 
                   {/* Actions / Status footer */}
-                  <div className="mt-6 flex items-center justify-between border-t pt-4 relative z-10" style={{ borderColor: "var(--md-outline-var)" }}>
-                    <div className="flex items-center gap-1.5">
+                  <div className="mt-5 flex items-center justify-between border-t pt-3.5 relative z-10" style={{ borderColor: "var(--md-outline-var)" }}>
+                    <div className="flex items-center gap-1">
                       {status === "connected" ? (
                         <>
                           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">Connected</span>
+                          <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-400">Connected</span>
                         </>
                       ) : (
                         <>
-                          <Activity className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-amber-400">Not Saved</span>
+                          <Activity className="w-3.5 h-3.5 text-[var(--md-on-surface-var)] opacity-40 shrink-0" />
+                          <span className="text-[9px] font-bold uppercase tracking-wider text-[var(--md-on-surface-var)] opacity-60">Not Saved</span>
                         </>
                       )}
                     </div>
@@ -273,7 +370,7 @@ export default function ProviderIntegrationsPage() {
                       type="button"
                       onClick={() => handleConnect(p.id, p.name, p.value)}
                       disabled={status === "connecting"}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-[11px] font-bold transition-all duration-200 hover:opacity-95 disabled:opacity-50"
+                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-[10px] font-bold transition-all duration-200 hover:opacity-95 disabled:opacity-50"
                       style={{
                         background: status === "connected" ? "var(--md-surface-2)" : "var(--md-primary)",
                         color: status === "connected" ? "var(--md-on-surface)" : "var(--md-on-primary)",
@@ -283,7 +380,7 @@ export default function ProviderIntegrationsPage() {
                     >
                       {status === "connecting" ? (
                         <span className="flex items-center gap-1">
-                          <svg className="animate-spin h-3.5 w-3.5 text-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <svg className="animate-spin h-3 w-3 text-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                           </svg>
@@ -291,11 +388,11 @@ export default function ProviderIntegrationsPage() {
                         </span>
                       ) : status === "connected" ? (
                         <>
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Update Key
+                          <CheckCircle2 className="w-3 h-3 text-emerald-400" /> Update Key
                         </>
                       ) : (
                         <>
-                          <Save className="w-3.5 h-3.5" /> Save API Key
+                          <Save className="w-3 h-3" /> Save Key
                         </>
                       )}
                     </button>
