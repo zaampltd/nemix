@@ -52,7 +52,7 @@ export default function TrainingPage() {
 
   // ── Fetch all jobs from backend + localStorage fallbacks ───────────
   const fetchJobs = useCallback(async () => {
-    const loadLocalJobs = () => {
+    const loadLocalJobs = (): Job[] => {
       try { return JSON.parse(localStorage.getItem('local_jobs') || '[]'); } catch { return []; }
     };
     try {
@@ -143,7 +143,7 @@ export default function TrainingPage() {
         if (job.status === 'completed' || job.status === 'failed') return job;
 
         updated = true;
-        let nextStatus = job.status;
+        let nextStatus: Job['status'] = job.status;
         let nextProgress = job.progress;
         let nextEpoch = job.current_epoch;
         const nextLogs = [...(job.logs || [])];
