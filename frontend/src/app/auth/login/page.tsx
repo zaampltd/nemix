@@ -150,10 +150,8 @@ function LoginForm() {
 
         {/* Logo */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', position: 'relative' }}>
-          <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Zap style={{ width: '18px', height: '18px', color: '#fff' }} />
-          </div>
-          <span style={{ fontSize: '18px', fontWeight: 800, color: '#fff' }}>Nemix</span>
+          <img src="/logo-simple.png" style={{ width: '30px', height: '30px', objectFit: 'contain' }} alt="Nemix Logo" />
+          <span className="brand-logotype" style={{ fontSize: '24px' }}>Nemix</span>
         </div>
 
         {/* Middle: headline + bullets */}

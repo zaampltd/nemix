@@ -253,11 +253,9 @@ export default function BlogPage() {
       {/* ── Navbar ─────────────────────────────────────────────── */}
       <header style={{ borderBottom: "1px solid var(--md-outline)", background: "var(--md-surface-1)", position: "sticky", top: 0, zIndex: 50 }}>
         <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "0 24px", height: "56px", display: "flex", alignItems: "center", gap: "16px" }}>
-          <Link href="/" style={{ display: "flex", alignItems: "center", gap: "7px", fontWeight: 700, fontSize: "15px", textDecoration: "none", color: "var(--md-on-surface)" }}>
-            <div style={{ width: "26px", height: "26px", borderRadius: "7px", background: "var(--md-primary)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <Zap style={{ width: "14px", height: "14px", color: "var(--md-on-primary)" }} />
-            </div>
-            Nemix
+          <Link href="/" style={{ display: "flex", alignItems: "center", gap: "7px", textDecoration: "none", flexShrink: 0 }}>
+            <img src="/logo-simple.png" style={{ width: "22px", height: "22px", objectFit: "contain" }} alt="Nemix Logo" />
+            <span className="brand-logotype-adaptive" style={{ fontSize: "17px" }}>Nemix</span>
           </Link>
           <span style={{ color: "var(--md-outline)", fontSize: "18px" }}>/</span>
           <span style={{ fontSize: "14px", fontWeight: 600, color: "var(--md-on-surface-var)" }}>Blog</span>

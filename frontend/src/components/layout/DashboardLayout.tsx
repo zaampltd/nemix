@@ -98,12 +98,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Logo */}
       <div className="flex items-center justify-between px-4 h-14"
         style={{ borderBottom: "1px solid var(--md-outline)" }}>
-        <Link href="/dashboard" className="flex items-center gap-2.5 font-bold text-sm">
-          <div className="w-7 h-7 rounded-xl flex items-center justify-center"
-            style={{ background: "var(--md-primary)" }}>
-            <Zap className="w-4 h-4" style={{ color: "var(--md-on-primary)" }} />
-          </div>
-          <span style={{ color: "var(--md-on-surface)" }}>Nemix</span>
+        <Link href="/dashboard" className="flex items-center gap-2.5 font-bold">
+          <img src="/logo-simple.png" className="w-[26px] h-[26px] object-contain shrink-0" alt="Nemix Logo" />
+          <span className="brand-logotype-adaptive text-[20px] tracking-tight">Nemix</span>
         </Link>
         {mobile && (
           <button onClick={() => setMobileOpen(false)}
@@ -219,12 +216,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* Mobile header */}
         <header className="md:hidden h-14 flex items-center justify-between px-4"
           style={{ borderBottom: "1px solid var(--md-outline)", background: "var(--md-surface-1)" }}>
-          <div className="flex items-center gap-2 font-bold text-sm">
-            <div className="w-6 h-6 rounded-lg flex items-center justify-center"
-              style={{ background: "var(--md-primary)" }}>
-              <Zap className="w-3.5 h-3.5" style={{ color: "var(--md-on-primary)" }} />
-            </div>
-            Nemix
+          <div className="flex items-center gap-2 font-bold">
+            <img src="/logo-simple.png" className="w-[22px] h-[22px] object-contain shrink-0" alt="Nemix Logo" />
+            <span className="brand-logotype-adaptive text-[17px] tracking-tight">Nemix</span>
           </div>
           <div className="flex items-center gap-2">
             <button onClick={toggle} className="p-2 rounded-xl transition-colors"

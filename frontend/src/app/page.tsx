@@ -101,11 +101,9 @@ export default function LandingPage() {
       {/* ── Navbar ───────────────────────────────────────────────── */}
       <header style={{ borderBottom: "1px solid var(--md-outline)", background: "var(--md-surface-1)", position: "sticky", top: 0, zIndex: 50 }}>
         <div style={{ ...W, height: "60px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <Link href="/" style={{ display: "flex", alignItems: "center", gap: "8px", fontWeight: 700, fontSize: "16px", textDecoration: "none", color: "var(--md-on-surface)" }}>
-            <div style={{ width: "30px", height: "30px", borderRadius: "9px", background: "var(--md-primary)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <Zap style={{ width: "16px", height: "16px", color: "var(--md-on-primary)" }} />
-            </div>
-            Nemix
+          <Link href="/" style={{ display: "flex", alignItems: "center", gap: "8px", textDecoration: "none" }}>
+            <img src="/logo-simple.png" style={{ width: "26px", height: "26px", objectFit: "contain" }} alt="Nemix Logo" />
+            <span className="brand-logotype-adaptive" style={{ fontSize: "20px" }}>Nemix</span>
           </Link>
 
           <nav style={{ display: "flex", alignItems: "center", gap: "2px" }}>
@@ -440,11 +438,9 @@ export default function LandingPage() {
           <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: "40px", marginBottom: "40px" }}>
             {/* Brand */}
             <div>
-              <div style={{ display: "flex", alignItems: "center", gap: "8px", fontWeight: 700, fontSize: "15px", marginBottom: "12px", color: "var(--md-on-surface)" }}>
-                <div style={{ width: "26px", height: "26px", borderRadius: "8px", background: "var(--md-primary)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <Zap style={{ width: "14px", height: "14px", color: "var(--md-on-primary)" }} />
-                </div>
-                Nemix
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "12px" }}>
+                <img src="/logo-simple.png" style={{ width: "22px", height: "22px", objectFit: "contain" }} alt="Nemix Logo" />
+                <span className="brand-logotype-adaptive" style={{ fontSize: "17px" }}>Nemix</span>
               </div>
               <p style={{ fontSize: "13px", color: "var(--md-on-surface-var)", lineHeight: 1.6, maxWidth: "240px", marginBottom: "20px" }}>
                 AI training infrastructure for modern teams. Build faster, scale smarter.
