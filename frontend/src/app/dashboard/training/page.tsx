@@ -378,13 +378,14 @@ export default function TrainingPage() {
         {/* ── Header ── */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight mb-1">Training Hub</h1>
+            <h1 className="text-3xl font-bold tracking-tight mb-1" style={{ color: 'var(--md-on-surface)' }}>Training Hub</h1>
             <p style={{ color: 'var(--md-on-surface-var)' }}>Train real AI models via Together AI or Hugging Face.</p>
           </div>
           <div className="flex items-center gap-3">
             <Link href="/dashboard/training/visualizer">
-              <Button variant="secondary" className="rounded-xl border border-white/5 bg-white/5 hover:bg-white/10 gap-2 text-xs font-semibold">
-                <Flame className="w-4 h-4 text-purple-400" />
+              <Button variant="secondary" className="rounded-xl gap-2 text-xs font-semibold"
+                style={{ background: 'var(--md-surface-2)', border: '1px solid var(--md-outline)', color: 'var(--md-on-surface-var)' }}>
+                <Flame className="w-4 h-4" style={{ color: 'var(--md-primary)' }} />
                 Pipeline Visualizer
               </Button>
             </Link>
@@ -409,25 +410,25 @@ export default function TrainingPage() {
           {/* Main detail panel */}
           <div className="lg:col-span-2 space-y-6">
             {loading ? (
-              <div className="flex flex-col items-center justify-center py-24 glass rounded-3xl">
-                <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin mb-4" />
-                <p className="text-gray-500 text-sm">Loading jobs...</p>
+              <div className="flex flex-col items-center justify-center py-24 rounded-3xl" style={{ background: 'var(--md-surface-1)', border: '1px solid var(--md-outline)' }}>
+                <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin mb-4" style={{ borderColor: 'var(--md-primary)', borderTopColor: 'transparent' }} />
+                <p className="text-sm" style={{ color: 'var(--md-on-surface-var)' }}>Loading jobs...</p>
               </div>
             ) : display ? (
               <>
                 {/* Job card */}
-                <div className="glass p-8 rounded-3xl border-white/5">
+                <div className="p-8 rounded-3xl" style={{ background: 'var(--md-surface-1)', border: '1px solid var(--md-outline)', boxShadow: 'var(--shadow-2)' }}>
                   <div className="flex items-start justify-between mb-8">
                     <div className="flex items-center gap-4">
-                      <div className="p-3 rounded-2xl bg-purple-500/10 text-purple-400">
-                        <Cpu className="w-8 h-8" />
+                      <div className="p-3 rounded-2xl" style={{ background: 'var(--md-primary-container)' }}>
+                        <Cpu className="w-8 h-8" style={{ color: 'var(--md-primary)' }} />
                       </div>
                       <div>
-                        <h2 className="text-xl font-bold flex items-center gap-2">
+                        <h2 className="text-xl font-bold flex items-center gap-2" style={{ color: 'var(--md-on-surface)' }}>
                           {display.model_name || `Job #${display.id}`}
                         </h2>
-                        <p className="text-sm text-gray-500 font-mono">{display.job_id.slice(0, 16)}...</p>
-                        <p className="text-xs text-gray-600 mt-0.5">{new Date(display.created_at).toLocaleString()}</p>
+                        <p className="text-sm font-mono" style={{ color: 'var(--md-on-surface-var)' }}>{display.job_id.slice(0, 16)}...</p>
+                        <p className="text-xs mt-0.5" style={{ color: 'var(--md-on-surface-var)', opacity: 0.7 }}>{new Date(display.created_at).toLocaleString()}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -455,10 +456,10 @@ export default function TrainingPage() {
                   {/* Progress bar */}
                   <div className="space-y-2 mb-8">
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-400">Progress</span>
-                      <span className="font-bold">{(display.progress ?? 0).toFixed(1)}%</span>
+                      <span style={{ color: 'var(--md-on-surface-var)' }}>Progress</span>
+                      <span className="font-bold" style={{ color: 'var(--md-on-surface)' }}>{(display.progress ?? 0).toFixed(1)}%</span>
                     </div>
-                    <div className="h-3 w-full bg-white/5 rounded-full overflow-hidden">
+                    <div className="h-3 w-full rounded-full overflow-hidden" style={{ background: 'var(--md-surface-3)' }}>
                       <motion.div
                         animate={{ width: `${display.progress ?? 0}%` }}
                         transition={{ duration: 0.8, ease: 'easeOut' }}
@@ -483,15 +484,15 @@ export default function TrainingPage() {
                 </div>
 
                 {/* Live terminal */}
-                <div className="glass rounded-3xl border-white/5 overflow-hidden">
-                  <div className="flex items-center gap-2 px-6 py-4 border-b border-white/5 bg-white/[0.01]">
+                <div className="rounded-3xl overflow-hidden" style={{ background: 'var(--md-surface-1)', border: '1px solid var(--md-outline)' }}>
+                  <div className="flex items-center gap-2 px-6 py-4" style={{ borderBottom: '1px solid var(--md-outline)', background: 'var(--md-surface-2)' }}>
                     <div className="flex gap-1.5">
                       <div className="w-3 h-3 rounded-full bg-red-500/60" />
                       <div className="w-3 h-3 rounded-full bg-yellow-500/60" />
                       <div className="w-3 h-3 rounded-full bg-green-500/60" />
                     </div>
-                    <Terminal className="w-4 h-4 text-gray-600 ml-2" />
-                    <span className="text-xs font-mono text-gray-500">training.log — {display.model_name || display.job_id.slice(0, 12)}</span>
+                    <Terminal className="w-4 h-4 ml-2" style={{ color: 'var(--md-on-surface-var)' }} />
+                    <span className="text-xs font-mono" style={{ color: 'var(--md-on-surface-var)' }}>training.log — {display.model_name || display.job_id.slice(0, 12)}</span>
                     <div className="ml-auto">
                       <button onClick={fetchJobs} style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: 'var(--md-on-surface-var)', background: 'none', border: 'none', cursor: 'pointer' }}>
                         <RefreshCw style={{ width: '12px', height: '12px' }} /> Refresh
@@ -509,7 +510,7 @@ export default function TrainingPage() {
                         );
                       })
                     ) : (
-                      <p className="text-gray-600">Waiting for logs...</p>
+                      <p style={{ color: 'var(--md-on-surface-var)', opacity: 0.5 }}>Waiting for logs...</p>
                     )}
                     {display.status === 'training' && (
                       <p className="text-green-400/50 animate-pulse">▋</p>
@@ -519,10 +520,10 @@ export default function TrainingPage() {
                 </div>
               </>
             ) : (
-              <div className="flex flex-col items-center justify-center py-24 glass rounded-3xl border-dashed border-white/10">
-                <Cpu className="w-14 h-14 text-gray-700 mb-5" />
-                <h3 className="text-xl font-bold mb-2">No training jobs yet</h3>
-                <p className="text-gray-500 mb-8 text-center max-w-xs">
+              <div className="flex flex-col items-center justify-center py-24 rounded-3xl" style={{ border: '1px dashed var(--md-outline)' }}>
+                <Cpu className="w-14 h-14 mb-5" style={{ color: 'var(--md-outline)' }} />
+                <h3 className="text-xl font-bold mb-2" style={{ color: 'var(--md-on-surface)' }}>No training jobs yet</h3>
+                <p className="mb-8 text-center max-w-xs" style={{ color: 'var(--md-on-surface-var)' }}>
                   Add your API key in the Provider panel above, then start a real training job.
                 </p>
                 <button
@@ -538,11 +539,11 @@ export default function TrainingPage() {
           {/* Job history sidebar */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold flex items-center gap-2">
-                <History className="w-5 h-5 text-gray-500" />
+              <h2 className="text-lg font-semibold flex items-center gap-2" style={{ color: 'var(--md-on-surface)' }}>
+                <History className="w-5 h-5" style={{ color: 'var(--md-on-surface-var)' }} />
                 Job History
               </h2>
-              <span className="text-xs text-gray-600">{jobs.length} job{jobs.length !== 1 ? 's' : ''}</span>
+              <span className="text-xs" style={{ color: 'var(--md-on-surface-var)' }}>{jobs.length} job{jobs.length !== 1 ? 's' : ''}</span>
             </div>
             <div className="space-y-3 max-h-[600px] overflow-y-auto pr-1">
               <AnimatePresence>
@@ -552,39 +553,42 @@ export default function TrainingPage() {
                     initial={{ opacity: 0, x: 10 }}
                     animate={{ opacity: 1, x: 0 }}
                     onClick={() => setActiveJob(job)}
-                    className={cn(
-                      'w-full text-left p-4 rounded-2xl border transition-all',
-                      activeJob?.job_id === job.job_id
-                        ? 'bg-purple-500/10 border-purple-500/40'
-                        : 'border-white/5 hover:border-white/15 hover:bg-white/[0.02]'
-                    )}
+                    style={{
+                      background: activeJob?.job_id === job.job_id ? 'var(--md-primary-container)' : 'var(--md-surface-1)',
+                      border: `1px solid ${activeJob?.job_id === job.job_id ? 'var(--md-primary)' : 'var(--md-outline)'}`,
+                      borderRadius: '16px',
+                      padding: '16px',
+                      width: '100%',
+                      textAlign: 'left',
+                      transition: 'all 0.15s',
+                    }}
                   >
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
-                        <Layers className="w-3.5 h-3.5 text-gray-500" />
-                        <span className="text-xs font-medium text-gray-300 truncate max-w-[100px]">
+                        <Layers className="w-3.5 h-3.5" style={{ color: 'var(--md-on-surface-var)' }} />
+                        <span className="text-xs font-medium truncate max-w-[100px]" style={{ color: activeJob?.job_id === job.job_id ? 'var(--md-on-primary-cont)' : 'var(--md-on-surface)' }}>
                           {job.model_name || `Job #${job.id}`}
                         </span>
                       </div>
                       {getStatusIcon(job.status)}
                     </div>
-                    <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden mb-2">
+                    <div className="h-1.5 w-full rounded-full overflow-hidden mb-2" style={{ background: 'var(--md-surface-3)' }}>
                       <motion.div
                         animate={{ width: `${job.progress ?? 0}%` }}
                         transition={{ duration: 0.5 }}
                         className={cn('h-full rounded-full', job.status === 'completed' ? 'bg-green-500' : 'premium-gradient')}
                       />
                     </div>
-                    <div className="flex items-center justify-between text-[10px] text-gray-500 uppercase tracking-widest">
+                    <div className="flex items-center justify-between text-[10px] uppercase tracking-widest" style={{ color: 'var(--md-on-surface-var)' }}>
                       <span>{job.current_epoch}/{job.total_epochs} epochs</span>
                       <span>{(job.progress ?? 0).toFixed(0)}%</span>
                     </div>
-                    <p className="text-[10px] text-gray-600 mt-1 font-mono">{job.job_id.slice(0, 14)}...</p>
+                    <p className="text-[10px] mt-1 font-mono" style={{ color: 'var(--md-on-surface-var)', opacity: 0.6 }}>{job.job_id.slice(0, 14)}...</p>
                   </motion.button>
                 ))}
               </AnimatePresence>
               {jobs.length === 0 && !loading && (
-                <p className="text-center text-gray-600 text-sm py-8">No jobs yet</p>
+                <p className="text-center text-sm py-8" style={{ color: 'var(--md-on-surface-var)' }}>No jobs yet</p>
               )}
             </div>
           </div>
