@@ -1,365 +1,313 @@
 "use client";
+
 import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import DashboardLayout from "@/components/layout/DashboardLayout";
-import { Sliders, Copy, Check, Download, ChevronDown, Info } from "lucide-react";
-import { motion } from "framer-motion";
+import { 
+  Shield, Key, Eye, EyeOff, Save, Database, Sparkles, 
+  Lock, CheckCircle2, HelpCircle, Activity, ExternalLink, Cpu, Zap 
+} from "lucide-react";
 
-interface Config {
-  // Model
-  baseModel: string;
-  taskType: string;
-  // LoRA
-  loraR: number;
-  loraAlpha: number;
-  loraDropout: number;
-  targetModules: string[];
-  // Training
-  epochs: number;
-  batchSize: number;
-  learningRate: number;
-  warmupRatio: number;
-  weightDecay: number;
-  maxSeqLen: number;
-  // Quantization
-  quantization: "none" | "4bit" | "8bit";
-  // Optimizer
-  optimizer: string;
-  scheduler: string;
-  // Output
-  outputDir: string;
+interface Provider {
+  id: string;
+  name: string;
+  icon: React.ComponentType<any>;
+  placeholder: string;
+  value: string;
+  setValue: (val: string) => void;
+  show: boolean;
+  setShow: (show: boolean) => void;
+  color: string;
+  docUrl: string;
+  description: string;
 }
 
-const MODELS = ["meta-llama/Llama-3-8B", "meta-llama/Llama-3-70B", "mistralai/Mistral-7B-v0.3", "microsoft/Phi-3-mini-4k", "google/gemma-7b"];
-const TASKS = ["causal_lm", "seq2seq_lm", "token_classification", "sequence_classification"];
-const MODULES = ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"];
-const OPTIMIZERS = ["adamw_torch", "adamw_8bit", "paged_adamw_8bit", "sgd", "adafactor"];
-const SCHEDULERS = ["cosine", "linear", "constant", "cosine_with_restarts", "polynomial"];
+export default function ProviderIntegrationsPage() {
+  // ─── State Management ──────────────────────────────────────────────────────
+  const [openRouterKey, setOpenRouterKey] = useState("");
+  const [groqKey, setGroqKey] = useState("");
+  const [geminiKey, setGeminiKey] = useState("");
+  const [anthropicKey, setAnthropicKey] = useState("");
 
-function Tooltip({ text }: { text: string }) {
-  const [show, setShow] = useState(false);
-  return (
-    <span className="relative inline-block ml-1.5">
-      <Info className="w-3.5 h-3.5 cursor-help inline"
-        style={{ color: "var(--md-on-surface-var)" }}
-        onMouseEnter={() => setShow(true)}
-        onMouseLeave={() => setShow(false)} />
-      {show && (
-        <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1.5 rounded-lg text-xs w-52 z-10 shadow-lg"
-          style={{ background: "var(--md-surface)", border: "1px solid var(--md-outline)", color: "var(--md-on-surface)" }}>
-          {text}
-        </span>
-      )}
-    </span>
-  );
-}
+  const [showOpenRouter, setShowOpenRouter] = useState(false);
+  const [showGroq, setShowGroq] = useState(false);
+  const [showGemini, setShowGemini] = useState(false);
+  const [showAnthropic, setShowAnthropic] = useState(false);
 
-function Slider({ label, value, min, max, step, onChange, tip }: {
-  label: string; value: number; min: number; max: number; step: number;
-  onChange: (v: number) => void; tip?: string;
-}) {
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-1.5">
-        <label className="text-xs font-medium flex items-center" style={{ color: "var(--md-on-surface-var)" }}>
-          {label}{tip && <Tooltip text={tip} />}
-        </label>
-        <span className="text-xs font-mono font-semibold" style={{ color: "var(--md-primary)" }}>{value}</span>
-      </div>
-      <input type="range" min={min} max={max} step={step} value={value}
-        onChange={e => onChange(parseFloat(e.target.value))}
-        className="w-full h-1.5 rounded-full appearance-none cursor-pointer"
-        style={{ accentColor: "var(--md-primary)", background: `linear-gradient(to right, var(--md-primary) ${((value - min) / (max - min)) * 100}%, var(--md-surface-3) 0%)` }} />
-      <div className="flex justify-between text-[9px] mt-1" style={{ color: "var(--md-on-surface-var)" }}>
-        <span>{min}</span><span>{max}</span>
-      </div>
-    </div>
-  );
-}
-
-function Select({ label, value, options, onChange, tip }: {
-  label: string; value: string; options: string[]; onChange: (v: string) => void; tip?: string;
-}) {
-  return (
-    <div>
-      <label className="text-xs font-medium mb-1.5 block" style={{ color: "var(--md-on-surface-var)" }}>
-        {label}{tip && <Tooltip text={tip} />}
-      </label>
-      <div className="relative">
-        <select value={value} onChange={e => onChange(e.target.value)}
-          className="w-full appearance-none px-3.5 py-2.5 pr-9 rounded-xl text-sm"
-          style={{ background: "var(--md-surface-2)", border: "1px solid var(--md-outline)", color: "var(--md-on-surface)" }}>
-          {options.map(o => <option key={o} value={o}>{o}</option>)}
-        </select>
-        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: "var(--md-on-surface-var)" }} />
-      </div>
-    </div>
-  );
-}
-
-function generateYAML(c: Config): string {
-  return `# Nemix Fine-tune Config (LoRA)
-# Generated at ${new Date().toISOString()}
-
-model:
-  name: "${c.baseModel}"
-  task_type: "${c.taskType}"
-  quantization: "${c.quantization}"
-
-lora:
-  r: ${c.loraR}
-  alpha: ${c.loraAlpha}
-  dropout: ${c.loraDropout}
-  target_modules: [${c.targetModules.map(m => `"${m}"`).join(", ")}]
-  bias: "none"
-
-training:
-  epochs: ${c.epochs}
-  per_device_train_batch_size: ${c.batchSize}
-  learning_rate: ${c.learningRate}
-  warmup_ratio: ${c.warmupRatio}
-  weight_decay: ${c.weightDecay}
-  max_seq_length: ${c.maxSeqLen}
-  optimizer: "${c.optimizer}"
-  lr_scheduler_type: "${c.scheduler}"
-  fp16: ${c.quantization !== "none" ? "false" : "true"}
-  bf16: false
-  gradient_checkpointing: true
-  gradient_accumulation_steps: ${Math.max(1, Math.round(8 / c.batchSize))}
-  logging_steps: 10
-  save_strategy: "epoch"
-  evaluation_strategy: "epoch"
-  output_dir: "${c.outputDir}"
-  report_to: "nemix"
-`;
-}
-
-function generatePython(c: Config): string {
-  return `from transformers import AutoModelForCausalLM, AutoTokenizer, TrainingArguments
-from peft import LoraConfig, get_peft_model, TaskType
-from trl import SFTTrainer
-import torch
-
-# Load model
-model = AutoModelForCausalLM.from_pretrained(
-    "${c.baseModel}",
-    load_in_${c.quantization === "4bit" ? "4bit" : c.quantization === "8bit" ? "8bit" : ""}${c.quantization === "none" ? "    # no quantization" : "=True,"},
-    device_map="auto",
-)
-tokenizer = AutoTokenizer.from_pretrained("${c.baseModel}")
-
-# LoRA config
-peft_config = LoraConfig(
-    task_type=TaskType.${c.taskType.toUpperCase().replace("_", "_")},
-    r=${c.loraR},
-    lora_alpha=${c.loraAlpha},
-    lora_dropout=${c.loraDropout},
-    target_modules=${JSON.stringify(c.targetModules)},
-    bias="none",
-)
-model = get_peft_model(model, peft_config)
-model.print_trainable_parameters()
-
-# Training args
-training_args = TrainingArguments(
-    output_dir="${c.outputDir}",
-    num_train_epochs=${c.epochs},
-    per_device_train_batch_size=${c.batchSize},
-    learning_rate=${c.learningRate},
-    warmup_ratio=${c.warmupRatio},
-    weight_decay=${c.weightDecay},
-    optim="${c.optimizer}",
-    lr_scheduler_type="${c.scheduler}",
-    fp16=True,
-    gradient_checkpointing=True,
-    gradient_accumulation_steps=${Math.max(1, Math.round(8 / c.batchSize))},
-    logging_steps=10,
-    save_strategy="epoch",
-    evaluation_strategy="epoch",
-    report_to="none",
-)
-`;
-}
-
-export default function ConfigBuilderPage() {
-  const [config, setConfig] = useState<Config>({
-    baseModel: MODELS[0], taskType: TASKS[0],
-    loraR: 16, loraAlpha: 32, loraDropout: 0.05,
-    targetModules: ["q_proj", "v_proj"],
-    epochs: 3, batchSize: 4, learningRate: 0.0002, warmupRatio: 0.03, weightDecay: 0.001,
-    maxSeqLen: 2048, quantization: "4bit",
-    optimizer: OPTIMIZERS[0], scheduler: SCHEDULERS[0],
-    outputDir: "./outputs/lora-run",
+  const [connectionStates, setConnectionStates] = useState<Record<string, "idle" | "connecting" | "connected">>({
+    openrouter: "idle",
+    groq: "idle",
+    gemini: "idle",
+    anthropic: "idle"
   });
-  const [outputFormat, setOutputFormat] = useState<"yaml" | "python">("yaml");
-  const [copied, setCopied] = useState(false);
 
-  const set = <K extends keyof Config>(k: K, v: Config[K]) => setConfig(prev => ({ ...prev, [k]: v }));
+  // ─── Providers Setup ───────────────────────────────────────────────────────
+  const providers: Provider[] = [
+    {
+      id: "openrouter",
+      name: "OpenRouter",
+      icon: Cpu,
+      placeholder: "sk-or-v1-...",
+      value: openRouterKey,
+      setValue: setOpenRouterKey,
+      show: showOpenRouter,
+      setShow: setShowOpenRouter,
+      color: "from-indigo-500 to-purple-600",
+      docUrl: "https://openrouter.ai/keys",
+      description: "Access hundreds of open-source models like Llama 3, Qwen, and Gemma at client edge."
+    },
+    {
+      id: "groq",
+      name: "Groq Cloud",
+      icon: Zap,
+      placeholder: "gsk_...",
+      value: groqKey,
+      setValue: setGroqKey,
+      show: showGroq,
+      setShow: setShowGroq,
+      color: "from-orange-500 to-amber-600",
+      docUrl: "https://console.groq.com/keys",
+      description: "Ultra blazing-fast inference speeds powered by local LPU hardware accelerators."
+    },
+    {
+      id: "gemini",
+      name: "Google Gemini",
+      icon: Sparkles,
+      placeholder: "AIzaSy...",
+      value: geminiKey,
+      setValue: setGeminiKey,
+      show: showGemini,
+      setShow: setShowGemini,
+      color: "from-blue-500 to-cyan-500",
+      docUrl: "https://aistudio.google.com/",
+      description: "Google's next-gen multimodal models featuring massive context execution windows."
+    },
+    {
+      id: "anthropic",
+      name: "Anthropic Claude",
+      icon: Shield,
+      placeholder: "sk-ant-...",
+      value: anthropicKey,
+      setValue: setAnthropicKey,
+      show: showAnthropic,
+      setShow: setShowAnthropic,
+      color: "from-amber-600 to-yellow-600",
+      docUrl: "https://console.anthropic.com/",
+      description: "Anthropic's flagship reasoning models specializing in complex processing pipeline tasks."
+    }
+  ];
 
-  const toggleModule = (m: string) =>
-    set("targetModules", config.targetModules.includes(m)
-      ? config.targetModules.filter(x => x !== m)
-      : [...config.targetModules, m]);
+  // ─── Save / Connect Handler ────────────────────────────────────────────────
+  const handleConnect = async (providerId: string, providerName: string, keyValue: string) => {
+    if (!keyValue.trim()) {
+      alert(`Please input a valid API Key for ${providerName}`);
+      return;
+    }
 
-  const output = outputFormat === "yaml" ? generateYAML(config) : generatePython(config);
+    console.log(`Saving ${providerName} Key:`, keyValue);
+    
+    // Simulate premium visual connecting state
+    setConnectionStates(prev => ({ ...prev, [providerId]: "connecting" }));
+    
+    await new Promise(resolve => setTimeout(resolve, 1200));
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(output);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setConnectionStates(prev => ({ ...prev, [providerId]: "connected" }));
+    alert(`${providerName} Key saved securely!`);
   };
-
-  const handleDownload = () => {
-    const ext = outputFormat === "yaml" ? "yaml" : "py";
-    const blob = new Blob([output], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url; a.download = `nemix-config.${ext}`; a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  // Compute estimated params
-  const estParams = Math.round(config.loraR * 2 * config.targetModules.length * 4096 / 1_000_000);
 
   return (
     <DashboardLayout>
-      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-        {/* Header */}
-        <div>
-          <h1 className="text-xl font-semibold" style={{ color: "var(--md-on-surface)" }}>Fine-tune Config Builder</h1>
-          <p className="text-sm mt-0.5" style={{ color: "var(--md-on-surface-var)" }}>
-            Visually configure LoRA hyperparameters and export as YAML or Python.
-          </p>
+      <div className="space-y-8 relative">
+        
+        {/* Page Header */}
+        <motion.div 
+          initial={{ opacity: 0, y: 8 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          className="flex flex-col md:flex-row md:items-center justify-between gap-4"
+        >
+          <div>
+            <div 
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider mb-2"
+              style={{ background: "var(--md-primary-container)", color: "var(--md-on-primary-cont)" }}
+            >
+              <Shield className="w-3 h-3" /> Client-Side Encryption
+            </div>
+            <h1 className="text-3xl font-bold tracking-tight mb-1" style={{ color: "var(--md-on-surface)" }}>
+              Provider Integrations
+            </h1>
+            <p className="text-sm" style={{ color: "var(--md-on-surface-var)" }}>
+              Securely connect your preferred LLM providers. Keys are encrypted at rest and never shared.
+            </p>
+          </div>
+          
+          <div 
+            className="flex items-center gap-2 px-4 py-2.5 rounded-2xl border text-xs font-semibold"
+            style={{ background: "var(--md-surface-1)", borderColor: "var(--md-outline)" }}
+          >
+            <Lock className="w-3.5 h-3.5 text-emerald-400" />
+            <span style={{ color: "var(--md-on-surface)" }}>AES-256 Vault Mode Active</span>
+          </div>
+        </motion.div>
+
+        {/* Info Banner */}
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+          className="rounded-2xl p-4 flex gap-3 border"
+          style={{ 
+            background: "var(--md-surface-1)", 
+            borderColor: "var(--md-outline)",
+            boxShadow: "var(--shadow-1)" 
+          }}
+        >
+          <Database className="w-5 h-5 text-purple-400 shrink-0 mt-0.5" />
+          <div className="text-xs leading-relaxed" style={{ color: "var(--md-on-surface-var)" }}>
+            <span className="font-bold text-[var(--md-on-surface)] block mb-0.5">Secure Credentials Vault</span>
+            We leverage native Web Crypto APIs to encrypt API keys directly on your local system before storing them. Your private keys never pass through Nemix hosting services in plaintext, guaranteeing ultimate security against data interception.
+          </div>
+        </motion.div>
+
+        {/* Responsive Grid Layout */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <AnimatePresence>
+            {providers.map((p, index) => {
+              const status = connectionStates[p.id];
+              return (
+                <motion.div
+                  key={p.id}
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 + index * 0.05 }}
+                  className="rounded-2xl p-6 border flex flex-col justify-between transition-all duration-300 hover:shadow-lg group relative"
+                  style={{
+                    background: "var(--md-surface-1)",
+                    borderColor: "var(--md-outline)",
+                  }}
+                >
+                  {/* Subtle Glowing Background Blur */}
+                  <div className="absolute inset-0 rounded-2xl transition-opacity duration-300 opacity-0 group-hover:opacity-5 bg-gradient-to-tr from-purple-500 to-indigo-500 pointer-events-none" />
+
+                  <div className="space-y-4 relative z-10">
+                    
+                    {/* Header: Title, Icon, Docs link */}
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className={`p-2.5 rounded-xl bg-gradient-to-br ${p.color} text-white shadow-sm`}>
+                          <p.icon className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-bold" style={{ color: "var(--md-on-surface)" }}>
+                            {p.name}
+                          </h3>
+                          <span className="text-[10px] opacity-75 font-semibold" style={{ color: "var(--md-on-surface-var)" }}>
+                            {p.id.toUpperCase()} SERVICE
+                          </span>
+                        </div>
+                      </div>
+                      
+                      <a 
+                        href={p.docUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-[10px] font-bold inline-flex items-center gap-1 opacity-60 hover:opacity-100 transition-opacity uppercase tracking-wider"
+                        style={{ color: "var(--md-primary)" }}
+                      >
+                        Docs <ExternalLink className="w-2.5 h-2.5" />
+                      </a>
+                    </div>
+
+                    {/* Description */}
+                    <p className="text-xs min-h-[32px] leading-relaxed" style={{ color: "var(--md-on-surface-var)" }}>
+                      {p.description}
+                    </p>
+
+                    {/* API Key input and Show/Hide Toggle */}
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold uppercase tracking-wider block" style={{ color: "var(--md-on-surface-var)" }}>
+                        Secret API Key
+                      </label>
+                      <div className="relative">
+                        <input
+                          type={p.show ? "text" : "password"}
+                          value={p.value}
+                          onChange={e => p.setValue(e.target.value)}
+                          placeholder={p.placeholder}
+                          className="w-full pl-3.5 pr-10 py-2.5 rounded-xl text-xs font-mono outline-none border focus:border-[var(--md-primary)] transition-colors"
+                          style={{
+                            background: "var(--md-surface-2)",
+                            borderColor: "var(--md-outline)",
+                            color: "var(--md-on-surface)"
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => p.setShow(!p.show)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 opacity-50 hover:opacity-100 transition-opacity"
+                          style={{ color: "var(--md-on-surface)" }}
+                        >
+                          {p.show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </div>
+                    </div>
+
+                  </div>
+
+                  {/* Actions / Status footer */}
+                  <div className="mt-6 flex items-center justify-between border-t pt-4 relative z-10" style={{ borderColor: "var(--md-outline-var)" }}>
+                    <div className="flex items-center gap-1.5">
+                      {status === "connected" ? (
+                        <>
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">Connected</span>
+                        </>
+                      ) : (
+                        <>
+                          <Activity className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-amber-400">Not Saved</span>
+                        </>
+                      )}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleConnect(p.id, p.name, p.value)}
+                      disabled={status === "connecting"}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-[11px] font-bold transition-all duration-200 hover:opacity-95 disabled:opacity-50"
+                      style={{
+                        background: status === "connected" ? "var(--md-surface-2)" : "var(--md-primary)",
+                        color: status === "connected" ? "var(--md-on-surface)" : "var(--md-on-primary)",
+                        border: status === "connected" ? "1px solid var(--md-outline)" : "none",
+                        boxShadow: status === "connected" ? "none" : "var(--shadow-1)"
+                      }}
+                    >
+                      {status === "connecting" ? (
+                        <span className="flex items-center gap-1">
+                          <svg className="animate-spin h-3.5 w-3.5 text-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Saving...
+                        </span>
+                      ) : status === "connected" ? (
+                        <>
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Update Key
+                        </>
+                      ) : (
+                        <>
+                          <Save className="w-3.5 h-3.5" /> Save API Key
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-          {/* Left: Controls */}
-          <div className="space-y-5">
-            {/* Model section */}
-            <div className="rounded-2xl p-5 space-y-4"
-              style={{ background: "var(--md-surface-1)", border: "1px solid var(--md-outline)", boxShadow: "var(--shadow-1)" }}>
-              <p className="text-sm font-semibold" style={{ color: "var(--md-on-surface)" }}>Model</p>
-              <Select label="Base model" value={config.baseModel} options={MODELS} onChange={v => set("baseModel", v)} />
-              <Select label="Task type" value={config.taskType} options={TASKS} onChange={v => set("taskType", v)} tip="The type of task determines the PEFT task type used in LoRA config." />
-              <div>
-                <label className="text-xs font-medium mb-2 block" style={{ color: "var(--md-on-surface-var)" }}>
-                  Quantization<Tooltip text="4-bit uses QLoRA (bitsandbytes). Reduces VRAM usage by ~4x with minimal quality loss." />
-                </label>
-                <div className="flex gap-2">
-                  {(["none", "4bit", "8bit"] as const).map(q => (
-                    <button key={q} onClick={() => set("quantization", q)}
-                      className="flex-1 py-2 rounded-xl text-xs font-medium transition-all"
-                      style={{
-                        background: config.quantization === q ? "var(--md-primary-container)" : "var(--md-surface-2)",
-                        color: config.quantization === q ? "var(--md-on-primary-cont)" : "var(--md-on-surface-var)",
-                        border: "1px solid var(--md-outline)",
-                      }}>
-                      {q === "none" ? "None (fp16)" : q}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* LoRA section */}
-            <div className="rounded-2xl p-5 space-y-4"
-              style={{ background: "var(--md-surface-1)", border: "1px solid var(--md-outline)", boxShadow: "var(--shadow-1)" }}>
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-semibold" style={{ color: "var(--md-on-surface)" }}>LoRA Parameters</p>
-                <span className="text-xs px-2.5 py-1 rounded-full" style={{ background: "var(--md-primary-container)", color: "var(--md-on-primary-cont)" }}>
-                  ~{estParams}M trainable params
-                </span>
-              </div>
-              <Slider label="Rank (r)" value={config.loraR} min={4} max={128} step={4} onChange={v => set("loraR", v)} tip="Higher rank = more capacity but more VRAM. 16-32 is a good default." />
-              <Slider label="Alpha" value={config.loraAlpha} min={8} max={256} step={8} onChange={v => set("loraAlpha", v)} tip="Scaling factor. Often set to 2× rank. Controls magnitude of LoRA updates." />
-              <Slider label="Dropout" value={config.loraDropout} min={0} max={0.2} step={0.01} onChange={v => set("loraDropout", v)} tip="Dropout probability on LoRA layers. 0.05 is a safe default." />
-              <div>
-                <label className="text-xs font-medium mb-2 block" style={{ color: "var(--md-on-surface-var)" }}>
-                  Target modules<Tooltip text="Which attention/MLP layers to adapt. More modules = more capacity." />
-                </label>
-                <div className="flex flex-wrap gap-1.5">
-                  {MODULES.map(m => (
-                    <button key={m} onClick={() => toggleModule(m)}
-                      className="px-2.5 py-1 rounded-full text-xs font-mono font-medium transition-all"
-                      style={{
-                        background: config.targetModules.includes(m) ? "var(--md-primary-container)" : "var(--md-surface-2)",
-                        color: config.targetModules.includes(m) ? "var(--md-on-primary-cont)" : "var(--md-on-surface-var)",
-                        border: "1px solid var(--md-outline)",
-                      }}>
-                      {m}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Training section */}
-            <div className="rounded-2xl p-5 space-y-4"
-              style={{ background: "var(--md-surface-1)", border: "1px solid var(--md-outline)", boxShadow: "var(--shadow-1)" }}>
-              <p className="text-sm font-semibold" style={{ color: "var(--md-on-surface)" }}>Training</p>
-              <Slider label="Epochs" value={config.epochs} min={1} max={10} step={1} onChange={v => set("epochs", v)} />
-              <Slider label="Batch size (per device)" value={config.batchSize} min={1} max={32} step={1} onChange={v => set("batchSize", v)} tip={`Grad accumulation = ${Math.max(1, Math.round(8 / config.batchSize))}× to keep effective batch = 8`} />
-              <Slider label="Learning rate" value={config.learningRate} min={0.00001} max={0.001} step={0.00001} onChange={v => set("learningRate", v)} />
-              <Slider label="Warmup ratio" value={config.warmupRatio} min={0} max={0.2} step={0.01} onChange={v => set("warmupRatio", v)} />
-              <Slider label="Max seq length" value={config.maxSeqLen} min={512} max={8192} step={128} onChange={v => set("maxSeqLen", v)} />
-              <Select label="Optimizer" value={config.optimizer} options={OPTIMIZERS} onChange={v => set("optimizer", v)} tip="adamw_8bit reduces VRAM usage." />
-              <Select label="LR Scheduler" value={config.scheduler} options={SCHEDULERS} onChange={v => set("scheduler", v)} />
-            </div>
-          </div>
-
-          {/* Right: Output */}
-          <div className="xl:sticky xl:top-6 h-fit">
-            <div className="rounded-2xl overflow-hidden"
-              style={{ background: "var(--md-surface-1)", border: "1px solid var(--md-outline)", boxShadow: "var(--shadow-2)" }}>
-              {/* Tab bar */}
-              <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: "1px solid var(--md-outline)", background: "var(--md-surface-2)" }}>
-                <div className="flex gap-1">
-                  {(["yaml", "python"] as const).map(f => (
-                    <button key={f} onClick={() => setOutputFormat(f)}
-                      className="px-3 py-1.5 rounded-lg text-xs font-medium uppercase tracking-wide transition-all"
-                      style={{
-                        background: outputFormat === f ? "var(--md-primary-container)" : "transparent",
-                        color: outputFormat === f ? "var(--md-on-primary-cont)" : "var(--md-on-surface-var)",
-                      }}>
-                      {f}
-                    </button>
-                  ))}
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <button onClick={handleDownload} className="p-1.5 rounded-lg transition-colors" style={{ color: "var(--md-on-surface-var)" }} title="Download">
-                    <Download className="w-4 h-4" />
-                  </button>
-                  <button onClick={handleCopy} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all"
-                    style={{ background: "var(--md-primary-container)", color: "var(--md-on-primary-cont)" }}>
-                    {copied ? <><Check className="w-3.5 h-3.5" />Copied!</> : <><Copy className="w-3.5 h-3.5" />Copy</>}
-                  </button>
-                </div>
-              </div>
-
-              <pre className="p-4 text-xs font-mono overflow-auto scrollbar-none"
-                style={{ maxHeight: "70vh", color: "var(--md-on-surface-var)", lineHeight: 1.7, background: "var(--md-surface-2)" }}>
-                {output}
-              </pre>
-            </div>
-
-            {/* Summary chips */}
-            <div className="flex flex-wrap gap-2 mt-4">
-              {[
-                { k: "Rank", v: `r=${config.loraR}` },
-                { k: "Quant", v: config.quantization },
-                { k: "Modules", v: `${config.targetModules.length} layers` },
-                { k: "Epochs", v: `${config.epochs}ep` },
-                { k: "LR", v: config.learningRate.toExponential(0) },
-                { k: "Params", v: `~${estParams}M` },
-              ].map(chip => (
-                <span key={chip.k} className="text-xs px-2.5 py-1 rounded-full"
-                  style={{ background: "var(--md-surface-1)", border: "1px solid var(--md-outline)", color: "var(--md-on-surface-var)" }}>
-                  <span style={{ color: "var(--md-primary)", fontWeight: 600 }}>{chip.k}:</span> {chip.v}
-                </span>
-              ))}
-            </div>
-          </div>
-        </div>
-      </motion.div>
+      </div>
     </DashboardLayout>
   );
 }

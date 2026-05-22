@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Database, Cpu, Settings, LogOut,
   Menu, X, Zap, Layers, MessageSquare, Rocket, Shield,
   BarChart2, BookOpen, FlaskConical, Sun, Moon, ChevronRight,
-  GitBranch, Sliders, CreditCard, Users, Activity, Bell, Webhook,
+  GitBranch, Sliders, CreditCard, Users, Activity, Bell, Webhook, Key,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -33,7 +33,7 @@ const NAV_SECTIONS = [
       { name: "Evaluations", href: "/dashboard/evaluations", icon: FlaskConical },
       { name: "Analytics", href: "/dashboard/analytics", icon: BarChart2 },
       { name: "Pipelines", href: "/dashboard/pipelines", icon: GitBranch },
-      { name: "Config Builder", href: "/dashboard/config", icon: Sliders },
+      { name: "Providers", href: "/dashboard/config", icon: Key },
       { name: "Edge Router", href: "/dashboard/router-config", icon: GitBranch },
     ],
   },
