@@ -70,7 +70,14 @@ export default function PlaygroundPage() {
         }),
       });
 
-      const data = await response.json();
+      const rawText = await response.text(); // Get raw response first
+      let data;
+      try {
+        data = JSON.parse(rawText); // Try to safely parse it
+      } catch (err) {
+        console.error("Raw response:", rawText);
+        throw new Error(`Server returned raw text instead of JSON: ${rawText.substring(0, 100)}...`);
+      }
 
       if (!response.ok) {
         throw new Error(data.error || "Failed to get response");

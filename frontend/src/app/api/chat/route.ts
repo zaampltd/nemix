@@ -36,7 +36,14 @@ export async function POST(req: Request) {
           max_tokens: 1024
         })
       });
-      const data = await res.json();
+      const rawText = await res.text();
+      let data;
+      try {
+        data = JSON.parse(rawText);
+      } catch (err) {
+        console.error("Raw Nvidia NIM response:", rawText);
+        throw new Error(`Nvidia NIM returned raw text/HTML instead of JSON: ${rawText.substring(0, 100)}...`);
+      }
       if (!res.ok) throw new Error(data.detail || "Nvidia API Error");
       reply = `[Routed via Nvidia NIM] ${data.choices[0].message.content}`;
     } 
@@ -54,7 +61,14 @@ export async function POST(req: Request) {
           temperature: parseFloat(temperature) || 0.7
         })
       });
-      const data = await res.json();
+      const rawText = await res.text();
+      let data;
+      try {
+        data = JSON.parse(rawText);
+      } catch (err) {
+        console.error("Raw Groq response:", rawText);
+        throw new Error(`Groq returned raw text/HTML instead of JSON: ${rawText.substring(0, 100)}...`);
+      }
       if (!res.ok) throw new Error(data.error?.message || "Groq API Error");
       reply = `[Routed via Groq] ${data.choices[0].message.content}`;
     }
@@ -69,7 +83,14 @@ export async function POST(req: Request) {
           generationConfig: { temperature: parseFloat(temperature) || 0.7 }
         })
       });
-      const data = await res.json();
+      const rawText = await res.text();
+      let data;
+      try {
+        data = JSON.parse(rawText);
+      } catch (err) {
+        console.error("Raw Gemini response:", rawText);
+        throw new Error(`Gemini returned raw text/HTML instead of JSON: ${rawText.substring(0, 100)}...`);
+      }
       if (!res.ok) throw new Error(data.error?.message || "Gemini Error");
       reply = `[Routed via Google Gemini] ${data.candidates[0].content.parts[0].text}`;
     }
