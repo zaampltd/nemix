@@ -248,20 +248,10 @@ export default function TrainingPage() {
     }
   };
 
-  // ── Create job ─────────────────────────────────────────────────────
   const handleNewJob = async (e: React.FormEvent) => {
     e.preventDefault();
     setCreating(true);
     setCreateError('');
-
-    // Check provider key
-    const keys = JSON.parse(localStorage.getItem('training_provider_keys') || '{}');
-    const hasKey = keys.together_api_key || (keys.hf_token && keys.hf_username);
-    if (!hasKey) {
-      setCreateError('No API key configured. Add your Together AI or Hugging Face key in the Provider panel above.');
-      setCreating(false);
-      return;
-    }
 
     const modelId = Number(selectedModel);
     const datasetId = Number(selectedDataset);
@@ -271,6 +261,15 @@ export default function TrainingPage() {
 
     if (isLocalModel || isLocalDataset) {
       createSimulatedLocalJob(modelId, datasetId);
+      setCreating(false);
+      return;
+    }
+
+    // Check provider key (only required for remote training jobs)
+    const keys = JSON.parse(localStorage.getItem('training_provider_keys') || '{}');
+    const hasKey = keys.together_api_key || (keys.hf_token && keys.hf_username);
+    if (!hasKey) {
+      setCreateError('No API key configured. Add your Together AI or Hugging Face key in the Provider panel above.');
       setCreating(false);
       return;
     }
