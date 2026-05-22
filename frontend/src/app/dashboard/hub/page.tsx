@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useMemo } from "react";
+import DashboardLayout from "@/components/layout/DashboardLayout";
 import {
   Search, ExternalLink, Copy, Check, Filter, Star, Zap,
   Shield, Globe, Lock, ChevronDown, ChevronUp, BookOpen,
@@ -148,188 +149,190 @@ export default function PublicAPIsPage() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--md-surface)", padding: "32px 32px 64px", fontFamily: "var(--font-sans, Inter, sans-serif)" }}>
+    <DashboardLayout>
+      <div style={{ padding: "16px 0 48px", fontFamily: "var(--font-sans, Inter, sans-serif)" }}>
 
-      {/* Header */}
-      <div style={{ marginBottom: "32px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "8px" }}>
-          <div style={{ width: "44px", height: "44px", borderRadius: "14px", background: "var(--md-primary-container)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <Globe style={{ width: "22px", height: "22px", color: "var(--md-primary)" }} />
+        {/* Header */}
+        <div style={{ marginBottom: "32px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "8px" }}>
+            <div style={{ width: "44px", height: "44px", borderRadius: "14px", background: "var(--md-primary-container)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <Globe style={{ width: "22px", height: "22px", color: "var(--md-primary)" }} />
+            </div>
+            <div>
+              <h1 style={{ margin: 0, fontSize: "26px", fontWeight: 800, color: "var(--md-on-surface)" }}>Public API Explorer</h1>
+              <p style={{ margin: 0, fontSize: "14px", color: "var(--md-on-surface-var)" }}>
+                Browse 1000+ free APIs from{" "}
+                <a href="https://github.com/public-apis/public-apis" target="_blank" rel="noreferrer" style={{ color: "var(--md-primary)", textDecoration: "none", fontWeight: 600 }}>
+                  public-apis/public-apis ↗
+                </a>
+              </p>
+            </div>
           </div>
+
+          {/* Stats bar */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px", marginTop: "24px" }}>
+            {[
+              { label: "Total APIs",     value: stats.total,  color: "var(--md-primary)" },
+              { label: "Free Tier",      value: stats.free,   color: "var(--md-success)" },
+              { label: "No Auth Needed", value: stats.noKey,  color: "var(--md-warning)" },
+              { label: "Categories",     value: stats.cats,   color: "var(--md-primary)" },
+            ].map(s => (
+              <div key={s.label} style={{ padding: "16px 20px", borderRadius: "16px", background: "var(--md-surface-1)", border: "1px solid var(--md-outline-var)" }}>
+                <p style={{ margin: 0, fontSize: "26px", fontWeight: 800, color: s.color }}>{s.value}</p>
+                <p style={{ margin: 0, fontSize: "12px", color: "var(--md-on-surface-var)", marginTop: "2px" }}>{s.label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Search & Filters */}
+        <div style={{ display: "flex", gap: "12px", marginBottom: "20px", flexWrap: "wrap", alignItems: "center" }}>
+          <div style={{ position: "relative", flex: 1, minWidth: "240px" }}>
+            <Search style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)", width: "16px", height: "16px", color: "var(--md-on-surface-var)" }} />
+            <input
+              type="text" placeholder="Search APIs — 'sentiment', 'image', 'crypto'..."
+              value={search} onChange={e => setSearch(e.target.value)}
+              style={{ width: "100%", height: "44px", borderRadius: "12px", padding: "0 14px 0 42px", fontSize: "14px", background: "var(--md-surface-1)", border: "1px solid var(--md-outline)", color: "var(--md-on-surface)", outline: "none" }}
+            />
+          </div>
+          <button onClick={() => setFreeOnly(p => !p)}
+            style={{ height: "44px", padding: "0 16px", borderRadius: "12px", fontSize: "13px", fontWeight: 700, border: "1.5px solid var(--md-outline)", background: freeOnly ? "var(--md-success-cont)" : "var(--md-surface-1)", color: freeOnly ? "var(--md-success)" : "var(--md-on-surface-var)", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px" }}>
+            🆓 Free Only
+          </button>
+          <button onClick={() => setNoAuth(p => !p)}
+            style={{ height: "44px", padding: "0 16px", borderRadius: "12px", fontSize: "13px", fontWeight: 700, border: "1.5px solid var(--md-outline)", background: noAuth ? "var(--md-warning-cont)" : "var(--md-surface-1)", color: noAuth ? "var(--md-warning)" : "var(--md-on-surface-var)", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px" }}>
+            🔓 No Auth
+          </button>
+        </div>
+
+        {/* Category Pills */}
+        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "24px" }}>
+          {CATEGORIES.map(cat => (
+            <button key={cat} onClick={() => setCategory(cat)}
+              style={{ display: "flex", alignItems: "center", gap: "5px", height: "34px", padding: "0 14px", borderRadius: "100px", fontSize: "12px", fontWeight: 700, border: `1.5px solid ${category === cat ? "var(--md-primary)" : "var(--md-outline)"}`, background: category === cat ? "var(--md-primary-container)" : "var(--md-surface-1)", color: category === cat ? "var(--md-primary)" : "var(--md-on-surface-var)", cursor: "pointer", transition: "all 0.15s" }}>
+              {CATEGORY_ICONS[cat] || <Globe style={{ width: "12px", height: "12px" }} />}
+              {cat}
+              {cat !== "All" && <span style={{ fontSize: "10px", opacity: 0.7 }}>({ALL_APIS.filter(a => a.category === cat).length})</span>}
+            </button>
+          ))}
+        </div>
+
+        {/* Results count */}
+        <p style={{ fontSize: "13px", color: "var(--md-on-surface-var)", marginBottom: "16px" }}>
+          Showing <strong style={{ color: "var(--md-on-surface)" }}>{filtered.length}</strong> API{filtered.length !== 1 ? "s" : ""}
+          {search && ` matching "${search}"`}
+          {category !== "All" && ` in ${category}`}
+        </p>
+
+        {/* API Cards Grid */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(360px, 1fr))", gap: "14px" }}>
+          {filtered.map(api => {
+            const ac = authColor(api.auth);
+            const isExp = expanded === api.name;
+            return (
+              <div key={api.name} style={{ borderRadius: "18px", background: "var(--md-surface-1)", border: "1px solid var(--md-outline-var)", overflow: "hidden", transition: "border-color 0.15s", cursor: "pointer" }}
+                onMouseEnter={e => (e.currentTarget.style.borderColor = "var(--md-outline)")}
+                onMouseLeave={e => (e.currentTarget.style.borderColor = "var(--md-outline-var)")}>
+
+                <div style={{ padding: "16px 18px" }}>
+                  {/* Top row */}
+                  <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "10px" }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", marginBottom: "4px" }}>
+                        <span style={{ fontSize: "14px", fontWeight: 800, color: "var(--md-on-surface)" }}>{api.name}</span>
+                        {api.free && <span style={{ fontSize: "10px", padding: "1px 7px", borderRadius: "100px", background: "var(--md-success-cont)", color: "var(--md-success)", fontWeight: 800 }}>FREE</span>}
+                      </div>
+                      <span style={{ fontSize: "11px", padding: "2px 8px", borderRadius: "100px", background: "var(--md-surface-2)", color: "var(--md-on-surface-var)", fontWeight: 600 }}>
+                        {CATEGORY_ICONS[api.category]} {api.category}
+                      </span>
+                    </div>
+                    <button onClick={() => setExpanded(isExp ? null : api.name)}
+                      style={{ background: "none", border: "none", cursor: "pointer", color: "var(--md-on-surface-var)", flexShrink: 0 }}>
+                      {isExp ? <ChevronUp style={{ width: "16px", height: "16px" }} /> : <ChevronDown style={{ width: "16px", height: "16px" }} />}
+                    </button>
+                  </div>
+
+                  <p style={{ margin: "10px 0 12px", fontSize: "13px", color: "var(--md-on-surface-var)", lineHeight: 1.5 }}>
+                    {api.desc}
+                  </p>
+
+                  {/* Badges */}
+                  <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "12px" }}>
+                    <span style={{ fontSize: "10px", padding: "2px 8px", borderRadius: "100px", fontWeight: 700, background: ac.bg, color: ac.color }}>
+                      {api.auth === "No" ? "🔓 No Auth" : api.auth === "OAuth" ? "🔐 OAuth" : "🔑 API Key"}
+                    </span>
+                    <span style={{ fontSize: "10px", padding: "2px 8px", borderRadius: "100px", fontWeight: 700, background: api.https ? "var(--md-success-cont)" : "var(--md-error-cont)", color: api.https ? "var(--md-success)" : "var(--md-error)" }}>
+                      {api.https ? "✓ HTTPS" : "✗ HTTP"}
+                    </span>
+                    <span style={{ fontSize: "10px", padding: "2px 8px", borderRadius: "100px", fontWeight: 700, background: api.cors ? "var(--md-success-cont)" : "var(--md-surface-2)", color: api.cors ? "var(--md-success)" : "var(--md-on-surface-var)" }}>
+                      {api.cors ? "✓ CORS" : "✗ No CORS"}
+                    </span>
+                  </div>
+
+                  {/* Actions */}
+                  <div style={{ display: "flex", gap: "8px" }}>
+                    <a href={api.url} target="_blank" rel="noreferrer"
+                      style={{ display: "flex", alignItems: "center", gap: "5px", padding: "7px 14px", borderRadius: "10px", background: "var(--md-primary)", color: "var(--md-on-primary)", fontSize: "12px", fontWeight: 700, textDecoration: "none" }}>
+                      <ExternalLink style={{ width: "12px", height: "12px" }} />
+                      Docs
+                    </a>
+                    <button onClick={() => handleCopy(api.url)}
+                      style={{ display: "flex", alignItems: "center", gap: "5px", padding: "7px 14px", borderRadius: "10px", background: "var(--md-surface-2)", color: "var(--md-on-surface-var)", fontSize: "12px", fontWeight: 600, border: "none", cursor: "pointer" }}>
+                      {copied === api.url ? <Check style={{ width: "12px", height: "12px" }} /> : <Copy style={{ width: "12px", height: "12px" }} />}
+                      {copied === api.url ? "Copied!" : "Copy URL"}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Expanded: code snippet */}
+                {isExp && (
+                  <div style={{ borderTop: "1px solid var(--md-outline-var)", padding: "14px 18px", background: "var(--md-surface)" }}>
+                    <p style={{ margin: "0 0 8px", fontSize: "11px", fontWeight: 700, color: "var(--md-on-surface-var)", textTransform: "uppercase", letterSpacing: "0.06em" }}>Quick Start</p>
+                    <pre style={{ margin: 0, fontSize: "11px", color: "var(--md-primary)", background: "var(--md-surface-2)", padding: "10px 12px", borderRadius: "8px", overflowX: "auto", lineHeight: 1.6 }}>
+  {api.auth === "No"
+    ? `# No API key needed!\ncurl "${api.url.split("/docs")[0]}/endpoint"`
+    : api.auth === "OAuth"
+    ? `# OAuth 2.0 — register your app\ncurl -H "Authorization: Bearer YOUR_TOKEN" \\
+    "${api.url}"`
+    : `# Sign up for a free API key\ncurl -H "Authorization: Bearer YOUR_API_KEY" \\
+    "${api.url.split("/docs")[0]}/endpoint"`}
+                    </pre>
+                    <p style={{ margin: "10px 0 0", fontSize: "12px", color: "var(--md-on-surface-var)" }}>
+                      Use this in your dataset pipeline or{" "}
+                      <a href="/dashboard/training" style={{ color: "var(--md-primary)", fontWeight: 600 }}>training jobs</a>{" "}
+                      to enrich your data.
+                    </p>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {filtered.length === 0 && (
+          <div style={{ textAlign: "center", padding: "80px 40px", color: "var(--md-on-surface-var)" }}>
+            <p style={{ fontSize: "40px", marginBottom: "8px" }}>🔍</p>
+            <p style={{ fontSize: "16px", fontWeight: 700, color: "var(--md-on-surface)" }}>No APIs found</p>
+            <p style={{ fontSize: "14px" }}>Try a different search term or category</p>
+          </div>
+        )}
+
+        {/* Footer source attribution */}
+        <div style={{ marginTop: "48px", padding: "20px 24px", borderRadius: "16px", background: "var(--md-surface-1)", border: "1px solid var(--md-outline-var)", display: "flex", alignItems: "center", gap: "14px" }}>
+          <Star style={{ width: "20px", height: "20px", color: "var(--md-warning)", flexShrink: 0 }} />
           <div>
-            <h1 style={{ margin: 0, fontSize: "26px", fontWeight: 800, color: "var(--md-on-surface)" }}>Public API Explorer</h1>
-            <p style={{ margin: 0, fontSize: "14px", color: "var(--md-on-surface-var)" }}>
-              Browse 1000+ free APIs from{" "}
-              <a href="https://github.com/public-apis/public-apis" target="_blank" rel="noreferrer" style={{ color: "var(--md-primary)", textDecoration: "none", fontWeight: 600 }}>
-                public-apis/public-apis ↗
+            <p style={{ margin: 0, fontSize: "13px", fontWeight: 700, color: "var(--md-on-surface)" }}>
+              Powered by public-apis/public-apis
+            </p>
+            <p style={{ margin: 0, fontSize: "12px", color: "var(--md-on-surface-var)" }}>
+              Community-curated list of 1000+ free public APIs.{" "}
+              <a href="https://github.com/public-apis/public-apis" target="_blank" rel="noreferrer" style={{ color: "var(--md-primary)", fontWeight: 600 }}>
+                Contribute on GitHub ↗
               </a>
             </p>
           </div>
         </div>
-
-        {/* Stats bar */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px", marginTop: "24px" }}>
-          {[
-            { label: "Total APIs",     value: stats.total,  color: "var(--md-primary)" },
-            { label: "Free Tier",      value: stats.free,   color: "var(--md-success)" },
-            { label: "No Auth Needed", value: stats.noKey,  color: "var(--md-warning)" },
-            { label: "Categories",     value: stats.cats,   color: "var(--md-primary)" },
-          ].map(s => (
-            <div key={s.label} style={{ padding: "16px 20px", borderRadius: "16px", background: "var(--md-surface-1)", border: "1px solid var(--md-outline-var)" }}>
-              <p style={{ margin: 0, fontSize: "26px", fontWeight: 800, color: s.color }}>{s.value}</p>
-              <p style={{ margin: 0, fontSize: "12px", color: "var(--md-on-surface-var)", marginTop: "2px" }}>{s.label}</p>
-            </div>
-          ))}
-        </div>
       </div>
-
-      {/* Search & Filters */}
-      <div style={{ display: "flex", gap: "12px", marginBottom: "20px", flexWrap: "wrap", alignItems: "center" }}>
-        <div style={{ position: "relative", flex: 1, minWidth: "240px" }}>
-          <Search style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)", width: "16px", height: "16px", color: "var(--md-on-surface-var)" }} />
-          <input
-            type="text" placeholder="Search APIs — 'sentiment', 'image', 'crypto'..."
-            value={search} onChange={e => setSearch(e.target.value)}
-            style={{ width: "100%", height: "44px", borderRadius: "12px", padding: "0 14px 0 42px", fontSize: "14px", background: "var(--md-surface-1)", border: "1px solid var(--md-outline)", color: "var(--md-on-surface)", outline: "none" }}
-          />
-        </div>
-        <button onClick={() => setFreeOnly(p => !p)}
-          style={{ height: "44px", padding: "0 16px", borderRadius: "12px", fontSize: "13px", fontWeight: 700, border: "1.5px solid var(--md-outline)", background: freeOnly ? "var(--md-success-cont)" : "var(--md-surface-1)", color: freeOnly ? "var(--md-success)" : "var(--md-on-surface-var)", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px" }}>
-          🆓 Free Only
-        </button>
-        <button onClick={() => setNoAuth(p => !p)}
-          style={{ height: "44px", padding: "0 16px", borderRadius: "12px", fontSize: "13px", fontWeight: 700, border: "1.5px solid var(--md-outline)", background: noAuth ? "var(--md-warning-cont)" : "var(--md-surface-1)", color: noAuth ? "var(--md-warning)" : "var(--md-on-surface-var)", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px" }}>
-          🔓 No Auth
-        </button>
-      </div>
-
-      {/* Category Pills */}
-      <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "24px" }}>
-        {CATEGORIES.map(cat => (
-          <button key={cat} onClick={() => setCategory(cat)}
-            style={{ display: "flex", alignItems: "center", gap: "5px", height: "34px", padding: "0 14px", borderRadius: "100px", fontSize: "12px", fontWeight: 700, border: `1.5px solid ${category === cat ? "var(--md-primary)" : "var(--md-outline)"}`, background: category === cat ? "var(--md-primary-container)" : "var(--md-surface-1)", color: category === cat ? "var(--md-primary)" : "var(--md-on-surface-var)", cursor: "pointer", transition: "all 0.15s" }}>
-            {CATEGORY_ICONS[cat] || <Globe style={{ width: "12px", height: "12px" }} />}
-            {cat}
-            {cat !== "All" && <span style={{ fontSize: "10px", opacity: 0.7 }}>({ALL_APIS.filter(a => a.category === cat).length})</span>}
-          </button>
-        ))}
-      </div>
-
-      {/* Results count */}
-      <p style={{ fontSize: "13px", color: "var(--md-on-surface-var)", marginBottom: "16px" }}>
-        Showing <strong style={{ color: "var(--md-on-surface)" }}>{filtered.length}</strong> API{filtered.length !== 1 ? "s" : ""}
-        {search && ` matching "${search}"`}
-        {category !== "All" && ` in ${category}`}
-      </p>
-
-      {/* API Cards Grid */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(360px, 1fr))", gap: "14px" }}>
-        {filtered.map(api => {
-          const ac = authColor(api.auth);
-          const isExp = expanded === api.name;
-          return (
-            <div key={api.name} style={{ borderRadius: "18px", background: "var(--md-surface-1)", border: "1px solid var(--md-outline-var)", overflow: "hidden", transition: "border-color 0.15s", cursor: "pointer" }}
-              onMouseEnter={e => (e.currentTarget.style.borderColor = "var(--md-outline)")}
-              onMouseLeave={e => (e.currentTarget.style.borderColor = "var(--md-outline-var)")}>
-
-              <div style={{ padding: "16px 18px" }}>
-                {/* Top row */}
-                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "10px" }}>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", marginBottom: "4px" }}>
-                      <span style={{ fontSize: "14px", fontWeight: 800, color: "var(--md-on-surface)" }}>{api.name}</span>
-                      {api.free && <span style={{ fontSize: "10px", padding: "1px 7px", borderRadius: "100px", background: "var(--md-success-cont)", color: "var(--md-success)", fontWeight: 800 }}>FREE</span>}
-                    </div>
-                    <span style={{ fontSize: "11px", padding: "2px 8px", borderRadius: "100px", background: "var(--md-surface-2)", color: "var(--md-on-surface-var)", fontWeight: 600 }}>
-                      {CATEGORY_ICONS[api.category]} {api.category}
-                    </span>
-                  </div>
-                  <button onClick={() => setExpanded(isExp ? null : api.name)}
-                    style={{ background: "none", border: "none", cursor: "pointer", color: "var(--md-on-surface-var)", flexShrink: 0 }}>
-                    {isExp ? <ChevronUp style={{ width: "16px", height: "16px" }} /> : <ChevronDown style={{ width: "16px", height: "16px" }} />}
-                  </button>
-                </div>
-
-                <p style={{ margin: "10px 0 12px", fontSize: "13px", color: "var(--md-on-surface-var)", lineHeight: 1.5 }}>
-                  {api.desc}
-                </p>
-
-                {/* Badges */}
-                <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "12px" }}>
-                  <span style={{ fontSize: "10px", padding: "2px 8px", borderRadius: "100px", fontWeight: 700, background: ac.bg, color: ac.color }}>
-                    {api.auth === "No" ? "🔓 No Auth" : api.auth === "OAuth" ? "🔐 OAuth" : "🔑 API Key"}
-                  </span>
-                  <span style={{ fontSize: "10px", padding: "2px 8px", borderRadius: "100px", fontWeight: 700, background: api.https ? "var(--md-success-cont)" : "var(--md-error-cont)", color: api.https ? "var(--md-success)" : "var(--md-error)" }}>
-                    {api.https ? "✓ HTTPS" : "✗ HTTP"}
-                  </span>
-                  <span style={{ fontSize: "10px", padding: "2px 8px", borderRadius: "100px", fontWeight: 700, background: api.cors ? "var(--md-success-cont)" : "var(--md-surface-2)", color: api.cors ? "var(--md-success)" : "var(--md-on-surface-var)" }}>
-                    {api.cors ? "✓ CORS" : "✗ No CORS"}
-                  </span>
-                </div>
-
-                {/* Actions */}
-                <div style={{ display: "flex", gap: "8px" }}>
-                  <a href={api.url} target="_blank" rel="noreferrer"
-                    style={{ display: "flex", alignItems: "center", gap: "5px", padding: "7px 14px", borderRadius: "10px", background: "var(--md-primary)", color: "var(--md-on-primary)", fontSize: "12px", fontWeight: 700, textDecoration: "none" }}>
-                    <ExternalLink style={{ width: "12px", height: "12px" }} />
-                    Docs
-                  </a>
-                  <button onClick={() => handleCopy(api.url)}
-                    style={{ display: "flex", alignItems: "center", gap: "5px", padding: "7px 14px", borderRadius: "10px", background: "var(--md-surface-2)", color: "var(--md-on-surface-var)", fontSize: "12px", fontWeight: 600, border: "none", cursor: "pointer" }}>
-                    {copied === api.url ? <Check style={{ width: "12px", height: "12px" }} /> : <Copy style={{ width: "12px", height: "12px" }} />}
-                    {copied === api.url ? "Copied!" : "Copy URL"}
-                  </button>
-                </div>
-              </div>
-
-              {/* Expanded: code snippet */}
-              {isExp && (
-                <div style={{ borderTop: "1px solid var(--md-outline-var)", padding: "14px 18px", background: "var(--md-surface)" }}>
-                  <p style={{ margin: "0 0 8px", fontSize: "11px", fontWeight: 700, color: "var(--md-on-surface-var)", textTransform: "uppercase", letterSpacing: "0.06em" }}>Quick Start</p>
-                  <pre style={{ margin: 0, fontSize: "11px", color: "var(--md-primary)", background: "var(--md-surface-2)", padding: "10px 12px", borderRadius: "8px", overflowX: "auto", lineHeight: 1.6 }}>
-{api.auth === "No"
-  ? `# No API key needed!\ncurl "${api.url.split("/docs")[0]}/endpoint"`
-  : api.auth === "OAuth"
-  ? `# OAuth 2.0 — register your app\ncurl -H "Authorization: Bearer YOUR_TOKEN" \\
-  "${api.url}"`
-  : `# Sign up for a free API key\ncurl -H "Authorization: Bearer YOUR_API_KEY" \\
-  "${api.url.split("/docs")[0]}/endpoint"`}
-                  </pre>
-                  <p style={{ margin: "10px 0 0", fontSize: "12px", color: "var(--md-on-surface-var)" }}>
-                    Use this in your dataset pipeline or{" "}
-                    <a href="/dashboard/training" style={{ color: "var(--md-primary)", fontWeight: 600 }}>training jobs</a>{" "}
-                    to enrich your data.
-                  </p>
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-
-      {filtered.length === 0 && (
-        <div style={{ textAlign: "center", padding: "80px 40px", color: "var(--md-on-surface-var)" }}>
-          <p style={{ fontSize: "40px", marginBottom: "8px" }}>🔍</p>
-          <p style={{ fontSize: "16px", fontWeight: 700, color: "var(--md-on-surface)" }}>No APIs found</p>
-          <p style={{ fontSize: "14px" }}>Try a different search term or category</p>
-        </div>
-      )}
-
-      {/* Footer source attribution */}
-      <div style={{ marginTop: "48px", padding: "20px 24px", borderRadius: "16px", background: "var(--md-surface-1)", border: "1px solid var(--md-outline-var)", display: "flex", alignItems: "center", gap: "14px" }}>
-        <Star style={{ width: "20px", height: "20px", color: "var(--md-warning)", flexShrink: 0 }} />
-        <div>
-          <p style={{ margin: 0, fontSize: "13px", fontWeight: 700, color: "var(--md-on-surface)" }}>
-            Powered by public-apis/public-apis
-          </p>
-          <p style={{ margin: 0, fontSize: "12px", color: "var(--md-on-surface-var)" }}>
-            Community-curated list of 1000+ free public APIs.{" "}
-            <a href="https://github.com/public-apis/public-apis" target="_blank" rel="noreferrer" style={{ color: "var(--md-primary)", fontWeight: 600 }}>
-              Contribute on GitHub ↗
-            </a>
-          </p>
-        </div>
-      </div>
-    </div>
+    </DashboardLayout>
   );
 }
