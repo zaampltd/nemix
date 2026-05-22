@@ -1,486 +1,313 @@
 "use client";
-
 import React, { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
-  Zap, Eye, EyeOff, AlertCircle, Lock, Mail,
-  CheckCircle2, ArrowRight, ShieldCheck, Sun, Moon
+  Zap, CheckCircle2, Eye, EyeOff, AlertCircle,
+  Star, ArrowRight, Lock, GitBranch, Globe,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAuth } from '@/context/AuthContext';
-import { useTheme } from '@/lib/theme';
-import DashboardMockup from '@/components/auth/DashboardMockup';
+import api from '@/lib/api';
 
-// ─── Custom Floating Ribbon SVG Component ──────────────────────────────────
-const FloatingRibbon = ({ className = '', delay = 0, duration = 6, color1 = '#ec4899', color2 = '#8b5cf6' }) => (
-  <motion.svg
-    className={`absolute pointer-events-none ${className}`}
-    width="160"
-    height="160"
-    viewBox="0 0 160 160"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-    animate={{
-      y: [0, -20, 0],
-      rotate: [0, 15, -15, 0],
-      scale: [1, 1.05, 0.95, 1],
-    }}
-    transition={{
-      duration,
-      repeat: Infinity,
-      ease: "easeInOut",
-      delay,
-    }}
-  >
-    <path
-      d="M30 20C50 40 20 80 80 100C140 120 110 50 130 140"
-      stroke={`url(#ribbon-grad-${color1.replace('#', '')})`}
-      strokeWidth="16"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      opacity="0.85"
-    />
-    <defs>
-      <linearGradient id={`ribbon-grad-${color1.replace('#', '')}`} x1="30" y1="20" x2="130" y2="140" gradientUnits="userSpaceOnUse">
-        <stop stopColor={color1} />
-        <stop offset="1" stopColor={color2} />
-      </linearGradient>
-    </defs>
-  </motion.svg>
-);
+// ─── Testimonials shown on the left panel ─────────────────────────
+const TESTIMONIALS = [
+  { quote: "Nemix cut our deployment time from weeks to hours.", name: "Sarah Chen",    role: "ML Lead @ Vercel",    avatar: "SC", color: "#5b5bd6" },
+  { quote: "We fine-tuned and shipped in a single afternoon.",  name: "James Wilson",  role: "CTO @ Notion",        avatar: "JW", color: "#3dd68c" },
+  { quote: "The evaluation suite is genuinely world-class.",    name: "Amira Patel",   role: "AI Eng @ Stripe",     avatar: "AP", color: "#f59e0b" },
+];
 
-// ─── Floating Shiny Sphere Component ───────────────────────────────────────
-const FloatingSphere = ({ size = 'w-10 h-10', position = '', delay = 0, duration = 5, colorGrad = 'from-fuchsia-400 to-purple-800 shadow-[0_0_20px_rgba(217,70,239,0.3)]' }) => (
-  <motion.div
-    className={`absolute rounded-full pointer-events-none bg-gradient-to-br ${colorGrad} ${size} ${position}`}
-    animate={{
-      y: [0, -15, 0],
-      scale: [1, 1.08, 0.92, 1],
-    }}
-    transition={{
-      duration,
-      repeat: Infinity,
-      ease: "easeInOut",
-      delay,
-    }}
-    style={{
-      boxShadow: 'inset -8px -8px 16px rgba(0,0,0,0.5), inset 8px 8px 16px rgba(255,255,255,0.4)',
-    }}
-  />
-);
+// ─── Key selling points on the left panel ────────────────────────
+const POINTS = [
+  "Fine-tune LLMs with LoRA / QLoRA",
+  "Deploy to global endpoints in 60 seconds",
+  "Real-time training loss curves",
+  "Built-in evaluation & benchmarking",
+];
 
-function LoginFormInner() {
+// ─── Shared input style ───────────────────────────────────────────
+const inp = (hasErr = false): React.CSSProperties => ({
+  width: '100%', height: '46px', borderRadius: '12px',
+  padding: '0 14px', fontSize: '0.875rem',
+  background: 'var(--md-surface-2)',
+  border: `1px solid ${hasErr ? 'var(--md-error)' : 'var(--md-outline)'}`,
+  color: 'var(--md-on-surface)', outline: 'none', transition: 'border-color 0.15s',
+});
+
+// ─── Login form inner (needs useSearchParams) ─────────────────────
+function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { loginWithEmail, loginWithGoogle } = useAuth();
-  const { theme, toggle } = useTheme();
 
-  const [email, setEmail] = useState('');
+  const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
-  const [showPw, setShowPw] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
-
+  const [showPw, setShowPw]     = useState(false);
+  const [loading, setLoading]   = useState(false);
+  const [error, setError]       = useState('');
+  const [activeTestimonial, setActiveTestimonial] = useState(0);
   const justRegistered = searchParams.get('registered') === 'true';
   const sessionExpired = searchParams.get('expired') === 'true';
 
-  const handleEmailLogin = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) return;
-    setLoading(true);
-    setError('');
+    setLoading(true); setError('');
+
+    const formData = new FormData();
+    formData.append('username', email);
+    formData.append('password', password);
 
     try {
-      await loginWithEmail(email, password);
-      setSuccess(true);
-      setTimeout(() => router.push('/dashboard'), 1000);
-    } catch (err: any) {
-      console.warn("Firebase Auth failed, trying local fallback:", err.code || err.message);
-
-      // Check if this matches a local sandbox account in localStorage
-      const localUsers = JSON.parse(localStorage.getItem('local_users') || '[]');
-      const match = localUsers.find((u: any) => u.email === email && u.password === password)
-        || localUsers.find((u: any) => u.email === email);
-
-      if (match || !err.status) {
-        // Successful offline/sandbox login fallback
-        const mockProfile = {
-          email,
-          full_name: match ? match.full_name : email.split('@')[0],
-          id: 'sandbox-id-' + Math.random().toString(36).substr(2, 9)
-        };
-        localStorage.setItem('token', `local-token-${email}`);
-        localStorage.setItem('current_user', JSON.stringify(mockProfile));
-        
-        setSuccess(true);
-        setTimeout(() => router.push('/dashboard'), 1000);
-      } else {
-        // Real authentication error message
-        const msg = err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password'
-          ? 'Incorrect email or password.'
-          : err.message || 'Authentication failed. Please try again.';
-        setError(msg);
-        setLoading(false);
+      const res = await api.post('/auth/login', formData);
+      const token = res.data.access_token;
+      localStorage.setItem('token', token);
+      localStorage.removeItem('demo_user');
+      // Fetch the full user profile so sidebar shows name/email
+      try {
+        const meRes = await api.get('/auth/me');
+        localStorage.setItem('current_user', JSON.stringify(meRes.data));
+      } catch {
+        // Fallback: store minimal user from email
+        localStorage.setItem('current_user', JSON.stringify({ email, full_name: email.split('@')[0] }));
       }
-    }
-  };
-
-  const handleGoogleLogin = async () => {
-    setLoading(true);
-    setError('');
-    try {
-      await loginWithGoogle();
-      setSuccess(true);
-      setTimeout(() => router.push('/dashboard'), 1000);
+      router.push('/dashboard');
     } catch (err: any) {
-      console.warn("Firebase Google login failed, running sandbox fallback:", err);
-      
-      // Sandbox fallback for Google sign-in
-      const mockProfile = {
-        email: 'google.developer@nemix.ai',
-        full_name: 'Google AI Developer',
-        id: 'sandbox-google-id'
-      };
-      localStorage.setItem('token', `local-token-google`);
-      localStorage.setItem('current_user', JSON.stringify(mockProfile));
-      
-      setSuccess(true);
-      setTimeout(() => router.push('/dashboard'), 1000);
+      if (!err.response) {
+        // Offline / demo mode
+        const local: any[] = JSON.parse(localStorage.getItem('local_users') || '[]');
+        let match = local.find((u: any) => u.email === email && u.password === password)
+          || local.find((u: any) => u.email === email);
+        if (!match) {
+          match = { email, password, full_name: email.split('@')[0] };
+          localStorage.setItem('local_users', JSON.stringify([match, ...local]));
+        }
+        const user = { email: match.email, full_name: match.full_name };
+        localStorage.setItem('token', `local-token-${match.email}`);
+        localStorage.setItem('current_user', JSON.stringify(user));
+        router.push('/dashboard');
+        return;
+      }
+      setError(err.response?.data?.detail || 'Incorrect email or password.');
+      setLoading(false);
     }
   };
 
   return (
-    <div className="relative min-h-screen bg-[var(--md-surface)] text-[var(--md-on-surface)] transition-colors duration-300 overflow-hidden flex flex-col font-sans">
-      
-      {/* ── Background Glow & Grid ────────────────────────────────────────── */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(124,58,237,0.12),transparent_50%),radial-gradient(circle_at_bottom_left,rgba(236,72,153,0.08),transparent_60%)] dark:bg-[radial-gradient(circle_at_top_right,rgba(124,58,237,0.18),transparent_50%),radial-gradient(circle_at_bottom_left,rgba(236,72,153,0.12),transparent_60%)] pointer-events-none transition-all duration-300" />
-      <div className="absolute inset-0 bg-[linear-gradient(var(--md-outline-var)_1px,transparent_1px),linear-gradient(90deg,var(--md-outline-var)_1px,transparent_1px)] bg-[size:40px_40px] opacity-40 dark:opacity-15 pointer-events-none transition-all duration-300" />
+    <div style={{ minHeight: '100vh', display: 'grid', gridTemplateColumns: '1fr 1fr', background: 'var(--md-surface)' }}>
 
-      {/* ── Glassmorphic Top Navbar ──────────────────────────────────────── */}
-      <header className="relative w-full max-w-7xl mx-auto px-6 pt-6 z-40">
-        <div className="flex items-center justify-between px-6 py-3.5 rounded-2xl bg-white/40 dark:bg-white/[0.02] border border-gray-200/50 dark:border-white/[0.05] backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.04)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.37)] transition-all duration-300">
-          <Link href="/" className="flex items-center gap-2.5 font-bold tracking-tight">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-violet-600 to-fuchsia-500 flex items-center justify-center shadow-[0_0_15px_rgba(139,92,246,0.5)]">
-              <Zap className="w-4.5 h-4.5 text-white fill-white/10" />
-            </div>
-            <span className="text-lg font-black tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 transition-all">NEMIX</span>
-          </Link>
-          <nav className="hidden sm:flex items-center gap-8 text-[13px] font-semibold text-gray-500 dark:text-gray-400">
-            <Link href="/" className="hover:text-gray-900 dark:hover:text-white transition-colors">Home</Link>
-            <Link href="/blog" className="hover:text-gray-900 dark:hover:text-white transition-colors">Blog</Link>
-            <Link href="/docs" className="hover:text-gray-900 dark:hover:text-white transition-colors font-medium">Documentation</Link>
-            <span className="px-3 py-1 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-600 dark:text-violet-400 text-[11px] font-bold tracking-wider">v1.2 LAUNCH</span>
-          </nav>
-          <div className="flex items-center gap-2">
-            {/* Sleek Theme Switcher Toggle */}
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={toggle}
-              type="button"
-              className="p-2 rounded-xl bg-gray-100/80 dark:bg-white/[0.03] border border-gray-200/60 dark:border-white/10 hover:border-violet-500/30 text-gray-700 dark:text-white transition-all cursor-pointer flex items-center justify-center mr-1"
-              aria-label="Toggle theme"
-            >
-              {theme === "dark" ? (
-                <Sun className="w-4 h-4 text-amber-500 fill-amber-500/20" />
-              ) : (
-                <Moon className="w-4 h-4 text-violet-600 fill-violet-600/10" />
-              )}
-            </motion.button>
-            <Link href="/auth/register" className="text-[13px] font-bold text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-fuchsia-600 dark:from-violet-400 dark:to-fuchsia-400 hover:from-violet-500 hover:to-fuchsia-500 dark:hover:from-white dark:hover:to-white transition-all">
+      {/* ── Left panel (brand / social proof) ───────────────────── */}
+      <div style={{ background: 'var(--md-primary)', padding: '40px 48px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', position: 'relative', overflow: 'hidden' }}>
+
+        {/* Decorative blobs */}
+        <div style={{ position: 'absolute', top: '-80px', right: '-80px', width: '320px', height: '320px', borderRadius: '50%', background: 'rgba(255,255,255,0.06)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', bottom: '-60px', left: '-60px', width: '240px', height: '240px', borderRadius: '50%', background: 'rgba(255,255,255,0.04)', pointerEvents: 'none' }} />
+
+        {/* Logo */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', position: 'relative' }}>
+          <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Zap style={{ width: '18px', height: '18px', color: '#fff' }} />
+          </div>
+          <span style={{ fontSize: '18px', fontWeight: 800, color: '#fff' }}>Nemix</span>
+        </div>
+
+        {/* Middle: headline + bullets */}
+        <div style={{ position: 'relative' }}>
+          <h2 style={{ fontSize: 'clamp(26px, 3vw, 38px)', fontWeight: 800, color: '#fff', lineHeight: 1.15, letterSpacing: '-0.02em', marginBottom: '24px' }}>
+            The fastest way to<br />
+            <span style={{ opacity: 0.75 }}>ship AI models.</span>
+          </h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '40px' }}>
+            {POINTS.map((p, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <CheckCircle2 style={{ width: '12px', height: '12px', color: '#fff' }} />
+                </div>
+                <span style={{ fontSize: '14px', color: 'rgba(255,255,255,0.85)', fontWeight: 500 }}>{p}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Stats mini row */}
+          <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
+            {[["50K+", "Models trained"], ["12K+", "Developers"], ["99.9%", "Uptime"]].map(([v, l]) => (
+              <div key={l}>
+                <p style={{ fontSize: '22px', fontWeight: 800, color: '#fff', letterSpacing: '-0.02em' }}>{v}</p>
+                <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', marginTop: '2px' }}>{l}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Testimonial */}
+        <div style={{ position: 'relative' }}>
+          <AnimatePresence mode="wait">
+            {TESTIMONIALS.map((t, i) => i === activeTestimonial && (
+              <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+                style={{ padding: '20px', borderRadius: '16px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)' }}>
+                {/* Stars */}
+                <div style={{ display: 'flex', gap: '3px', marginBottom: '12px' }}>
+                  {[...Array(5)].map((_, si) => <Star key={si} style={{ width: '13px', height: '13px', color: '#fbbf24', fill: '#fbbf24' }} />)}
+                </div>
+                <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.9)', lineHeight: 1.6, marginBottom: '16px' }}>"{t.quote}"</p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: t.color + '33', border: `2px solid ${t.color}66`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '12px', color: '#fff', flexShrink: 0 }}>
+                    {t.avatar}
+                  </div>
+                  <div>
+                    <p style={{ fontSize: '13px', fontWeight: 700, color: '#fff' }}>{t.name}</p>
+                    <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)' }}>{t.role}</p>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+          {/* Dots */}
+          <div style={{ display: 'flex', gap: '6px', marginTop: '14px' }}>
+            {TESTIMONIALS.map((_, i) => (
+              <button key={i} onClick={() => setActiveTestimonial(i)}
+                style={{ width: i === activeTestimonial ? '20px' : '7px', height: '7px', borderRadius: '100px', background: i === activeTestimonial ? '#fff' : 'rgba(255,255,255,0.3)', border: 'none', cursor: 'pointer', transition: 'all 0.3s' }} />
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Right panel (form) ───────────────────────────────────── */}
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '48px 40px', overflowY: 'auto' }}>
+        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} style={{ width: '100%', maxWidth: '400px' }}>
+
+          {/* Top link */}
+          <div style={{ textAlign: 'right', marginBottom: '32px' }}>
+            <span style={{ fontSize: '13px', color: 'var(--md-on-surface-var)' }}>Don't have an account? </span>
+            <Link href="/auth/register" style={{ fontSize: '13px', fontWeight: 700, color: 'var(--md-primary)', textDecoration: 'none' }}>
               Sign up free →
             </Link>
           </div>
-        </div>
-      </header>
 
-      {/* ── Split Screen Body Layout ─────────────────────────────────────── */}
-      <div className="flex-1 w-full max-w-7xl mx-auto px-6 py-8 flex flex-col lg:flex-row items-center justify-center gap-12 lg:gap-8 z-30">
-        
-        {/* ── Left Side: Auth Form ────────────────────────────────────────── */}
-        <motion.div
-          initial={{ opacity: 0, x: -30 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.6 }}
-          className="w-full lg:w-[46%] max-w-[460px] shrink-0"
-        >
-          {/* Glass Auth Card */}
-          <div className="relative rounded-3xl bg-white/70 dark:bg-white/[0.03] border border-gray-200 dark:border-white/[0.07] backdrop-blur-2xl p-8 sm:p-10 shadow-[0_20px_50px_rgba(0,0,0,0.04)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden transition-all duration-300">
-            
-            {/* Top decorative gradient glow */}
-            <div className="absolute top-0 left-1/4 right-1/4 h-[2px] bg-gradient-to-r from-transparent via-violet-500/50 to-transparent" />
+          {/* Heading */}
+          <div style={{ marginBottom: '28px' }}>
+            <h1 style={{ fontSize: '26px', fontWeight: 800, color: 'var(--md-on-surface)', letterSpacing: '-0.025em', marginBottom: '6px' }}>
+              Welcome back 👋
+            </h1>
+            <p style={{ fontSize: '14px', color: 'var(--md-on-surface-var)' }}>Sign in to your Nemix workspace</p>
+          </div>
 
-            {/* Pill highlight */}
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-600 dark:text-violet-400 text-[10px] font-bold tracking-wider mb-5 uppercase select-none">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              Now in public beta — free to start
+          {/* Registration success / session expired banners */}
+          <AnimatePresence>
+            {justRegistered && (
+              <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', padding: '12px 16px', borderRadius: '12px', background: 'var(--md-success-cont)', border: '1px solid var(--md-outline)' }}>
+                <CheckCircle2 style={{ width: '16px', height: '16px', color: 'var(--md-success)', flexShrink: 0 }} />
+                <span style={{ fontSize: '13px', color: 'var(--md-success)', fontWeight: 500 }}>Account created! Sign in below.</span>
+              </motion.div>
+            )}
+            {sessionExpired && !justRegistered && (
+              <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', padding: '12px 16px', borderRadius: '12px', background: 'var(--md-warning-cont)', border: '1px solid var(--md-outline)' }}>
+                <AlertCircle style={{ width: '16px', height: '16px', color: 'var(--md-warning)', flexShrink: 0 }} />
+                <span style={{ fontSize: '13px', color: 'var(--md-on-surface)', fontWeight: 500 }}>Your session expired. Please sign in again.</span>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* OAuth buttons */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '24px' }}>
+            <button style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', height: '42px', borderRadius: '12px', border: '1px solid var(--md-outline)', background: 'var(--md-surface-1)', color: 'var(--md-on-surface)', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>
+              <GitBranch style={{ width: '16px', height: '16px' }} /> GitHub
+            </button>
+            <button style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', height: '42px', borderRadius: '12px', border: '1px solid var(--md-outline)', background: 'var(--md-surface-1)', color: 'var(--md-on-surface)', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>
+              <Globe style={{ width: '16px', height: '16px' }} /> Google
+            </button>
+          </div>
+
+          {/* Divider */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+            <div style={{ flex: 1, height: '1px', background: 'var(--md-outline)' }} />
+            <span style={{ fontSize: '12px', color: 'var(--md-on-surface-var)', fontWeight: 500 }}>or continue with email</span>
+            <div style={{ flex: 1, height: '1px', background: 'var(--md-outline)' }} />
+          </div>
+
+          {/* Form */}
+          <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '6px', color: 'var(--md-on-surface-var)' }}>Email Address</label>
+              <input type="email" required placeholder="you@company.com"
+                value={email} onChange={e => { setEmail(e.target.value); setError(''); }}
+                style={inp(!!error)} />
             </div>
 
-            {/* Heading */}
-            <div className="mb-6">
-              <h1 className="text-3xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-gray-950 via-gray-800 to-gray-900 dark:from-white dark:via-gray-100 dark:to-gray-300 mb-2">
-                Welcome back 👋
-              </h1>
-              <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">Log in to enter your futuristic AI workspace</p>
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--md-on-surface-var)' }}>Password</label>
+                <Link href="#" style={{ fontSize: '12px', color: 'var(--md-primary)', textDecoration: 'none', fontWeight: 600 }}>Forgot password?</Link>
+              </div>
+              <div style={{ position: 'relative' }}>
+                <input type={showPw ? 'text' : 'password'} required placeholder="••••••••"
+                  value={password} onChange={e => { setPassword(e.target.value); setError(''); }}
+                  style={{ ...inp(!!error), paddingRight: '44px' }} />
+                <button type="button" onClick={() => setShowPw(p => !p)}
+                  style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--md-on-surface-var)', display: 'flex', alignItems: 'center' }}>
+                  {showPw ? <EyeOff style={{ width: '16px', height: '16px' }} /> : <Eye style={{ width: '16px', height: '16px' }} />}
+                </button>
+              </div>
             </div>
 
-            {/* Status alerts */}
+            {/* Remember me */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <input type="checkbox" id="remember" style={{ width: '16px', height: '16px', borderRadius: '4px', accentColor: 'var(--md-primary)', cursor: 'pointer' }} />
+              <label htmlFor="remember" style={{ fontSize: '13px', color: 'var(--md-on-surface-var)', cursor: 'pointer' }}>Remember me for 30 days</label>
+            </div>
+
+            {/* Error */}
             <AnimatePresence>
-              {justRegistered && (
-                <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                  className="flex items-center gap-2.5 mb-6 p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-semibold">
-                  <CheckCircle2 className="w-4 h-4 shrink-0" />
-                  <span>Account successfully created! Sign in below.</span>
-                </motion.div>
-              )}
-              {sessionExpired && !justRegistered && (
-                <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                  className="flex items-center gap-2.5 mb-6 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 text-xs font-semibold">
-                  <AlertCircle className="w-4 h-4 shrink-0" />
-                  <span>Session expired. Please log in again to continue.</span>
+              {error && (
+                <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                  style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 14px', borderRadius: '10px', background: 'var(--md-error-cont)' }}>
+                  <AlertCircle style={{ width: '15px', height: '15px', color: 'var(--md-error)', flexShrink: 0 }} />
+                  <span style={{ fontSize: '13px', color: 'var(--md-error)' }}>{error}</span>
                 </motion.div>
               )}
             </AnimatePresence>
 
-            {/* Social Authentication */}
-            <div className="grid grid-cols-2 gap-4 mb-6">
-              <motion.button
-                whileHover={{ scale: 1.02, y: -1 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={handleGoogleLogin}
-                type="button"
-                className="flex items-center justify-center gap-2.5 h-12 rounded-xl bg-gray-50/50 dark:bg-white/[0.03] border border-gray-200 dark:border-white/10 hover:border-violet-500/30 hover:bg-gray-100 dark:hover:bg-white/[0.06] text-gray-800 dark:text-white text-xs font-bold transition-all cursor-pointer shadow-sm dark:shadow-lg"
-              >
-                {/* Custom Google SVG */}
-                <svg className="w-4.5 h-4.5" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
-                  <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
-                  <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05" />
-                  <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335" />
-                </svg>
-                Google
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.02, y: -1 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={handleGoogleLogin} // Wired to same for sandbox fallback compatibility
-                type="button"
-                className="flex items-center justify-center gap-2.5 h-12 rounded-xl bg-gray-50/50 dark:bg-white/[0.03] border border-gray-200 dark:border-white/10 hover:border-fuchsia-500/30 hover:bg-gray-100 dark:hover:bg-white/[0.06] text-gray-800 dark:text-white text-xs font-bold transition-all cursor-pointer shadow-sm dark:shadow-lg"
-              >
-                {/* GitHub Icon */}
-                <svg className="w-4.5 h-4.5" viewBox="0 0 24 24" fill="currentColor">
-                  <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.464-1.11-1.464-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.579.688.481C19.137 20.162 22 16.418 22 12c0-5.523-4.477-10-10-10z" />
-                </svg>
-                GitHub
-              </motion.button>
-            </div>
+            {/* Submit */}
+            <button type="submit" disabled={loading || !email || !password}
+              style={{ height: '46px', borderRadius: '12px', background: 'var(--md-primary)', color: 'var(--md-on-primary)', fontSize: '14px', fontWeight: 700, border: 'none', cursor: loading ? 'not-allowed' : 'pointer', opacity: (loading || !email || !password) ? 0.7 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', transition: 'opacity 0.15s' }}>
+              {loading
+                ? <><div style={{ width: '16px', height: '16px', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} /> Signing in...</>
+                : <><Lock style={{ width: '15px', height: '15px' }} /> Sign in</>}
+            </button>
+          </form>
 
-            {/* Email Divider */}
-            <div className="flex items-center gap-3.5 mb-6">
-              <div className="flex-1 h-[1px] bg-gray-200 dark:bg-white/10" />
-              <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">or use email</span>
-              <div className="flex-1 h-[1px] bg-gray-200 dark:bg-white/10" />
-            </div>
-
-            {/* Auth Form */}
-            <form onSubmit={handleEmailLogin} className="space-y-5">
-              
-              {/* Email */}
-              <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2 px-1">Email Address</label>
-                <div className="relative">
-                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-gray-400 dark:text-gray-500" />
-                  <input
-                    type="email"
-                    required
-                    placeholder="developer@nemix.ai"
-                    value={email}
-                    onChange={e => { setEmail(e.target.value); setError(''); }}
-                    className={`w-full h-12 pl-11 pr-4 bg-gray-50/30 dark:bg-white/[0.02] border ${error ? 'border-red-500/50 hover:border-red-500/70 focus:border-red-500/80 focus:ring-1 focus:ring-red-500/20' : 'border-gray-200 dark:border-white/10 hover:border-gray-300 dark:hover:border-white/20 focus:border-violet-500/80 focus:ring-1 focus:ring-violet-500/20'} rounded-xl text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-600 outline-none transition-all`}
-                  />
+          {/* Avatar social proof */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '28px', paddingTop: '20px', borderTop: '1px solid var(--md-outline-var)' }}>
+            <div style={{ display: 'flex' }}>
+              {[["SC","#5b5bd6"],["JW","#3dd68c"],["AP","#f59e0b"]].map(([init, c], i) => (
+                <div key={init} style={{ width: '28px', height: '28px', borderRadius: '50%', background: (c as string) + '33', border: `2px solid var(--md-surface)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '9px', color: c as string, marginLeft: i > 0 ? '-8px' : 0 }}>
+                  {init}
                 </div>
-              </div>
-
-              {/* Password */}
-              <div>
-                <div className="flex justify-between items-center mb-2 px-1">
-                  <label className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Password</label>
-                  <Link href="#" className="text-xs font-bold text-violet-600 dark:text-violet-400 hover:text-violet-500 dark:hover:text-violet-300 transition-colors">Forgot password?</Link>
-                </div>
-                <div className="relative">
-                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-gray-400 dark:text-gray-500" />
-                  <input
-                    type={showPw ? 'text' : 'password'}
-                    required
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={e => { setPassword(e.target.value); setError(''); }}
-                    className={`w-full h-12 pl-11 pr-12 bg-gray-50/30 dark:bg-white/[0.02] border ${error ? 'border-red-500/50 hover:border-red-500/70 focus:border-red-500/80 focus:ring-1 focus:ring-red-500/20' : 'border-gray-200 dark:border-white/10 hover:border-gray-300 dark:hover:border-white/20 focus:border-violet-500/80 focus:ring-1 focus:ring-violet-500/20'} rounded-xl text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-600 outline-none transition-all`}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPw(p => !p)}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors cursor-pointer flex items-center"
-                  >
-                    {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-              </div>
-
-              {/* Remember me */}
-              <div className="flex items-center gap-2.5 pt-1 px-1">
-                <input
-                  type="checkbox"
-                  id="remember"
-                  className="w-4.5 h-4.5 rounded bg-gray-50 dark:bg-white/[0.02] border-gray-200 dark:border-white/10 accent-violet-600 focus:ring-0 focus:ring-offset-0 cursor-pointer"
-                  defaultChecked
-                />
-                <label htmlFor="remember" className="text-xs text-gray-500 dark:text-gray-400 font-medium cursor-pointer select-none">
-                  Keep me signed in for 30 days
-                </label>
-              </div>
-
-              {/* Error messages */}
-              <AnimatePresence>
-                {error && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                    className="flex items-center gap-2.5 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 text-xs font-semibold"
-                  >
-                    <AlertCircle className="w-4.5 h-4.5 shrink-0" />
-                    <span>{error}</span>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {/* Submit Button */}
-              <motion.button
-                type="submit"
-                disabled={loading || success}
-                whileHover={{ scale: 1.01 }}
-                whileTap={{ scale: 0.99 }}
-                className="relative w-full h-12 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-extrabold text-sm shadow-[0_4px_20px_rgba(139,92,246,0.25)] hover:shadow-[0_4px_25px_rgba(139,92,246,0.4)] transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-75 disabled:cursor-not-allowed overflow-hidden"
-              >
-                {success ? (
-                  <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} className="flex items-center gap-2">
-                    <CheckCircle2 className="w-5 h-5 text-white" />
-                    Entering Workspace...
-                  </motion.div>
-                ) : loading ? (
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-4.5 h-4.5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                    Authenticating...
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-1.5 font-black uppercase tracking-wider">
-                    Sign in to Account <ArrowRight className="w-4.5 h-4.5 ml-0.5" />
-                  </div>
-                )}
-              </motion.button>
-            </form>
-
-            {/* Bottom Section */}
-            <div className="mt-8 pt-6 border-t border-gray-200 dark:border-white/[0.06] text-center">
-              <span className="text-xs text-gray-500 font-medium">Don't have a Nemix account? </span>
-              <Link href="/auth/register" className="text-xs font-bold text-violet-600 dark:text-violet-400 hover:text-violet-500 dark:hover:text-violet-300 transition-colors">
-                Sign up free →
-              </Link>
+              ))}
             </div>
-
-            {/* Security Compliance badges */}
-            <div className="flex justify-center gap-5 mt-5 opacity-40">
-              <div className="flex items-center gap-1 text-[9px] font-bold text-gray-500 dark:text-gray-400">
-                <ShieldCheck className="w-3 h-3 text-emerald-500 dark:text-emerald-400" /> SOC2 COMPLIANT
-              </div>
-              <div className="flex items-center gap-1 text-[9px] font-bold text-gray-500 dark:text-gray-400">
-                <ShieldCheck className="w-3 h-3 text-emerald-500 dark:text-emerald-400" /> GDPR READY
-              </div>
-            </div>
-
-          </div>
-        </motion.div>
-
-        {/* ── Right Side: Immersive Dashboard Mockup presentation ────────── */}
-        <motion.div
-          initial={{ opacity: 0, x: 30 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.6, delay: 0.15 }}
-          className="hidden lg:flex flex-1 flex-col items-center justify-center relative min-h-[580px] w-full"
-        >
-          {/* Main Glowing Background Radial Orbs */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[380px] height-[380px] bg-violet-600/10 rounded-full blur-[100px] pointer-events-none" />
-          <div className="absolute top-1/3 left-1/2 -translate-x-1/3 -translate-y-1/3 w-[260px] height-[260px] bg-fuchsia-600/8 rounded-full blur-[90px] pointer-events-none" />
-
-          {/* Immersive Dribbble Floating Ornaments */}
-          <FloatingRibbon className="top-12 left-14" delay={0.5} duration={7} color1="#a855f7" color2="#3b82f6" />
-          <FloatingRibbon className="bottom-10 right-10 scale-75 rotate-45" delay={1.8} duration={8.5} color1="#ec4899" color2="#f43f5e" />
-          
-          <FloatingSphere size="w-12 h-12" position="top-24 right-20" delay={0.2} duration={5.5} colorGrad="from-fuchsia-400 to-violet-800" />
-          <FloatingSphere size="w-7 h-7" position="bottom-28 left-16" delay={1.2} duration={4.8} colorGrad="from-violet-400 to-indigo-800" />
-          <FloatingSphere size="w-5 h-5" position="top-2/3 right-1/4" delay={0.8} duration={6} colorGrad="from-pink-400 to-fuchsia-700" />
-
-          {/* Large heavy typography tagline (matching your design screenshot exactly!) */}
-          <div className="text-center max-w-[480px] mb-8 z-20">
-            <motion.h2 
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="text-4xl font-extrabold tracking-tight text-gray-900 dark:text-white mb-3"
-            >
-              Train & deploy <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-fuchsia-500 to-indigo-600 dark:from-violet-400 dark:via-fuchsia-400 dark:to-indigo-400">AI models 10x faster.</span>
-            </motion.h2>
-            <p className="text-[13px] text-gray-500 dark:text-gray-400 font-medium leading-relaxed px-6">
-              Fine-tune LLMs, manage datasets, run evaluations, and deploy production APIs — all in one platform. No infrastructure headaches.
+            <p style={{ fontSize: '12px', color: 'var(--md-on-surface-var)' }}>
+              Join <strong style={{ color: 'var(--md-on-surface)' }}>12,000+</strong> developers building with Nemix
             </p>
           </div>
 
-          {/* Dynamic Mockup Area */}
-          <DashboardMockup />
-          
-          {/* Checklist features underneath the mockup exactly like the screenshot */}
-          <div className="mt-8 flex flex-wrap justify-center gap-x-6 gap-y-2 max-w-[500px] text-[11px] font-bold text-gray-500 dark:text-gray-400 select-none">
-            <span className="flex items-center gap-1.5">
-              <span className="text-emerald-500 font-black text-xs">✓</span> No credit card required
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="text-emerald-500 font-black text-xs">✓</span> LoRA fine-tuning
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="text-emerald-500 font-black text-xs">✓</span> Auto-scaling APIs
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="text-emerald-500 font-black text-xs">✓</span> Open model hub
-            </span>
+          {/* Trust badges */}
+          <div style={{ display: 'flex', gap: '16px', marginTop: '16px', flexWrap: 'wrap' }}>
+            {["🔒 SOC 2 Type II", "🇪🇺 GDPR Compliant", "⚡ 99.9% Uptime"].map(b => (
+              <span key={b} style={{ fontSize: '11px', color: 'var(--md-on-surface-var)', opacity: 0.6 }}>{b}</span>
+            ))}
           </div>
-          
         </motion.div>
-
       </div>
 
-      {/* Footer copyright */}
-      <footer className="w-full text-center py-6 text-[10px] font-bold tracking-widest text-gray-400 dark:text-gray-600 uppercase z-30 select-none">
-        © {new Date().getFullYear()} Nemix AI Platform Inc. All rights reserved.
-      </footer>
+      {/* Spin animation */}
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-[var(--md-surface)] flex items-center justify-center text-[var(--md-on-surface)] transition-colors duration-300">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-4 border-violet-500/20 border-t-violet-500 rounded-full animate-spin" />
-          <span className="text-xs font-bold text-gray-500 dark:text-gray-400 tracking-wider">LOADING SAAS PLATFORM...</span>
-        </div>
-      </div>
-    }>
-      <LoginFormInner />
+    <Suspense fallback={<div style={{ minHeight: '100vh', background: 'var(--md-surface)' }} />}>
+      <LoginForm />
     </Suspense>
   );
 }
