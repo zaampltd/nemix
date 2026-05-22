@@ -702,41 +702,6 @@ print(data["text"])`;
                 boxShadow: "var(--shadow-2)"
               }}
             >
-              {/* Segmented Control Switcher (Right above the EDGE SDK EXPORTER code box) */}
-              <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b"
-                style={{
-                  background: "var(--md-surface-1)",
-                  borderColor: "var(--md-outline)"
-                }}
-              >
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-wide" style={{ color: "var(--md-on-surface)" }}>
-                    Deployment Mode
-                  </p>
-                  <p className="text-[10px]" style={{ color: "var(--md-on-surface-var)" }}>
-                    Select between local client execution and hosted cloud API.
-                  </p>
-                </div>
-                <div className="flex bg-black/20 dark:bg-white/5 p-1 rounded-full border border-[var(--md-outline-var)] shadow-inner shrink-0">
-                  {(["edge", "cloud"] as const).map(mode => (
-                    <button
-                      key={mode}
-                      onClick={() => setDeploymentMode(mode)}
-                      className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-300 ${
-                        deploymentMode === mode
-                          ? "shadow-sm scale-[1.02]"
-                          : "opacity-60 hover:opacity-100 hover:bg-white/5 dark:hover:bg-white/5"
-                      }`}
-                      style={{
-                        background: deploymentMode === mode ? "var(--md-primary)" : "transparent",
-                        color: deploymentMode === mode ? "var(--md-on-primary)" : "var(--md-on-surface-var)",
-                      }}
-                    >
-                      {mode === "edge" ? "Edge SDK (Local)" : "Cloud API (Hosted)"}
-                    </button>
-                  ))}
-                </div>
-              </div>
               {/* Tab Header */}
               <div className="flex items-center justify-between px-4 py-3 border-b"
                 style={{
