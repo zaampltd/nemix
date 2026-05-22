@@ -767,8 +767,18 @@ print(data["text"])`;
               <div className="flex flex-col md:flex-row justify-between items-center mb-4">
                 <div className="font-bold text-sm tracking-wide text-[var(--md-on-surface)]">DEPLOYMENT MODE</div>
                 <div className="flex p-1 bg-black/10 dark:bg-white/5 rounded-full border border-[var(--md-outline-var)]">
-                   <button type="button" className="px-4 py-1.5 text-xs font-bold rounded-full bg-[var(--md-primary)] text-[var(--md-on-primary)] shadow-sm">Edge SDK</button>
-                   <button type="button" className="px-4 py-1.5 text-xs font-bold rounded-full opacity-60 hover:opacity-100 transition-opacity">Cloud API</button>
+                   <button 
+                     type="button"
+                     onClick={() => setDeploymentMode("edge")} 
+                     className={`px-4 py-1.5 text-xs font-bold rounded-full transition-all ${deploymentMode === "edge" ? "bg-[var(--md-primary)] text-[var(--md-on-primary)] shadow-sm" : "opacity-60 hover:opacity-100"}`}>
+                     Edge SDK
+                   </button>
+                   <button 
+                     type="button"
+                     onClick={() => setDeploymentMode("cloud")} 
+                     className={`px-4 py-1.5 text-xs font-bold rounded-full transition-all ${deploymentMode === "cloud" ? "bg-[var(--md-primary)] text-[var(--md-on-primary)] shadow-sm" : "opacity-60 hover:opacity-100"}`}>
+                     Cloud API
+                   </button>
                 </div>
               </div>
               <div className="relative">
