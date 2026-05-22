@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import {
@@ -13,40 +13,58 @@ import { collection, addDoc } from "firebase/firestore";
 
 // ─── Constants & Available Models ──────────────────────────────────────────
 const PROVIDERS = {
+  "OpenRouter": [
+    "meta-llama/llama-3-8b-instruct:free",
+    "google/gemma-2-9b-it:free",
+    "microsoft/phi-3-medium-128k-instruct:free",
+    "qwen/qwen-2-7b-instruct:free",
+    "openchat/openchat-7b:free"
+  ],
   "Groq": [
-    "llama3-70b-8192",
-    "llama3-8b-8192",
-    "mixtral-8x7b-32768"
+    "llama-3.3-70b-versatile",
+    "llama-3.1-8b-instant",
+    "mixtral-8x7b-32768",
+    "gemma2-9b-it"
+  ],
+  "NVIDIA NIM": [
+    "meta/llama-3.3-70b-instruct",
+    "nvidia/llama-3.1-nemotron-51b-instruct",
+    "microsoft/phi-3-medium-128k-instruct"
   ],
   "Google Gemini": [
-    "gemini-1.5-flash",
+    "gemini-2.5-flash",
     "gemini-1.5-pro",
+    "gemini-1.5-flash",
     "gemma-2-9b"
   ],
-  "Together AI": [
-    "llama3-70b-instruct",
-    "mistral-7b-instruct-v0.3",
-    "qwen-2-72b"
-  ],
   "Hugging Face": [
-    "zephyr-7b-beta",
-    "starcoder-2-15b",
-    "phi-3-mini-4k"
+    "meta-llama/Llama-3.2-3B-Instruct",
+    "mistralai/Mistral-7B-Instruct-v0.3",
+    "microsoft/Phi-3-mini-4k-instruct"
+  ],
+  "Cohere": [
+    "command-r-plus",
+    "command-r",
+    "command-light"
+  ],
+  "SambaNova": [
+    "llama-3.3-70b-instruct",
+    "llama-3.1-8b-instruct",
+    "llama-3.2-3b-instruct"
+  ],
+  "Cerebras": [
+    "llama3.1-8b",
+    "llama3.1-70b"
+  ],
+  "Together AI": [
+    "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+    "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo",
+    "Qwen/Qwen2.5-72B-Instruct-Turbo"
   ],
   "Mistral AI": [
+    "pixtral-12b",
     "mistral-large-latest",
-    "codestral-22b",
-    "mistral-nemo"
-  ],
-  "OpenAI": [
-    "gpt-4o",
-    "gpt-4o-mini",
-    "gpt-3.5-turbo"
-  ],
-  "Anthropic": [
-    "claude-3-5-sonnet",
-    "claude-3-haiku",
-    "claude-3-opus"
+    "codestral-latest"
   ]
 } as const;
 
@@ -78,13 +96,102 @@ const TOOLS_CONFIG = [
   { id: "db_query", name: "SQL DB Query", description: "Inspect data warehouses directly from client nodes", icon: Database }
 ];
 
+interface CustomDropdownProps {
+  value: string;
+  onChange: (val: string) => void;
+  options: readonly string[] | string[];
+}
+
+function CustomDropdown({ value, onChange, options }: CustomDropdownProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  return (
+    <div className="relative w-full" ref={dropdownRef}>
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs text-left transition-all border outline-none duration-200"
+        style={{
+          background: "var(--md-surface-1)",
+          borderColor: isOpen ? "var(--md-primary)" : "var(--md-outline)",
+          color: "var(--md-on-surface)",
+        }}
+      >
+        <span className="truncate">{value}</span>
+        <ChevronDown 
+          className={`w-3.5 h-3.5 transition-transform duration-200 shrink-0 ${
+            isOpen ? "rotate-180 text-[var(--md-primary)]" : "text-[var(--md-on-surface-var)]"
+          }`} 
+        />
+      </button>
+
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -4, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -4, scale: 0.95 }}
+            transition={{ duration: 0.12, ease: "easeOut" }}
+            className="absolute left-0 right-0 mt-1.5 z-[999] rounded-xl shadow-lg border max-h-56 overflow-y-auto scrollbar-thin"
+            style={{
+              background: "var(--md-surface-2)",
+              borderColor: "var(--md-outline)",
+            }}
+          >
+            <div className="py-1">
+              {options.map((opt) => {
+                const isSelected = opt === value;
+                return (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() => {
+                      onChange(opt);
+                      setIsOpen(false);
+                    }}
+                    className={`w-full text-left px-3 py-2 text-xs transition-colors flex items-center justify-between ${
+                      isSelected 
+                        ? "font-semibold" 
+                        : "opacity-80 hover:opacity-100 hover:bg-white/5 dark:hover:bg-white/5"
+                    }`}
+                    style={{
+                      background: isSelected ? "var(--md-primary-container)" : "transparent",
+                      color: isSelected ? "var(--md-on-primary-cont)" : "var(--md-on-surface)",
+                    }}
+                  >
+                    <span className="truncate">{opt}</span>
+                    {isSelected && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-[var(--md-primary)] ml-2 shrink-0" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 export default function EdgeRouterPage() {
   // ─── State Management ──────────────────────────────────────────────────────
   const [configName, setConfigName] = useState("Production Edge Router");
   const [fallbackChain, setFallbackChain] = useState<FallbackNode[]>([
-    { id: "1", provider: "Groq", model: "llama3-70b-8192", trigger: "Rate Limit (429)" },
-    { id: "2", provider: "Google Gemini", model: "gemini-1.5-flash", trigger: "Any Failure (Trigger on any error)" },
-    { id: "3", provider: "Hugging Face", model: "zephyr-7b-beta", trigger: "Any Failure (Trigger on any error)" }
+    { id: "1", provider: "OpenRouter", model: "meta-llama/llama-3-8b-instruct:free", trigger: "Rate Limit (429)" },
+    { id: "2", provider: "Groq", model: "llama-3.1-8b-instant", trigger: "Rate Limit (429)" },
+    { id: "3", provider: "Google Gemini", model: "gemini-2.5-flash", trigger: "Any Failure (Trigger on any error)" }
   ]);
   const [selectedTools, setSelectedTools] = useState<string[]>(["web_search", "math_calculator"]);
   const [sdkLanguage, setSdkLanguage] = useState<"javascript" | "python">("javascript");
@@ -103,7 +210,7 @@ export default function EdgeRouterPage() {
 
   // ─── Rule Builder Handlers ─────────────────────────────────────────────────
   const addFallbackNode = () => {
-    const defaultProvider = "Groq";
+    const defaultProvider = "OpenRouter" as ProviderName;
     const newNode: FallbackNode = {
       id: Date.now().toString(),
       provider: defaultProvider,
@@ -444,19 +551,11 @@ print(response.text)`;
                           <label className="text-[10px] font-semibold uppercase tracking-wider mb-1.5 block" style={{ color: "var(--md-on-surface-var)" }}>
                             Provider
                           </label>
-                          <div className="relative">
-                            <select
-                              value={node.provider}
-                              onChange={e => updateNode(node.id, "provider", e.target.value as ProviderName)}
-                              className="w-full appearance-none px-3 py-2 rounded-xl text-xs"
-                              style={{ background: "var(--md-surface-1)", border: "1px solid var(--md-outline)", color: "var(--md-on-surface)" }}
-                            >
-                              {Object.keys(PROVIDERS).map(p => (
-                                <option key={p} value={p}>{p}</option>
-                              ))}
-                            </select>
-                            <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none" style={{ color: "var(--md-on-surface-var)" }} />
-                          </div>
+                          <CustomDropdown
+                            value={node.provider}
+                            onChange={val => updateNode(node.id, "provider", val as ProviderName)}
+                            options={Object.keys(PROVIDERS)}
+                          />
                         </div>
 
                         {/* Model select */}
@@ -464,19 +563,11 @@ print(response.text)`;
                           <label className="text-[10px] font-semibold uppercase tracking-wider mb-1.5 block" style={{ color: "var(--md-on-surface-var)" }}>
                             Model
                           </label>
-                          <div className="relative">
-                            <select
-                              value={node.model}
-                              onChange={e => updateNode(node.id, "model", e.target.value)}
-                              className="w-full appearance-none px-3 py-2 rounded-xl text-xs"
-                              style={{ background: "var(--md-surface-1)", border: "1px solid var(--md-outline)", color: "var(--md-on-surface)" }}
-                            >
-                              {PROVIDERS[node.provider].map(m => (
-                                <option key={m} value={m}>{m}</option>
-                              ))}
-                            </select>
-                            <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none" style={{ color: "var(--md-on-surface-var)" }} />
-                          </div>
+                          <CustomDropdown
+                            value={node.model}
+                            onChange={val => updateNode(node.id, "model", val)}
+                            options={PROVIDERS[node.provider]}
+                          />
                         </div>
 
                         {/* Fallback triggers */}
@@ -484,19 +575,11 @@ print(response.text)`;
                           <label className="text-[10px] font-semibold uppercase tracking-wider mb-1.5 block" style={{ color: "var(--md-on-surface-var)" }}>
                             Trigger Fallback On
                           </label>
-                          <div className="relative">
-                            <select
-                              value={node.trigger}
-                              onChange={e => updateNode(node.id, "trigger", e.target.value)}
-                              className="w-full appearance-none px-3 py-2 rounded-xl text-xs"
-                              style={{ background: "var(--md-surface-1)", border: "1px solid var(--md-outline)", color: "var(--md-on-surface)" }}
-                            >
-                              {TRIGGERS.map(t => (
-                                <option key={t} value={t}>{t}</option>
-                              ))}
-                            </select>
-                            <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none" style={{ color: "var(--md-on-surface-var)" }} />
-                          </div>
+                          <CustomDropdown
+                            value={node.trigger}
+                            onChange={val => updateNode(node.id, "trigger", val)}
+                            options={TRIGGERS}
+                          />
                         </div>
                       </div>
                     </motion.div>
@@ -599,12 +682,16 @@ print(response.text)`;
                 </div>
                 
                 {/* Language Selectors */}
-                <div className="flex gap-1 bg-black/10 dark:bg-white/5 p-1 rounded-xl">
+                <div className="flex bg-black/20 dark:bg-white/5 p-1 rounded-full border border-[var(--md-outline-var)] shadow-inner">
                   {(["javascript", "python"] as const).map(lang => (
                     <button
                       key={lang}
                       onClick={() => setSdkLanguage(lang)}
-                      className="px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all"
+                      className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-300 ${
+                        sdkLanguage === lang 
+                          ? "shadow-sm scale-[1.02]" 
+                          : "opacity-60 hover:opacity-100 hover:bg-white/5 dark:hover:bg-white/5"
+                      }`}
                       style={{
                         background: sdkLanguage === lang ? "var(--md-primary)" : "transparent",
                         color: sdkLanguage === lang ? "var(--md-on-primary)" : "var(--md-on-surface-var)",
