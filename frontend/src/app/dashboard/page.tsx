@@ -34,19 +34,121 @@ export default function Dashboard() {
   const [activeJobs, setActiveJobs] = useState(0);
   const [userName, setUserName] = useState('');
   const [greeting, setGreeting] = useState('');
+  const [activeJobsList, setActiveJobsList] = useState<any[]>([]);
+  const [activities, setActivities] = useState<any[]>(ACTIVITIES);
 
   useEffect(() => {
     const hour = new Date().getHours();
     setGreeting(hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening');
     const raw = localStorage.getItem('current_user');
     if (raw) { try { const u = JSON.parse(raw); setUserName(u.full_name?.split(' ')[0] || ''); } catch {} }
-    // Fetch real counts from actual endpoints
-    api.get('/models').then(r => setModelCount(Array.isArray(r.data) ? r.data.length : 0)).catch(() => {});
-    api.get('/datasets').then(r => setDatasetCount(Array.isArray(r.data) ? r.data.length : 0)).catch(() => {});
-    api.get('/training/jobs').then(r => {
-      const running = (r.data || []).filter((j: any) => j.status === 'pending' || j.status === 'training');
-      setActiveJobs(running.length);
+    
+    // Load local counts to merge
+    let localModelCount = 0;
+    let localModelsList: any[] = [];
+    try {
+      localModelsList = JSON.parse(localStorage.getItem('local_models') || '[]');
+      localModelCount = localModelsList.length;
+    } catch {}
+
+    let localDatasetCount = 0;
+    let localDatasetsList: any[] = [];
+    try {
+      localDatasetsList = JSON.parse(localStorage.getItem('local_datasets') || '[]');
+      localDatasetCount = localDatasetsList.length;
+    } catch {}
+
+    let localActiveJobsCount = 0;
+    let localJobsList: any[] = [];
+    try {
+      localJobsList = JSON.parse(localStorage.getItem('local_jobs') || '[]');
+      localActiveJobsCount = localJobsList.filter((j: any) => j.status === 'pending' || j.status === 'training').length;
+    } catch {}
+
+    setModelCount(localModelCount);
+    setDatasetCount(localDatasetCount);
+    setActiveJobs(localActiveJobsCount);
+
+    // Fetch real counts from actual endpoints and merge them
+    api.get('/models').then(r => {
+      const dbCount = Array.isArray(r.data) ? r.data.length : 0;
+      setModelCount(dbCount + localModelCount);
     }).catch(() => {});
+
+    api.get('/datasets').then(r => {
+      const dbCount = Array.isArray(r.data) ? r.data.length : 0;
+      setDatasetCount(dbCount + localDatasetCount);
+    }).catch(() => {});
+
+    // Active Jobs and active list
+    const fetchJobsData = async () => {
+      let dbActiveCount = 0;
+      let dbActiveJobs: any[] = [];
+      try {
+        const res = await api.get('/training/jobs');
+        const dbJobs = res.data || [];
+        const running = dbJobs.filter((j: any) => j.status === 'pending' || j.status === 'training');
+        dbActiveCount = running.length;
+        dbActiveJobs = running;
+      } catch {}
+
+      setActiveJobs(dbActiveCount + localActiveJobsCount);
+
+      // Construct active jobs list
+      const combinedActive = [...dbActiveJobs, ...localJobsList.filter((j: any) => j.status === 'pending' || j.status === 'training')].map(job => ({
+        id: job.id,
+        name: job.model_name || job.job_id || 'unnamed-job',
+        progress: job.progress || 0,
+        epoch: `${job.current_epoch || 1}/${job.total_epochs || 5}`,
+        eta: job.status === 'completed' ? 'Done' : job.eta || '~10 min'
+      }));
+      setActiveJobsList(combinedActive);
+    };
+
+    fetchJobsData();
+
+    // Construct dynamic activities feed
+    const localActivities: any[] = [];
+    localModelsList.forEach((m: any) => {
+      localActivities.push({
+        id: `model-${m.id}`,
+        action: 'Model created',
+        target: m.name,
+        time: 'Just now',
+        status: 'completed' as const
+      });
+    });
+
+    localDatasetsList.forEach((d: any) => {
+      localActivities.push({
+        id: `dataset-${d.id}`,
+        action: 'Dataset uploaded',
+        target: d.name,
+        time: 'Just now',
+        status: 'completed' as const
+      });
+    });
+
+    localJobsList.forEach((j: any) => {
+      let timeStr = 'Recently';
+      const timeDiff = Date.now() - j.id;
+      if (timeDiff < 60000) {
+        timeStr = 'Just now';
+      } else if (timeDiff < 3600000) {
+        timeStr = `${Math.round(timeDiff / 60000)} min ago`;
+      }
+      localActivities.push({
+        id: `job-${j.id}`,
+        action: j.status === 'completed' ? 'Fine-tuning completed' : j.status === 'failed' ? 'Training failed' : 'Training started',
+        target: j.model_name || j.job_id,
+        time: timeStr,
+        status: j.status === 'completed' ? ('completed' as const) : j.status === 'failed' ? ('failed' as const) : ('running' as const)
+      });
+    });
+
+    // Merge and show the latest 6 activities
+    const combinedActivities = [...localActivities, ...ACTIVITIES].slice(0, 6);
+    setActivities(combinedActivities);
   }, []);
 
   return (
@@ -159,7 +261,7 @@ export default function Dashboard() {
           <div className="rounded-2xl p-5" style={S.card}>
             <p className="text-sm font-semibold mb-4" style={S.textPrimary}>Recent activity</p>
             <div className="space-y-0.5">
-              {ACTIVITIES.map(item => (
+              {activities.map(item => (
                 <div key={item.id} className="flex items-start gap-2.5 py-2.5" style={S.divider}>
                   <div className="mt-0.5 shrink-0">
                     {item.status === 'completed' && <CheckCircle2 className="w-3.5 h-3.5" style={{ color: 'var(--md-success)' }} />}
@@ -214,25 +316,32 @@ export default function Dashboard() {
               </Link>
             </div>
             <div className="space-y-4">
-              {[
-                { name: 'llama3-sentiment-v2', progress: 78, epoch: '4/5', eta: '~18 min' },
-                { name: 'gpt2-code-assistant', progress: 34, epoch: '2/5', eta: '~1 hr' },
-              ].map(job => (
-                <div key={job.name}>
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--md-primary)' }} />
-                      <span className="text-xs font-mono" style={S.textSecondary}>{job.name}</span>
-                    </div>
-                    <span className="text-[10px] font-mono" style={S.textSecondary}>Epoch {job.epoch} · {job.eta}</span>
-                  </div>
-                  <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--md-surface-3)' }}>
-                    <motion.div initial={{ width: 0 }} animate={{ width: `${job.progress}%` }} transition={{ duration: 0.8, ease: 'easeOut' }}
-                      className="h-full rounded-full" style={{ background: 'var(--md-primary)' }} />
-                  </div>
-                  <p className="text-[10px] mt-1 font-mono" style={S.textSecondary}>{job.progress}%</p>
+              {activeJobsList.length === 0 ? (
+                <div className="py-8 text-center flex flex-col items-center justify-center gap-2">
+                  <Activity className="w-8 h-8 text-gray-400 opacity-60 animate-pulse" />
+                  <p className="text-xs font-medium" style={S.textSecondary}>No active jobs running</p>
+                  <Link href="/dashboard/training">
+                    <span className="text-[10px] font-semibold text-purple-400 hover:underline">Start a new run &rarr;</span>
+                  </Link>
                 </div>
-              ))}
+              ) : (
+                activeJobsList.map(job => (
+                  <div key={job.id}>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: 'var(--md-primary)' }} />
+                        <span className="text-xs font-mono truncate max-w-[180px]" style={S.textSecondary}>{job.name}</span>
+                      </div>
+                      <span className="text-[10px] font-mono" style={S.textSecondary}>Epoch {job.epoch} · {job.eta}</span>
+                    </div>
+                    <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--md-surface-3)' }}>
+                      <motion.div initial={{ width: 0 }} animate={{ width: `${job.progress}%` }} transition={{ duration: 0.8, ease: 'easeOut' }}
+                        className="h-full rounded-full" style={{ background: 'var(--md-primary)' }} />
+                    </div>
+                    <p className="text-[10px] mt-1 font-mono" style={S.textSecondary}>{job.progress}%</p>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </motion.div>
