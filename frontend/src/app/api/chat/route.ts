@@ -14,9 +14,9 @@ export async function POST(req: Request) {
     };
 
     // Fetch keys directly from the database
-    const nvidiaKey = await checkKey("Nvidia NIM");
-    const groqKey = await checkKey("Groq Cloud");
-    const geminiKey = await checkKey("Google Gemini");
+    const nvidiaKey = await checkKey("Nvidia");
+    const groqKey = await checkKey("Groq");
+    const geminiKey = await checkKey("Gemini");
 
     let reply = "";
 

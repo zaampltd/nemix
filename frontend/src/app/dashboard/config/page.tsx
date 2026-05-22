@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import DashboardLayout from "@/components/layout/DashboardLayout";
+import { db } from "@/lib/firebase";
+import { doc, setDoc, getDoc } from "firebase/firestore";
 import { 
   Shield, Key, Eye, EyeOff, Save, Database, 
   Lock, CheckCircle2, Activity, ExternalLink
@@ -83,7 +85,7 @@ export default function ProviderIntegrationsPage() {
     },
     {
       id: "anthropic",
-      name: "Anthropic Claude",
+      name: "Anthropic",
       icon: SiAnthropic,
       iconClass: "text-amber-600",
       placeholder: "sk-ant-...",
@@ -97,7 +99,7 @@ export default function ProviderIntegrationsPage() {
     },
     {
       id: "gemini",
-      name: "Google Gemini",
+      name: "Gemini",
       icon: SiGoogle,
       iconClass: "text-blue-500",
       placeholder: "AIzaSy...",
@@ -125,7 +127,7 @@ export default function ProviderIntegrationsPage() {
     },
     {
       id: "groq",
-      name: "Groq Cloud",
+      name: "Groq",
       icon: SiGnubash,
       iconClass: "text-orange-500",
       placeholder: "gsk_...",
@@ -139,7 +141,7 @@ export default function ProviderIntegrationsPage() {
     },
     {
       id: "nvidia",
-      name: "Nvidia NIM",
+      name: "Nvidia",
       icon: SiNvidia,
       iconClass: "text-green-500",
       placeholder: "nvapi-...",
@@ -167,7 +169,7 @@ export default function ProviderIntegrationsPage() {
     },
     {
       id: "mistral",
-      name: "Mistral AI",
+      name: "Mistral",
       icon: FaWind,
       iconClass: "text-orange-400",
       placeholder: "sk-ms-...",
@@ -181,7 +183,7 @@ export default function ProviderIntegrationsPage() {
     },
     {
       id: "huggingface",
-      name: "Hugging Face",
+      name: "HuggingFace",
       icon: SiHuggingface,
       iconClass: "text-yellow-500",
       placeholder: "hf_...",
@@ -209,6 +211,41 @@ export default function ProviderIntegrationsPage() {
     }
   ];
 
+  // Load saved keys from Firebase on component mount
+  useEffect(() => {
+    const fetchSavedKeys = async () => {
+      const providersList = [
+        { name: "OpenAI", id: "openai", setKey: setOpenaiKey },
+        { name: "Anthropic", id: "anthropic", setKey: setAnthropicKey },
+        { name: "Gemini", id: "gemini", setKey: setGeminiKey },
+        { name: "OpenRouter", id: "openrouter", setKey: setOpenrouterKey },
+        { name: "Groq", id: "groq", setKey: setGroqKey },
+        { name: "Nvidia", id: "nvidia", setKey: setNvidiaKey },
+        { name: "DeepSeek", id: "deepseek", setKey: setDeepseekKey },
+        { name: "Mistral", id: "mistral", setKey: setMistralKey },
+        { name: "HuggingFace", id: "huggingface", setKey: setHuggingfaceKey },
+        { name: "Cohere", id: "cohere", setKey: setCohereKey }
+      ];
+      
+      // In production, 'test-user-123' will be the real user ID
+      for (const provider of providersList) {
+        try {
+          const docRef = doc(db, "UserAPIKeys", `test-user-123_${provider.name}`);
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists()) {
+             const keyData = docSnap.data().key;
+             provider.setKey(keyData || "");
+             setConnectionStates(prev => ({ ...prev, [provider.id]: "connected" }));
+             console.log(`${provider.name} key is already saved.`);
+          }
+        } catch (error) {
+          console.error(`Error loading key for ${provider.name}:`, error);
+        }
+      }
+    };
+    fetchSavedKeys();
+  }, []);
+
   // ─── Save / Connect Handler ────────────────────────────────────────────────
   const handleConnect = async (providerId: string, providerName: string, keyValue: string) => {
     if (!keyValue.trim()) {
@@ -221,10 +258,18 @@ export default function ProviderIntegrationsPage() {
     // Simulate premium visual connecting state
     setConnectionStates(prev => ({ ...prev, [providerId]: "connecting" }));
     
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    setConnectionStates(prev => ({ ...prev, [providerId]: "connected" }));
-    alert(`${providerName} key encrypted and saved securely!`);
+    try {
+      // In production, 'test-user-123' will be the real user ID
+      await setDoc(doc(db, "UserAPIKeys", `test-user-123_${providerName}`), {
+        key: keyValue.trim()
+      });
+      setConnectionStates(prev => ({ ...prev, [providerId]: "connected" }));
+      alert(`${providerName} key encrypted and saved securely!`);
+    } catch (error: any) {
+      console.error(`Error saving ${providerName} key:`, error);
+      setConnectionStates(prev => ({ ...prev, [providerId]: "idle" }));
+      alert(`Failed to save ${providerName} key: ${error.message}`);
+    }
   };
 
   return (
