@@ -10,7 +10,7 @@ import {
   signOut,
   User as FirebaseUser
 } from 'firebase/auth';
-import { auth, googleProvider } from '@/lib/firebase';
+import { auth, googleProvider, githubProvider } from '@/lib/firebase';
 
 interface UserProfile {
   email: string;
@@ -25,6 +25,7 @@ interface AuthContextType {
   loginWithEmail: (email: string, pass: string) => Promise<any>;
   signUpWithEmail: (name: string, email: string, pass: string) => Promise<any>;
   loginWithGoogle: () => Promise<any>;
+  loginWithGithub: () => Promise<any>;
   logout: () => Promise<void>;
 }
 
@@ -119,6 +120,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // Github OAuth Sign In
+  const loginWithGithub = async () => {
+    setLoading(true);
+    try {
+      const credential = await signInWithPopup(auth, githubProvider);
+      return credential.user;
+    } catch (error: any) {
+      setLoading(false);
+      throw error;
+    }
+  };
+
   // Logout
   const logout = async () => {
     setLoading(true);
@@ -144,6 +157,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       loginWithEmail,
       signUpWithEmail,
       loginWithGoogle,
+      loginWithGithub,
       logout
     }}>
       {children}

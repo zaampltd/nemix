@@ -1,5 +1,5 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider, GithubAuthProvider } from 'firebase/auth';
 
 // ─── Firebase Client Configuration ─────────────────────────────────────────
 // Reads from Next.js public environment variables.
@@ -23,5 +23,7 @@ export const auth = getAuth(app);
 // Configure Providers
 export const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
+
+export const githubProvider = new GithubAuthProvider();
 
 export default app;
