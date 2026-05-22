@@ -9,30 +9,24 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 
 interface Message {
-  id: number;
-  role: "user" | "assistant";
-  content: string;
-  timestamp: string;
+  role: "user" | "ai";
+  text: string;
 }
 
 export default function PlaygroundPage() {
   // ─── State Management ──────────────────────────────────────────────────────
   const [messages, setMessages] = useState<Message[]>([
     {
-      id: 1,
       role: "user",
-      content: "How can I deploy a local edge routing gateway?",
-      timestamp: "10:24 AM"
+      text: "How can I deploy a local edge routing gateway?"
     },
     {
-      id: 2,
-      role: "assistant",
-      content: "You can deploy it using the Nemix Edge SDK. Navigate to the Edge Router section in the sidebar to download the edge configuration, install `@nemix/sdk` via npm, and initialize it with your secure client-side encryption key.\n\n```javascript\nimport { NemixRouter } from '@nemix/sdk';\n\nconst router = new NemixRouter({\n  apiKey: process.env.NEMIX_API_KEY,\n  fallbackChain: ['openai', 'anthropic', 'gemini']\n});\n```\nThis setup allows full local client execution with absolute offline-first protection.",
-      timestamp: "10:25 AM"
+      role: "ai",
+      text: "You can deploy it using the Nemix Edge SDK. Navigate to the Edge Router section in the sidebar to download the edge configuration, install `@nemix/sdk` via npm, and initialize it with your secure client-side encryption key.\n\n```javascript\nimport { NemixRouter } from '@nemix/sdk';\n\nconst router = new NemixRouter({\n  apiKey: process.env.NEMIX_API_KEY,\n  fallbackChain: ['openai', 'anthropic', 'gemini']\n});\n```\nThis setup allows full local client execution with absolute offline-first protection."
     }
   ]);
-  const [input, setInput] = useState("");
-  const [isTyping, setIsTyping] = useState(false);
+  const [inputMessage, setInputMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   
   // Sidebar config settings
   const [routingMode, setRoutingMode] = useState("auto");
@@ -50,48 +44,47 @@ export default function PlaygroundPage() {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages, isTyping]);
+  }, [messages, isLoading]);
 
   // ─── Send message handler ──────────────────────────────────────────────────
-  const handleSend = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim() || isTyping) return;
+  const handleSendMessage = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!inputMessage.trim() || isLoading) return;
 
-    const userMessage: Message = {
-      id: Date.now(),
-      role: "user",
-      content: input,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    };
+    const userMessage = inputMessage.trim();
+    
+    // 1. Add user message to UI immediately
+    setMessages(prev => [...prev, { role: "user", text: userMessage }]);
+    setInputMessage("");
+    setIsLoading(true);
 
-    setMessages(prev => [...prev, userMessage]);
-    const currentInput = input;
-    setInput("");
-    setIsTyping(true);
+    try {
+      // 2. Call our real backend API
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: userMessage,
+          systemPrompt: systemPrompt, // using the state from the left panel
+          temperature: temperature    // using the state from the left panel
+        }),
+      });
 
-    // Simulate ChatGPT-style typing latency & response
-    setTimeout(() => {
-      let aiResponseText = "";
-      const query = currentInput.toLowerCase();
+      const data = await response.json();
 
-      if (query.includes("hello") || query.includes("hi ") || query.includes("hey")) {
-        aiResponseText = `Hello! I am your AI assistant running in **${routingMode === "auto" ? "Nemix Edge Router (Auto)" : routingMode === "gemini" ? "Direct: Gemini" : "Direct: Groq"}** mode. I have loaded your system prompt:\n\n> "${systemPrompt}"\n\nHow can I help you today?`;
-      } else if (query.includes("code") || query.includes("write") || query.includes("function")) {
-        aiResponseText = "Here is a clean implementation for your request:\n\n```typescript\ninterface RouterConfig {\n  provider: string;\n  latency: number;\n  active: boolean;\n}\n\nexport function validateActiveRoute(routes: RouterConfig[]): RouterConfig | null {\n  return routes.find(r => r.active && r.latency < 100) || null;\n}\n```\nThis checks for active routes and prioritizes models with a latency lower than 100ms.";
-      } else {
-        aiResponseText = `I have received your prompt: "${currentInput}".\n\nHere are the details under current parameters:\n* **Routing Engine**: \`${routingMode.toUpperCase()}\`\n* **Temperature**: \`${temperature}\`\n* **System Context Length**: \`${systemPrompt.length} chars\`\n* **Max Completion Limit**: \`${maxTokens} tokens\``;
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to get response");
       }
 
-      const aiMessage: Message = {
-        id: Date.now() + 1,
-        role: "assistant",
-        content: aiResponseText,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      };
-
-      setMessages(prev => [...prev, aiMessage]);
-      setIsTyping(false);
-    }, 1500);
+      // 3. Add AI response to UI
+      setMessages(prev => [...prev, { role: "ai", text: data.reply }]);
+      
+    } catch (error: any) {
+      console.error("Chat Error:", error);
+      setMessages(prev => [...prev, { role: "ai", text: `Error: ${error.message}. Please check console or API keys.` }]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Clear chat handler
@@ -357,11 +350,11 @@ export default function PlaygroundPage() {
                     </div>
                   </div>
                 ) : (
-                  messages.map((msg) => {
+                  messages.map((msg, index) => {
                     const isUser = msg.role === "user";
                     return (
                       <motion.div
-                        key={msg.id}
+                        key={index}
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0 }}
@@ -396,12 +389,12 @@ export default function PlaygroundPage() {
                               color: "var(--md-on-surface)"
                             }}
                           >
-                            {isUser ? <p>{msg.content}</p> : renderMessageContent(msg.content)}
+                            {isUser ? <p>{msg.text}</p> : renderMessageContent(msg.text)}
                           </div>
                           
                           {/* Timestamp / Role */}
                           <div className={`text-[9px] opacity-50 px-1 font-semibold flex ${isUser ? "justify-end" : "justify-start"}`} style={{ color: "var(--md-on-surface-var)" }}>
-                            {msg.timestamp}
+                            {isUser ? "User" : "AI"}
                           </div>
                         </div>
                       </motion.div>
@@ -410,7 +403,7 @@ export default function PlaygroundPage() {
                 )}
 
                 {/* Animated Typing bouncing dots */}
-                {isTyping && (
+                {isLoading && (
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -440,14 +433,14 @@ export default function PlaygroundPage() {
 
             {/* Bottom input fixed message container */}
             <div className="p-4 border-t" style={{ borderColor: "var(--md-outline-var)", background: "var(--md-surface-2)" }}>
-              <form onSubmit={handleSend} className="relative flex items-center">
+              <form onSubmit={handleSendMessage} className="relative flex items-center">
                 <textarea
-                  value={input}
-                  onChange={e => setInput(e.target.value)}
+                  value={inputMessage}
+                  onChange={e => setInputMessage(e.target.value)}
                   onKeyDown={e => {
                     if (e.key === "Enter" && !e.shiftKey) {
                       e.preventDefault();
-                      handleSend(e);
+                      handleSendMessage(e);
                     }
                   }}
                   placeholder={routingMode === "auto" ? "Send a prompt to Edge Router Gateway..." : `Send a prompt to ${routingMode.toUpperCase()}...`}
@@ -462,7 +455,7 @@ export default function PlaygroundPage() {
                 
                 <button
                   type="submit"
-                  disabled={!input.trim() || isTyping}
+                  disabled={!inputMessage.trim() || isLoading}
                   className="absolute right-3.5 w-8 h-8 rounded-xl flex items-center justify-center transition-all disabled:opacity-40 cursor-pointer shadow-sm"
                   style={{
                     background: "var(--md-primary)",
