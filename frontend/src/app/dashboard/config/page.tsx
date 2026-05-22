@@ -7,11 +7,17 @@ import {
   Shield, Key, Eye, EyeOff, Save, Database, 
   Lock, CheckCircle2, Activity, ExternalLink
 } from "lucide-react";
+import { 
+  SiOpenai, SiAnthropic, SiGoogle, SiVectorworks, 
+  SiGnubash, SiNvidia, SiHuggingface
+} from "react-icons/si";
+import { FaBrain, FaWind, FaDatabase } from "react-icons/fa";
 
 interface Provider {
   id: string;
   name: string;
-  logoUrl: string;
+  icon: React.ComponentType<any>;
+  iconClass: string;
   placeholder: string;
   value: string;
   setValue: (val: string) => void;
@@ -20,28 +26,6 @@ interface Provider {
   color: string;
   docUrl: string;
   description: string;
-}
-
-// ─── Robust Image Loader with Themed Fallback ────────────────────────────────
-function LogoImage({ src, alt }: { src: string; alt: string }) {
-  const [error, setError] = useState(false);
-
-  if (error || !src) {
-    return (
-      <div className="w-full h-full flex items-center justify-center bg-purple-500/10 text-[var(--md-primary)] font-bold text-xs uppercase tracking-wider rounded-lg">
-        {alt.slice(0, 2)}
-      </div>
-    );
-  }
-
-  return (
-    <img 
-      src={src} 
-      alt={alt} 
-      className="w-full h-full object-contain"
-      onError={() => setError(true)}
-    />
-  );
 }
 
 export default function ProviderIntegrationsPage() {
@@ -81,12 +65,13 @@ export default function ProviderIntegrationsPage() {
     cohere: "idle"
   });
 
-  // ─── Providers Setup with Official SVG URLs ────────────────────────────────
+  // ─── Providers Setup with react-icons ──────────────────────────────────────
   const providers: Provider[] = [
     {
       id: "openai",
       name: "OpenAI",
-      logoUrl: "https://cdn.worldvectorlogo.com/logos/openai-2.svg",
+      icon: SiOpenai,
+      iconClass: "text-emerald-500",
       placeholder: "sk-proj-...",
       value: openaiKey,
       setValue: setOpenaiKey,
@@ -99,7 +84,8 @@ export default function ProviderIntegrationsPage() {
     {
       id: "anthropic",
       name: "Anthropic Claude",
-      logoUrl: "https://cdn.worldvectorlogo.com/logos/anthropic.svg",
+      icon: SiAnthropic,
+      iconClass: "text-amber-600",
       placeholder: "sk-ant-...",
       value: anthropicKey,
       setValue: setAnthropicKey,
@@ -112,7 +98,8 @@ export default function ProviderIntegrationsPage() {
     {
       id: "gemini",
       name: "Google Gemini",
-      logoUrl: "https://cdn.worldvectorlogo.com/logos/google-gemini.svg",
+      icon: SiGoogle,
+      iconClass: "text-blue-500",
       placeholder: "AIzaSy...",
       value: geminiKey,
       setValue: setGeminiKey,
@@ -125,7 +112,8 @@ export default function ProviderIntegrationsPage() {
     {
       id: "openrouter",
       name: "OpenRouter",
-      logoUrl: "https://openrouter.ai/icon.png",
+      icon: SiVectorworks,
+      iconClass: "text-purple-500",
       placeholder: "sk-or-v1-...",
       value: openrouterKey,
       setValue: setOpenrouterKey,
@@ -138,7 +126,8 @@ export default function ProviderIntegrationsPage() {
     {
       id: "groq",
       name: "Groq Cloud",
-      logoUrl: "https://groq.com/wp-content/uploads/2024/03/Groq-Logomark-Black.svg",
+      icon: SiGnubash,
+      iconClass: "text-orange-500",
       placeholder: "gsk_...",
       value: groqKey,
       setValue: setGroqKey,
@@ -151,7 +140,8 @@ export default function ProviderIntegrationsPage() {
     {
       id: "nvidia",
       name: "Nvidia NIM",
-      logoUrl: "https://cdn.worldvectorlogo.com/logos/nvidia-icon.svg",
+      icon: SiNvidia,
+      iconClass: "text-green-500",
       placeholder: "nvapi-...",
       value: nvidiaKey,
       setValue: setNvidiaKey,
@@ -164,7 +154,8 @@ export default function ProviderIntegrationsPage() {
     {
       id: "deepseek",
       name: "DeepSeek",
-      logoUrl: "https://cdn.worldvectorlogo.com/logos/deepseek.svg",
+      icon: FaBrain,
+      iconClass: "text-blue-600",
       placeholder: "sk-ds-...",
       value: deepseekKey,
       setValue: setDeepseekKey,
@@ -177,7 +168,8 @@ export default function ProviderIntegrationsPage() {
     {
       id: "mistral",
       name: "Mistral AI",
-      logoUrl: "https://mistral.ai/images/logo_hub.svg",
+      icon: FaWind,
+      iconClass: "text-orange-400",
       placeholder: "sk-ms-...",
       value: mistralKey,
       setValue: setMistralKey,
@@ -190,7 +182,8 @@ export default function ProviderIntegrationsPage() {
     {
       id: "huggingface",
       name: "Hugging Face",
-      logoUrl: "https://cdn.worldvectorlogo.com/logos/huggingface-2.svg",
+      icon: SiHuggingface,
+      iconClass: "text-yellow-500",
       placeholder: "hf_...",
       value: huggingfaceKey,
       setValue: setHuggingfaceKey,
@@ -203,7 +196,8 @@ export default function ProviderIntegrationsPage() {
     {
       id: "cohere",
       name: "Cohere",
-      logoUrl: "https://cdn.worldvectorlogo.com/logos/cohere-logo.svg",
+      icon: FaDatabase,
+      iconClass: "text-slate-700 dark:text-slate-200",
       placeholder: "co-...",
       value: cohereKey,
       setValue: setCohereKey,
@@ -291,6 +285,7 @@ export default function ProviderIntegrationsPage() {
           <AnimatePresence>
             {providers.map((p, index) => {
               const status = connectionStates[p.id];
+              const IconComponent = p.icon;
               return (
                 <motion.div
                   key={p.id}
@@ -308,11 +303,11 @@ export default function ProviderIntegrationsPage() {
 
                   <div className="space-y-4 relative z-10">
                     
-                    {/* Header: Title, Official Logo, Docs link */}
+                    {/* Header: Title, Bulletproof react-icons logo, Docs link */}
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-white dark:bg-white flex items-center justify-center shadow-sm p-1.5 shrink-0 border border-neutral-200 dark:border-neutral-200">
-                          <LogoImage src={p.logoUrl} alt={p.name} />
+                        <div className="w-10 h-10 rounded-xl bg-black/5 dark:bg-white/5 flex items-center justify-center shrink-0">
+                          <IconComponent className={`w-6 h-6 ${p.iconClass} object-contain`} />
                         </div>
                         <div>
                           <h3 className="text-xs font-bold truncate max-w-[120px]" style={{ color: "var(--md-on-surface)" }}>
