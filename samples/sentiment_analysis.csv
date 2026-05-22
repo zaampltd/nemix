@@ -1,0 +1,26 @@
+text,label
+"The platform is extremely fast, intuitive, and the documentation made it very easy to integrate.",positive
+"I am very disappointed with the slow response times and frequent API timeouts.",negative
+"It is decent, does what it claims but lacks some advanced analytics features.",neutral
+"Absolutely incredible customer service! They resolved my integration issue in less than 5 minutes.",positive
+"This is a complete waste of money. The SDK is full of bugs and doesn't load.",negative
+"The interface is clean and minimal, but it takes time to get used to the workflow.",neutral
+"I highly recommend this tool to all machine learning engineers fine-tuning models.",positive
+"Very confusing settings page. I could not figure out how to generate an API token.",negative
+"An average product that gets the job done for simple text classification.",neutral
+"The dynamic dark mode implementation looks stunning and premium!",positive
+"I received a billing error and no response from support for three days straight.",negative
+"It works fine on desktop, but the mobile layout is slightly squished.",neutral
+"Outstanding performance! We scaled our training pipelines with zero downtime.",positive
+"The model keeps hallucinating and the fine-tuning options are very limited.",negative
+"A standard SQL client with no unique features compared to free open-source tools.",neutral
+"Best SAAS tool we have adopted this year. Save us hundreds of engineering hours.",positive
+"I encountered several compilation errors when trying to run the Next.js production build.",negative
+"Documentation covers the basic API calls but lacks details on webhook payload specs.",neutral
+"Perfect integration with our Firebase Auth setup. Real SSO took 10 minutes to wire up.",positive
+"The serverless cold starts are awful. Our latency spikes up to 4 seconds.",negative
+"The Pricing tab is simple to understand, although I would love a pay-as-you-go option.",neutral
+"The AI playground is pure magic. Being able to compare models side-by-side is a game changer.",positive
+"It has too many complex settings that serve no purpose for general developers.",negative
+"The analytics graphs are easy to read, but I want to export them as raw JSON.",neutral
+"Brilliant design! The micro-animations make the app feel alive and responsive.",positive
