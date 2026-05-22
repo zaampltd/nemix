@@ -4,15 +4,14 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { 
-  Shield, Key, Eye, EyeOff, Save, Database, Sparkles, 
-  Lock, CheckCircle2, Activity, ExternalLink, Cpu, Zap,
-  Brain, Terminal, Cloud, Sliders, GitBranch
+  Shield, Key, Eye, EyeOff, Save, Database, 
+  Lock, CheckCircle2, Activity, ExternalLink
 } from "lucide-react";
 
 interface Provider {
   id: string;
   name: string;
-  icon: React.ComponentType<any>;
+  logoUrl: string;
   placeholder: string;
   value: string;
   setValue: (val: string) => void;
@@ -21,6 +20,28 @@ interface Provider {
   color: string;
   docUrl: string;
   description: string;
+}
+
+// ─── Robust Image Loader with Themed Fallback ────────────────────────────────
+function LogoImage({ src, alt }: { src: string; alt: string }) {
+  const [error, setError] = useState(false);
+
+  if (error || !src) {
+    return (
+      <div className="w-full h-full flex items-center justify-center bg-purple-500/10 text-[var(--md-primary)] font-bold text-xs uppercase tracking-wider rounded-lg">
+        {alt.slice(0, 2)}
+      </div>
+    );
+  }
+
+  return (
+    <img 
+      src={src} 
+      alt={alt} 
+      className="w-full h-full object-contain"
+      onError={() => setError(true)}
+    />
+  );
 }
 
 export default function ProviderIntegrationsPage() {
@@ -60,12 +81,12 @@ export default function ProviderIntegrationsPage() {
     cohere: "idle"
   });
 
-  // ─── Providers Setup ───────────────────────────────────────────────────────
+  // ─── Providers Setup with Official SVG URLs ────────────────────────────────
   const providers: Provider[] = [
     {
       id: "openai",
       name: "OpenAI",
-      icon: Sparkles,
+      logoUrl: "https://cdn.worldvectorlogo.com/logos/openai-2.svg",
       placeholder: "sk-proj-...",
       value: openaiKey,
       setValue: setOpenaiKey,
@@ -78,7 +99,7 @@ export default function ProviderIntegrationsPage() {
     {
       id: "anthropic",
       name: "Anthropic Claude",
-      icon: Shield,
+      logoUrl: "https://cdn.worldvectorlogo.com/logos/anthropic.svg",
       placeholder: "sk-ant-...",
       value: anthropicKey,
       setValue: setAnthropicKey,
@@ -91,7 +112,7 @@ export default function ProviderIntegrationsPage() {
     {
       id: "gemini",
       name: "Google Gemini",
-      icon: Zap,
+      logoUrl: "https://cdn.worldvectorlogo.com/logos/google-gemini.svg",
       placeholder: "AIzaSy...",
       value: geminiKey,
       setValue: setGeminiKey,
@@ -104,7 +125,7 @@ export default function ProviderIntegrationsPage() {
     {
       id: "openrouter",
       name: "OpenRouter",
-      icon: GitBranch,
+      logoUrl: "https://openrouter.ai/icon.png",
       placeholder: "sk-or-v1-...",
       value: openrouterKey,
       setValue: setOpenrouterKey,
@@ -117,7 +138,7 @@ export default function ProviderIntegrationsPage() {
     {
       id: "groq",
       name: "Groq Cloud",
-      icon: Cpu,
+      logoUrl: "https://groq.com/wp-content/uploads/2024/03/Groq-Logomark-Black.svg",
       placeholder: "gsk_...",
       value: groqKey,
       setValue: setGroqKey,
@@ -130,7 +151,7 @@ export default function ProviderIntegrationsPage() {
     {
       id: "nvidia",
       name: "Nvidia NIM",
-      icon: Database,
+      logoUrl: "https://cdn.worldvectorlogo.com/logos/nvidia-icon.svg",
       placeholder: "nvapi-...",
       value: nvidiaKey,
       setValue: setNvidiaKey,
@@ -143,7 +164,7 @@ export default function ProviderIntegrationsPage() {
     {
       id: "deepseek",
       name: "DeepSeek",
-      icon: Brain,
+      logoUrl: "https://cdn.worldvectorlogo.com/logos/deepseek.svg",
       placeholder: "sk-ds-...",
       value: deepseekKey,
       setValue: setDeepseekKey,
@@ -156,7 +177,7 @@ export default function ProviderIntegrationsPage() {
     {
       id: "mistral",
       name: "Mistral AI",
-      icon: Cloud,
+      logoUrl: "https://mistral.ai/images/logo_hub.svg",
       placeholder: "sk-ms-...",
       value: mistralKey,
       setValue: setMistralKey,
@@ -169,7 +190,7 @@ export default function ProviderIntegrationsPage() {
     {
       id: "huggingface",
       name: "Hugging Face",
-      icon: Sliders,
+      logoUrl: "https://cdn.worldvectorlogo.com/logos/huggingface-2.svg",
       placeholder: "hf_...",
       value: huggingfaceKey,
       setValue: setHuggingfaceKey,
@@ -182,7 +203,7 @@ export default function ProviderIntegrationsPage() {
     {
       id: "cohere",
       name: "Cohere",
-      icon: Terminal,
+      logoUrl: "https://cdn.worldvectorlogo.com/logos/cohere-logo.svg",
       placeholder: "co-...",
       value: cohereKey,
       setValue: setCohereKey,
@@ -287,11 +308,11 @@ export default function ProviderIntegrationsPage() {
 
                   <div className="space-y-4 relative z-10">
                     
-                    {/* Header: Title, Icon, Docs link */}
+                    {/* Header: Title, Official Logo, Docs link */}
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-3">
-                        <div className={`p-2.5 rounded-xl bg-gradient-to-br ${p.color} text-white shadow-sm`}>
-                          <p.icon className="w-5 h-5" />
+                        <div className="w-10 h-10 rounded-xl bg-white dark:bg-white flex items-center justify-center shadow-sm p-1.5 shrink-0 border border-neutral-200 dark:border-neutral-200">
+                          <LogoImage src={p.logoUrl} alt={p.name} />
                         </div>
                         <div>
                           <h3 className="text-xs font-bold truncate max-w-[120px]" style={{ color: "var(--md-on-surface)" }}>
