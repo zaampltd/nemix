@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import { Button } from '@/components/ui/Button';
 import { 
   Play, 
   Pause, 
@@ -225,10 +224,10 @@ export default function TrainingVisualizer() {
   };
 
   const stages = [
-    { title: 'Data Processing', icon: Database, color: 'text-blue-400', desc: 'Syntax checks & sanitization' },
-    { title: 'Tokenization', icon: Hash, color: 'text-yellow-400', desc: 'Encoding text to subwords' },
-    { title: 'Gradient Descent', icon: TrendingDown, color: 'text-purple-400', desc: 'LoRA weight optimizations' },
-    { title: 'Weight Merging', icon: GitMerge, color: 'text-emerald-400', desc: 'Consolidating parameters' },
+    { title: 'Data Processing', icon: Database, desc: 'Syntax checks & sanitization' },
+    { title: 'Tokenization', icon: Hash, desc: 'Encoding text to subwords' },
+    { title: 'Gradient Descent', icon: TrendingDown, desc: 'LoRA weight optimizations' },
+    { title: 'Weight Merging', icon: GitMerge, desc: 'Consolidating parameters' },
   ];
 
   return (
@@ -238,48 +237,67 @@ export default function TrainingVisualizer() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <Link href="/dashboard/training">
-              <div className="p-2 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all cursor-pointer">
+              <div className="p-2 rounded-xl border transition-all cursor-pointer hover:bg-black/5 dark:hover:bg-white/5"
+                style={{ background: 'var(--md-surface-1)', borderColor: 'var(--md-outline)', color: 'var(--md-on-surface-var)' }}>
                 <ArrowLeft className="w-5 h-5" />
               </div>
             </Link>
             <div>
-              <h1 className="text-3xl font-bold tracking-tight mb-1 premium-text-glow flex items-center gap-2">
-                <Flame className="w-7 h-7 text-purple-400 animate-pulse" />
+              <h1 className="text-3xl font-bold tracking-tight mb-1 flex items-center gap-2" style={{ color: 'var(--md-on-surface)' }}>
+                <Flame className="w-7 h-7 text-purple-400 animate-pulse animate-duration-1000" />
                 Fine-Tuning Visualizer
               </h1>
-              <p className="text-gray-400">Interactive live pipeline tracking weights optimization and tokens flow.</p>
+              <p className="text-sm" style={{ color: 'var(--md-on-surface-var)' }}>Interactive live pipeline tracking weights optimization and tokens flow.</p>
             </div>
           </div>
 
           {/* Quick Simulation controls */}
-          <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md">
+          <div className="flex items-center gap-2 p-1.5 rounded-2xl border backdrop-blur-md"
+            style={{ background: 'var(--md-surface-2)', borderColor: 'var(--md-outline)' }}>
             {isPlaying ? (
-              <Button onClick={pauseSimulation} variant="secondary" className="rounded-xl border border-white/5 hover:bg-white/10 gap-1.5 py-1 px-3 text-xs">
-                <Pause className="w-3.5 h-3.5 text-yellow-400" />
+              <button 
+                onClick={pauseSimulation} 
+                className="flex items-center gap-1.5 py-1.5 px-3 rounded-xl border text-xs font-semibold cursor-pointer transition-colors hover:bg-black/5 dark:hover:bg-white/5"
+                style={{ background: 'var(--md-surface-1)', borderColor: 'var(--md-outline)', color: 'var(--md-on-surface)' }}
+              >
+                <Pause className="w-3.5 h-3.5 text-amber-500" />
                 Pause
-              </Button>
+              </button>
             ) : (
-              <Button onClick={startSimulation} variant="secondary" className="rounded-xl border border-white/5 hover:bg-white/10 gap-1.5 py-1 px-3 text-xs">
-                <Play className="w-3.5 h-3.5 text-green-400" />
+              <button 
+                onClick={startSimulation} 
+                className="flex items-center gap-1.5 py-1.5 px-3 rounded-xl border text-xs font-semibold cursor-pointer transition-colors hover:bg-black/5 dark:hover:bg-white/5"
+                style={{ background: 'var(--md-surface-1)', borderColor: 'var(--md-outline)', color: 'var(--md-on-surface)' }}
+              >
+                <Play className="w-3.5 h-3.5 text-emerald-500" />
                 {activeStep === 4 ? "Restart" : "Start"}
-              </Button>
+              </button>
             )}
 
-            <Button onClick={cycleSpeed} variant="secondary" className="rounded-xl border border-white/5 hover:bg-white/10 gap-1.5 py-1 px-3 text-xs font-mono">
-              <FastForward className="w-3.5 h-3.5 text-blue-400" />
+            <button 
+              onClick={cycleSpeed} 
+              className="flex items-center gap-1.5 py-1.5 px-3 rounded-xl border text-xs font-mono font-semibold cursor-pointer transition-colors hover:bg-black/5 dark:hover:bg-white/5"
+              style={{ background: 'var(--md-surface-1)', borderColor: 'var(--md-outline)', color: 'var(--md-on-surface)' }}
+            >
+              <FastForward className="w-3.5 h-3.5 text-blue-500" />
               {getSpeedLabel()}
-            </Button>
+            </button>
 
-            <Button onClick={resetSimulation} variant="secondary" className="rounded-xl border border-white/5 hover:bg-white/10 p-1 px-2.5 text-xs">
-              <RotateCcw className="w-3.5 h-3.5 text-red-400" />
-            </Button>
+            <button 
+              onClick={resetSimulation} 
+              className="flex items-center py-1.5 px-3.5 rounded-xl border text-xs font-semibold cursor-pointer transition-colors hover:bg-black/5 dark:hover:bg-white/5"
+              style={{ background: 'var(--md-surface-1)', borderColor: 'var(--md-outline)', color: 'var(--md-on-surface)' }}
+            >
+              <RotateCcw className="w-3.5 h-3.5 text-rose-500" />
+            </button>
           </div>
         </div>
 
         {/* Core Canvas Interactive Section */}
-        <div className="glass rounded-3xl border border-white/5 p-8 relative overflow-hidden bg-[#050505]/40 backdrop-blur-xl min-h-[380px] flex flex-col justify-center">
-          {/* Animated Matrix grid-bg pattern */}
-          <div className="absolute inset-0 grid-bg opacity-30 pointer-events-none" />
+        <div className="rounded-3xl border p-8 relative overflow-hidden backdrop-blur-xl min-h-[380px] flex flex-col justify-center transition-all"
+          style={{ background: 'var(--md-surface-1)', borderColor: 'var(--md-outline)', boxShadow: 'var(--shadow-2)' }}>
+          {/* Animated grid-bg pattern */}
+          <div className="absolute inset-0 grid-bg opacity-[0.07] dark:opacity-[0.15] pointer-events-none" />
 
           {/* SVG Pipeline Lines Container */}
           <div className="absolute inset-0 w-full h-full pointer-events-none hidden md:block">
@@ -287,9 +305,10 @@ export default function TrainingVisualizer() {
               {/* Pipe 1 -> 2 */}
               <path 
                 d="M 190 190 L 370 190" 
-                stroke="rgba(255,255,255,0.05)" 
+                stroke="var(--md-outline)" 
                 strokeWidth="4" 
                 strokeLinecap="round" 
+                strokeOpacity="0.4"
               />
               {isPlaying && activeStep === 0 && (
                 <path 
@@ -306,9 +325,10 @@ export default function TrainingVisualizer() {
               {/* Pipe 2 -> 3 */}
               <path 
                 d="M 450 190 L 630 190" 
-                stroke="rgba(255,255,255,0.05)" 
+                stroke="var(--md-outline)" 
                 strokeWidth="4" 
                 strokeLinecap="round" 
+                strokeOpacity="0.4"
               />
               {isPlaying && activeStep === 1 && (
                 <path 
@@ -325,9 +345,10 @@ export default function TrainingVisualizer() {
               {/* Pipe 3 -> 4 */}
               <path 
                 d="M 710 190 L 890 190" 
-                stroke="rgba(255,255,255,0.05)" 
+                stroke="var(--md-outline)" 
                 strokeWidth="4" 
                 strokeLinecap="round" 
+                strokeOpacity="0.4"
               />
               {isPlaying && activeStep === 2 && (
                 <path 
@@ -369,13 +390,22 @@ export default function TrainingVisualizer() {
                 <div 
                   key={i} 
                   className={cn(
-                    "glass p-6 rounded-3xl border text-center transition-all duration-300 flex flex-col justify-between min-h-[220px]",
-                    isCurrent 
-                      ? "border-purple-500 bg-purple-500/5 shadow-[0_0_30px_rgba(168,85,247,0.1)] scale-105" 
-                      : isDone 
-                      ? "border-emerald-500/30 bg-emerald-500/[0.01]" 
-                      : "border-white/5 opacity-60"
+                    "p-6 rounded-3xl border text-center transition-all duration-300 flex flex-col justify-between min-h-[220px]",
+                    isCurrent ? "scale-105" : "opacity-75"
                   )}
+                  style={{
+                    background: isCurrent
+                      ? 'var(--md-surface-1)'
+                      : isDone
+                      ? 'var(--md-surface-1)'
+                      : 'var(--md-surface-2)',
+                    borderColor: isCurrent
+                      ? 'var(--md-primary)'
+                      : isDone
+                      ? 'var(--md-success)'
+                      : 'var(--md-outline-var)',
+                    boxShadow: isCurrent ? '0 0 25px var(--md-primary-container)' : 'none',
+                  }}
                 >
                   <div className="flex flex-col items-center">
                     {/* Glowing active pulse circle */}
@@ -383,44 +413,56 @@ export default function TrainingVisualizer() {
                       {isCurrent && (
                         <span className="absolute -inset-2 rounded-full bg-purple-500/20 animate-ping" />
                       )}
-                      <div className={cn(
-                        "w-12 h-12 rounded-2xl flex items-center justify-center border",
-                        isCurrent 
-                          ? "bg-purple-500/20 border-purple-400 text-purple-300"
-                          : isDone 
-                          ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
-                          : "bg-white/5 border-white/5 text-gray-500"
-                      )}>
+                      <div className="w-12 h-12 rounded-2xl flex items-center justify-center border transition-colors"
+                        style={{
+                          background: isCurrent 
+                            ? 'var(--md-primary-container)' 
+                            : isDone 
+                            ? 'var(--md-success-cont)' 
+                            : 'var(--md-surface-3)',
+                          borderColor: isCurrent 
+                            ? 'var(--md-primary)' 
+                            : isDone 
+                            ? 'var(--md-success)' 
+                            : 'var(--md-outline)',
+                          color: isCurrent 
+                            ? 'var(--md-primary)' 
+                            : isDone 
+                            ? 'var(--md-success)' 
+                            : 'var(--md-on-surface-var)',
+                        }}>
                         {isDone ? <CheckCircle2 className="w-6 h-6" /> : <stage.icon className="w-6 h-6" />}
                       </div>
                     </div>
 
-                    <h3 className="font-semibold text-sm tracking-tight text-white">{stage.title}</h3>
-                    <p className="text-[10px] text-gray-500 mt-1">{stage.desc}</p>
+                    <h3 className="font-semibold text-sm tracking-tight" style={{ color: 'var(--md-on-surface)' }}>{stage.title}</h3>
+                    <p className="text-[10px] mt-1" style={{ color: 'var(--md-on-surface-var)' }}>{stage.desc}</p>
                   </div>
 
                   {/* Progress Indicator inside nodes */}
                   <div className="mt-6 space-y-2">
                     {isCurrent ? (
                       <div className="space-y-1">
-                        <div className="flex justify-between text-[8px] font-mono text-purple-400 px-1">
+                        <div className="flex justify-between text-[8px] font-mono px-1" style={{ color: 'var(--md-primary)' }}>
                           <span>STAGE PROGRESS</span>
                           <span>{progress}%</span>
                         </div>
-                        <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                        <div className="h-1.5 w-full rounded-full overflow-hidden" style={{ background: 'var(--md-surface-3)' }}>
                           <motion.div 
-                            className="h-full bg-purple-500 rounded-full"
-                            style={{ width: `${progress}%` }}
+                            className="h-full rounded-full"
+                            style={{ width: `${progress}%`, background: 'var(--md-primary)' }}
                             transition={{ duration: 0.1 }}
                           />
                         </div>
                       </div>
                     ) : isDone ? (
-                      <span className="inline-block text-[9px] uppercase tracking-wider font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+                      <span className="inline-block text-[9px] uppercase tracking-wider font-mono px-2.5 py-1 rounded-full font-semibold border"
+                        style={{ background: 'var(--md-success-cont)', color: 'var(--md-success)', borderColor: 'var(--md-success)' }}>
                         COMPLETED
                       </span>
                     ) : (
-                      <span className="inline-block text-[9px] uppercase tracking-wider font-mono text-gray-600 bg-white/[0.02] px-2 py-0.5 rounded-full">
+                      <span className="inline-block text-[9px] uppercase tracking-wider font-mono px-2.5 py-1 rounded-full border"
+                        style={{ background: 'var(--md-surface-3)', color: 'var(--md-on-surface-var)', borderColor: 'var(--md-outline-var)' }}>
                         IDLE
                       </span>
                     )}
@@ -443,67 +485,72 @@ export default function TrainingVisualizer() {
         {/* Live Metrics Overlay & Logs Window */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Real-time Loss/Accuracy Graph Overlay (Updated dynamically!) */}
-          <div className="glass rounded-3xl border border-white/5 p-6 space-y-6 flex flex-col justify-between">
+          <div className="rounded-3xl border p-6 space-y-6 flex flex-col justify-between transition-all"
+            style={{ background: 'var(--md-surface-1)', borderColor: 'var(--md-outline)', boxShadow: 'var(--shadow-1)' }}>
             <div>
-              <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
-                <Settings className="w-4 h-4 text-purple-400" />
+              <h3 className="text-sm font-semibold uppercase tracking-widest flex items-center gap-1.5" style={{ color: 'var(--md-on-surface-var)' }}>
+                <Settings className="w-4 h-4" style={{ color: 'var(--md-primary)' }} />
                 Simulation Metrics
               </h3>
-              <p className="text-xs text-gray-500 mt-1">Live metrics calculated during optimization stage.</p>
+              <p className="text-xs mt-1" style={{ color: 'var(--md-on-surface-var)' }}>Live metrics calculated during optimization stage.</p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               {/* Training Loss */}
-              <div className="p-4 rounded-2xl bg-white/[0.01] border border-white/5">
-                <span className="text-[10px] text-gray-500 font-mono block">VAL LOSS</span>
-                <span className="text-2xl font-bold font-mono text-purple-400 mt-1 block">
+              <div className="p-4 rounded-2xl border" style={{ background: 'var(--md-surface-2)', borderColor: 'var(--md-outline-var)' }}>
+                <span className="text-[10px] font-mono block" style={{ color: 'var(--md-on-surface-var)' }}>VAL LOSS</span>
+                <span className="text-2xl font-bold font-mono mt-1 block" style={{ color: 'var(--md-primary)' }}>
                   {activeStep === 2 || activeStep === 3 || activeStep === 4 ? currentLoss.toFixed(3) : "—"}
                 </span>
               </div>
 
               {/* Accuracy */}
-              <div className="p-4 rounded-2xl bg-white/[0.01] border border-white/5">
-                <span className="text-[10px] text-gray-500 font-mono block">ACCURACY</span>
-                <span className="text-2xl font-bold font-mono text-emerald-400 mt-1 block">
+              <div className="p-4 rounded-2xl border" style={{ background: 'var(--md-surface-2)', borderColor: 'var(--md-outline-var)' }}>
+                <span className="text-[10px] font-mono block" style={{ color: 'var(--md-on-surface-var)' }}>ACCURACY</span>
+                <span className="text-2xl font-bold font-mono mt-1 block" style={{ color: 'var(--md-success)' }}>
                   {activeStep === 2 || activeStep === 3 || activeStep === 4 ? `${(currentAcc * 100).toFixed(1)}%` : "—"}
                 </span>
               </div>
             </div>
 
-            <div className="text-[10px] text-gray-600 font-mono uppercase tracking-wider text-center pt-2">
+            <div className="text-[10px] font-mono uppercase tracking-wider text-center pt-2" style={{ color: 'var(--md-on-surface-var)' }}>
               Optimizer: AdamW (lr: 2e-5, weight_decay: 0.01)
             </div>
           </div>
 
           {/* Real-Time Terminal Log Stream */}
-          <div className="lg:col-span-2 glass rounded-3xl border border-white/5 p-6 flex flex-col h-[280px]">
-            <div className="flex justify-between items-center border-b border-white/5 pb-3 mb-3">
+          <div className="lg:col-span-2 rounded-3xl border p-6 flex flex-col h-[280px] transition-all"
+            style={{ background: 'var(--md-surface-1)', borderColor: 'var(--md-outline)', boxShadow: 'var(--shadow-1)' }}>
+            <div className="flex justify-between items-center border-b pb-3 mb-3" style={{ borderColor: 'var(--md-outline-var)' }}>
               <div className="flex items-center gap-2">
-                <Terminal className="w-4 h-4 text-gray-400" />
-                <span className="text-xs font-semibold text-gray-300">Live Console Execution Stream</span>
+                <Terminal className="w-4 h-4" style={{ color: 'var(--md-on-surface-var)' }} />
+                <span className="text-xs font-semibold" style={{ color: 'var(--md-on-surface)' }}>Live Console Execution Stream</span>
               </div>
-              <span className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse" />
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse animate-duration-1000" />
             </div>
 
-            <div className="flex-1 overflow-y-auto font-mono text-[11px] leading-relaxed space-y-1.5 scrollbar-none pr-2 bg-black/40 p-4 rounded-2xl border border-white/5">
+            <div className="flex-1 overflow-y-auto font-mono text-[11px] leading-relaxed space-y-1.5 scrollbar-none pr-2 p-4 rounded-2xl border"
+              style={{ background: 'var(--md-surface-2)', borderColor: 'var(--md-outline-var)' }}>
               {logs.map((log, i) => (
                 <div key={i} className="flex gap-2.5 items-start">
-                  <span className="text-gray-600 select-none shrink-0">{log.timestamp}</span>
+                  <span className="select-none shrink-0" style={{ color: 'var(--md-on-surface-var)', opacity: 0.6 }}>{log.timestamp}</span>
                   <span className={cn(
-                    "px-1 py-0.25 rounded-[3px] text-[9px] font-bold shrink-0 uppercase select-none",
-                    log.module === 'DATA' ? "bg-blue-500/20 text-blue-400" :
-                    log.module === 'TOKEN' ? "bg-yellow-500/20 text-yellow-400" :
-                    log.module === 'TRAIN' ? "bg-purple-500/20 text-purple-400" :
-                    log.module === 'MERGE' ? "bg-emerald-500/20 text-emerald-400" : "bg-neutral-500/20 text-neutral-400"
+                    "px-1.5 py-0.5 rounded text-[9px] font-bold shrink-0 uppercase select-none",
+                    log.module === 'DATA' ? "bg-blue-500/10 text-blue-500 border border-blue-500/20" :
+                    log.module === 'TOKEN' ? "bg-amber-500/10 text-amber-500 border border-amber-500/20" :
+                    log.module === 'TRAIN' ? "bg-purple-500/10 text-purple-500 border border-purple-500/20" :
+                    log.module === 'MERGE' ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20" : 
+                    "bg-neutral-500/10 text-neutral-500 border border-neutral-500/20"
                   )}>
                     {log.module}
                   </span>
                   <span className={cn(
                     "flex-1",
-                    log.type === 'success' ? "text-emerald-400" :
-                    log.type === 'warn' ? "text-yellow-400" :
-                    log.type === 'debug' ? "text-blue-400" : "text-gray-300"
-                  )}>
+                    log.type === 'success' ? "text-emerald-500" :
+                    log.type === 'warn' ? "text-amber-500" :
+                    log.type === 'debug' ? "text-blue-500" : ""
+                  )}
+                    style={{ color: log.type === 'info' ? 'var(--md-on-surface)' : undefined }}>
                     {log.text}
                   </span>
                 </div>
