@@ -1,5 +1,6 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, GithubAuthProvider } from 'firebase/auth';
+import { getFirestore } from 'firebase/firestore';
 
 // ─── Firebase Client Configuration ─────────────────────────────────────────
 // Reads from Next.js public environment variables.
@@ -19,6 +20,9 @@ const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
 // Initialize Firebase Auth
 export const auth = getAuth(app);
+
+// Initialize Firebase Firestore
+export const db = getFirestore(app);
 
 // Configure Providers
 export const googleProvider = new GoogleAuthProvider();

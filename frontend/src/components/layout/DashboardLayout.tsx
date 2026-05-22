@@ -34,6 +34,7 @@ const NAV_SECTIONS = [
       { name: "Analytics", href: "/dashboard/analytics", icon: BarChart2 },
       { name: "Pipelines", href: "/dashboard/pipelines", icon: GitBranch },
       { name: "Config Builder", href: "/dashboard/config", icon: Sliders },
+      { name: "Edge Router", href: "/dashboard/router-config", icon: GitBranch },
     ],
   },
   {
