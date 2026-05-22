@@ -9,7 +9,8 @@ import {
   CloudLightning, Code2, Save, FileCode, CheckCircle2, AlertTriangle, ChevronDown
 } from "lucide-react";
 import { db, auth } from "@/lib/firebase";
-import { collection, addDoc } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { useAuth } from "@/context/AuthContext";
 
 // ─── Constants & Available Models ──────────────────────────────────────────
 const PROVIDERS = {
@@ -80,7 +81,7 @@ interface FallbackNode {
 interface ToastMessage {
   id: number;
   message: string;
-  type: "success" | "warning" | "info";
+  type: "success" | "warning" | "info" | "error";
 }
 
 const TRIGGERS = [
@@ -186,6 +187,8 @@ function CustomDropdown({ value, onChange, options }: CustomDropdownProps) {
 }
 
 export default function EdgeRouterPage() {
+  const { firebaseUser, user } = useAuth();
+
   // ─── State Management ──────────────────────────────────────────────────────
   const [configName, setConfigName] = useState("Production Edge Router");
   const [fallbackChain, setFallbackChain] = useState<FallbackNode[]>([
@@ -195,12 +198,13 @@ export default function EdgeRouterPage() {
   ]);
   const [selectedTools, setSelectedTools] = useState<string[]>(["web_search", "math_calculator"]);
   const [sdkLanguage, setSdkLanguage] = useState<"javascript" | "python">("javascript");
+  const [deploymentMode, setDeploymentMode] = useState<"edge" | "cloud">("edge");
   const [copied, setCopied] = useState(false);
-  const [publishing, setPublishing] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
   // ─── Helper: Show Custom Toast Alert ───────────────────────────────────────
-  const showToast = (message: string, type: "success" | "warning" | "info" = "success") => {
+  const showToast = (message: string, type: "success" | "warning" | "info" | "error" = "success") => {
     const id = Date.now();
     setToasts(prev => [...prev, { id, message, type }]);
     setTimeout(() => {
@@ -323,7 +327,45 @@ response = router.generate(
 
 print(response.text)`;
 
-  const activeCode = sdkLanguage === "javascript" ? javascriptCode : pythonCode;
+  const javascriptCloudCode = `// Call the Hosted Nemix Cloud Gateway API via fetch
+const response = await fetch("https://api.nemix.com/v1/gateway", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "Authorization": "Bearer nex_live_xxxxxxxxxxx"
+  },
+  body: JSON.stringify({
+    prompt: "Analyze user query and return structured code.",
+    temperature: 0.2,
+    config: ${JSON.stringify(JSON.parse(generatedJSON), null, 2).replace(/\n/g, "\n    ")}
+  })
+});
+
+const data = await response.json();
+console.log(data.text);`;
+
+  const pythonCloudCode = `import requests
+
+# Call the Hosted Nemix Cloud Gateway API via requests
+response = requests.post(
+    "https://api.nemix.com/v1/gateway",
+    headers={
+        "Content-Type": "application/json",
+        "Authorization": "Bearer nex_live_xxxxxxxxxxx"
+    },
+    json={
+        "prompt": "Analyze user query and return structured code.",
+        "temperature": 0.2,
+        "config": ${JSON.stringify(JSON.parse(generatedJSON), null, 4).replace(/\n/g, "\n        ")}
+    }
+)
+
+data = response.json()
+print(data["text"])`;
+
+  const activeCode = deploymentMode === "edge"
+    ? (sdkLanguage === "javascript" ? javascriptCode : pythonCode)
+    : (sdkLanguage === "javascript" ? javascriptCloudCode : pythonCloudCode);
 
   // ─── Copy to Clipboard Handler ─────────────────────────────────────────────
   const copyToClipboard = () => {
@@ -334,49 +376,35 @@ print(response.text)`;
   };
 
   // ─── Save Configuration to Firestore & Local Storage Fallback ──────────────
-  const publishConfiguration = async () => {
-    setPublishing(true);
-    let userId = "anonymous-dev";
-
+  const handlePublish = async () => {
+    console.log("1. Publish button clicked");
+    setIsPublishing(true);
     try {
-      const rawUser = localStorage.getItem("current_user");
-      if (rawUser) {
-        const u = JSON.parse(rawUser);
-        userId = u.uid || u.id || userId;
-      }
-    } catch {}
-
-    const payload = {
-      userId,
-      name: configName,
-      fallbackChain: fallbackChain.map(n => ({
-        provider: n.provider,
-        model: n.model,
-        trigger: n.trigger
-      })),
-      agenticTools: selectedTools,
-      updatedAt: new Date().toISOString()
-    };
-
-    try {
-      // 1. Attempt Cloud Publish via Firebase Firestore
+      console.log("2. Checking DB instance...");
+      if (!db) throw new Error("Firebase DB is not initialized. Check lib/firebase.ts");
+      
+      console.log("3. Preparing payload...");
+      const payload = {
+        configName: configName,
+        fallbackChain: fallbackChain.map(node => ({
+          provider: node.provider,
+          model: node.model,
+          trigger: node.trigger
+        })),
+        agenticTools: selectedTools,
+        createdAt: serverTimestamp()
+      };
+      
+      console.log("4. Writing to Firestore...");
       await addDoc(collection(db, "RouterConfigs"), payload);
-      
-      // Sync local storage as backup
-      const existing = JSON.parse(localStorage.getItem("local_router_configs") || "[]");
-      localStorage.setItem("local_router_configs", JSON.stringify([payload, ...existing]));
-
-      showToast("Published router configuration to Cloud Control Plane!", "success");
+      console.log("5. Write successful!");
+      alert("Gateway Published Successfully!"); // Using native alert just to test if it reaches here
     } catch (error) {
-      console.warn("Firestore write skipped/offline. Activating offline sandbox fallback:", error);
-      
-      // 2. Offline Sandbox Backup Fallback
-      const existing = JSON.parse(localStorage.getItem("local_router_configs") || "[]");
-      localStorage.setItem("local_router_configs", JSON.stringify([payload, ...existing]));
-      
-      showToast("Offline Sandbox Active: Config saved to local browser storage.", "info");
+      console.error("CRITICAL FIREBASE ERROR:", error);
+      alert("Error saving: Check browser console!");
     } finally {
-      setPublishing(false);
+      console.log("6. Resetting button state...");
+      setIsPublishing(false); // THIS IS CRUCIAL TO STOP THE SAVING SPINNER
     }
   };
 
@@ -396,17 +424,18 @@ print(response.text)`;
                 className="p-4 rounded-2xl flex items-start gap-3 shadow-lg pointer-events-auto border"
                 style={{
                   background: "var(--md-surface-2)",
-                  borderColor: "var(--md-outline)",
+                  borderColor: t.type === "error" ? "rgba(239, 68, 68, 0.4)" : "var(--md-outline)",
                   boxShadow: "var(--shadow-3)",
                 }}
               >
-                <div className="mt-0.5">
+                <div className="mt-0.5 shrink-0">
                   {t.type === "success" && <CheckCircle2 className="w-4 h-4 text-emerald-400" />}
                   {t.type === "warning" && <AlertTriangle className="w-4 h-4 text-amber-400" />}
+                  {t.type === "error" && <AlertTriangle className="w-4 h-4 text-red-500" />}
                   {t.type === "info" && <Sparkles className="w-4 h-4 text-indigo-400" />}
                 </div>
                 <div className="flex-1">
-                  <p className="text-xs font-medium" style={{ color: "var(--md-on-surface)" }}>{t.message}</p>
+                  <p className="text-xs font-medium" style={{ color: t.type === "error" ? "#f87171" : "var(--md-on-surface)" }}>{t.message}</p>
                 </div>
               </motion.div>
             ))}
@@ -426,17 +455,23 @@ print(response.text)`;
             </p>
           </div>
           <button
-            onClick={publishConfiguration}
-            disabled={publishing}
+            onClick={handlePublish}
+            disabled={isPublishing}
             className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold transition-opacity hover:opacity-90 disabled:opacity-50 shrink-0"
             style={{ background: "var(--md-primary)", color: "var(--md-on-primary)", boxShadow: "var(--shadow-2)" }}
           >
-            {publishing ? (
-              <>Saving...</>
+            {isPublishing ? (
+              <span className="flex items-center gap-2">
+                <svg className="animate-spin h-4 w-4 text-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Saving...
+              </span>
             ) : (
-              <>
+              <span className="flex items-center gap-2">
                 <Save className="w-4 h-4" /> Publish Gateway
-              </>
+              </span>
             )}
           </button>
         </motion.div>
@@ -667,6 +702,41 @@ print(response.text)`;
                 boxShadow: "var(--shadow-2)"
               }}
             >
+              {/* Segmented Control Switcher (Right above the EDGE SDK EXPORTER code box) */}
+              <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b"
+                style={{
+                  background: "var(--md-surface-1)",
+                  borderColor: "var(--md-outline)"
+                }}
+              >
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wide" style={{ color: "var(--md-on-surface)" }}>
+                    Deployment Mode
+                  </p>
+                  <p className="text-[10px]" style={{ color: "var(--md-on-surface-var)" }}>
+                    Select between local client execution and hosted cloud API.
+                  </p>
+                </div>
+                <div className="flex bg-black/20 dark:bg-white/5 p-1 rounded-full border border-[var(--md-outline-var)] shadow-inner shrink-0">
+                  {(["edge", "cloud"] as const).map(mode => (
+                    <button
+                      key={mode}
+                      onClick={() => setDeploymentMode(mode)}
+                      className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-300 ${
+                        deploymentMode === mode
+                          ? "shadow-sm scale-[1.02]"
+                          : "opacity-60 hover:opacity-100 hover:bg-white/5 dark:hover:bg-white/5"
+                      }`}
+                      style={{
+                        background: deploymentMode === mode ? "var(--md-primary)" : "transparent",
+                        color: deploymentMode === mode ? "var(--md-on-primary)" : "var(--md-on-surface-var)",
+                      }}
+                    >
+                      {mode === "edge" ? "Edge SDK (Local)" : "Cloud API (Hosted)"}
+                    </button>
+                  ))}
+                </div>
+              </div>
               {/* Tab Header */}
               <div className="flex items-center justify-between px-4 py-3 border-b"
                 style={{
@@ -677,7 +747,7 @@ print(response.text)`;
                 <div className="flex items-center gap-2">
                   <Code2 className="w-4 h-4 text-purple-400" />
                   <span className="text-xs font-bold uppercase tracking-wide" style={{ color: "var(--md-on-surface)" }}>
-                    Edge SDK Exporter
+                    {deploymentMode === "edge" ? "EDGE SDK EXPORTER" : "CLOUD API ENDPOINT"}
                   </span>
                 </div>
                 
@@ -703,6 +773,8 @@ print(response.text)`;
                 </div>
               </div>
 
+
+
               {/* Exporter Instructions */}
               <div className="px-4 py-3 text-[11px] leading-relaxed flex items-start gap-2"
                 style={{
@@ -712,13 +784,28 @@ print(response.text)`;
                 }}
               >
                 <Info className="w-3.5 h-3.5 text-purple-400 shrink-0 mt-0.5" />
-                <span>
-                  Load keys securely from your server's local <code className="font-mono text-purple-400">.env</code> keys. 
-                  Zero API credentials touch Nemix databases, eliminating all cloud leak risks.
-                </span>
+                {deploymentMode === "edge" ? (
+                  <span>
+                    Load keys securely from your server's local <code className="font-mono text-purple-400">.env</code> keys. 
+                    Zero API credentials touch Nemix databases, eliminating all cloud leak risks.
+                  </span>
+                ) : (
+                  <span>
+                    Route your traffic through Nemix's secure, globally distributed hosting gateway. 
+                    Authenticate using your secure Bearer token (<code className="font-mono text-purple-400">nex_live_xxxxxxxxxxx</code>).
+                  </span>
+                )}
               </div>
 
               {/* Code console */}
+              {/* HYBRID DEPLOYMENT TOGGLE */}
+              <div className="flex flex-col md:flex-row justify-between items-center mb-4">
+                <div className="font-bold text-sm tracking-wide text-[var(--md-on-surface)]">DEPLOYMENT MODE</div>
+                <div className="flex p-1 bg-black/10 dark:bg-white/5 rounded-full border border-[var(--md-outline-var)]">
+                   <button type="button" className="px-4 py-1.5 text-xs font-bold rounded-full bg-[var(--md-primary)] text-[var(--md-on-primary)] shadow-sm">Edge SDK</button>
+                   <button type="button" className="px-4 py-1.5 text-xs font-bold rounded-full opacity-60 hover:opacity-100 transition-opacity">Cloud API</button>
+                </div>
+              </div>
               <div className="relative">
                 {/* Copy overlay */}
                 <button
