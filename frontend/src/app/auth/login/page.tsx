@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/context/AuthContext';
+import AnimatedMascot from '@/components/auth/AnimatedMascot';
 
 // ─── Custom Floating Ribbon SVG Component ──────────────────────────────────
 const FloatingRibbon = ({ className = '', delay = 0, duration = 6, color1 = '#ec4899', color2 = '#8b5cf6' }) => (
@@ -414,38 +415,7 @@ function LoginFormInner() {
           </div>
 
           {/* Mascot Floating Scene Area */}
-          <div className="relative w-[340px] h-[340px] flex items-center justify-center z-10 select-none">
-            
-            {/* The 3D Platform Base Ring */}
-            <div className="absolute bottom-2 w-[240px] h-[40px] bg-black/60 rounded-full blur-[8px]" />
-            <div 
-              className="absolute bottom-6 w-[200px] h-[22px] bg-gradient-to-t from-violet-950/80 to-violet-800/40 rounded-full border border-violet-500/20 shadow-[0_12px_30px_rgba(139,92,246,0.3)]"
-              style={{ transform: 'rotateX(55deg)' }}
-            />
-
-            {/* Glowing Spotlight under avatar */}
-            <div className="absolute bottom-7 w-[130px] h-[130px] bg-violet-500/20 rounded-full blur-xl animate-pulse" />
-
-            {/* Animated Mascot Image wrapper */}
-            <motion.div
-              animate={{
-                y: [0, -15, 0],
-              }}
-              transition={{
-                duration: 6,
-                repeat: Infinity,
-                ease: "easeInOut",
-              }}
-              className="w-full h-full relative flex items-center justify-center"
-            >
-              {/* Mascot Image */}
-              <img 
-                src="/auth_avatar.png" 
-                alt="AI Developer Mascot" 
-                className="max-w-[280px] max-h-[280px] object-contain drop-shadow-[0_15px_30px_rgba(0,0,0,0.6)]"
-              />
-            </motion.div>
-          </div>
+          <AnimatedMascot />
           
         </motion.div>
 
