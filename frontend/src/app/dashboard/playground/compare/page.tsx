@@ -316,15 +316,15 @@ export default function ModelComparisonArena() {
         {/* Header Section */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight mb-2 premium-text-glow flex items-center gap-2">
-              <ArrowLeftRight className="w-7 h-7 text-purple-400" />
+            <h1 className="text-xl font-semibold flex items-center gap-2" style={{ color: 'var(--md-on-surface)' }}>
+              <ArrowLeftRight className="w-5 h-5 text-purple-400 animate-pulse" />
               Model Comparison Arena
             </h1>
-            <p className="text-gray-400">Benchmarking and side-by-side playground testing environment.</p>
+            <p className="text-sm mt-1" style={{ color: 'var(--md-on-surface-var)' }}>Benchmarking and side-by-side playground testing environment.</p>
           </div>
           <div className="flex items-center gap-3">
             <Link href="/dashboard/playground">
-              <Button variant="secondary" className="rounded-2xl border border-white/5 bg-white/5 hover:bg-white/10 gap-2">
+              <Button variant="secondary" className="rounded-xl border gap-2 text-xs" style={{ background: 'var(--md-surface-1)', border: '1px solid var(--md-outline)', color: 'var(--md-on-surface-var)' }}>
                 <MessageSquare className="w-4 h-4 text-purple-400" />
                 Single Playground
               </Button>
@@ -338,20 +338,21 @@ export default function ModelComparisonArena() {
           <div className="relative">
             <div 
               onClick={() => setStateA(prev => ({ ...prev, dropdownOpen: !prev.dropdownOpen }))}
-              className="glass px-5 py-4 rounded-2xl flex items-center justify-between border border-white/5 cursor-pointer hover:bg-white/5 transition-all select-none hover:border-purple-500/20"
+              style={{ background: 'var(--md-surface-1)', border: '1px solid var(--md-outline)' }}
+              className="px-5 py-4 rounded-2xl flex items-center justify-between cursor-pointer hover:opacity-95 transition-all select-none"
             >
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-xl bg-purple-500/10 flex items-center justify-center border border-purple-500/20">
                   <Bot className="w-4.5 h-4.5 text-purple-400" />
                 </div>
                 <div>
-                  <span className="text-[10px] text-gray-500 block uppercase font-mono tracking-wider">Model Arena A</span>
-                  <span className="text-sm font-semibold text-white">
+                  <span className="text-[10px] block uppercase font-mono tracking-wider" style={{ color: 'var(--md-on-surface-var)', opacity: 0.7 }}>Model Arena A</span>
+                  <span className="text-sm font-semibold" style={{ color: 'var(--md-on-surface)' }}>
                     {stateA.model ? `${stateA.model.name} ${stateA.model.local ? '[Local]' : '[Cloud]'}` : "Select Model A..."}
                   </span>
                 </div>
               </div>
-              <ChevronDown className={cn("w-4 h-4 text-gray-500 transition-transform duration-200", stateA.dropdownOpen ? "rotate-180" : "")} />
+              <ChevronDown className={cn("w-4 h-4 transition-transform duration-200", stateA.dropdownOpen ? "rotate-180" : "")} style={{ color: 'var(--md-on-surface-var)' }} />
             </div>
 
             <AnimatePresence>
@@ -360,10 +361,11 @@ export default function ModelComparisonArena() {
                   initial={{ opacity: 0, y: 8, scale: 0.98 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 8, scale: 0.98 }}
-                  className="absolute left-0 right-0 top-full mt-2 glass rounded-2xl border border-white/10 p-2 shadow-2xl z-50 flex flex-col bg-black/90 backdrop-blur-xl max-h-64 overflow-y-auto"
+                  style={{ background: 'var(--md-surface-1)', border: '1px solid var(--md-outline)', boxShadow: 'var(--shadow-3)' }}
+                  className="absolute left-0 right-0 top-full mt-2 rounded-2xl p-2 z-50 flex flex-col max-h-64 overflow-y-auto"
                 >
                   {modelsList.length === 0 ? (
-                    <div className="p-4 text-center text-xs text-gray-500">No models found.</div>
+                    <div className="p-4 text-center text-xs" style={{ color: 'var(--md-on-surface-var)' }}>No models found.</div>
                   ) : (
                     modelsList.map((model) => (
                       <button
@@ -386,21 +388,23 @@ export default function ModelComparisonArena() {
                             ]
                           }));
                         }}
-                        className={cn(
-                          "w-full text-left px-4 py-2.5 rounded-xl text-xs font-medium transition-all hover:bg-white/5 flex flex-col gap-0.5",
-                          stateA.model?.id === model.id ? "bg-purple-500/20 text-purple-300 font-semibold" : "text-gray-400 hover:text-white"
-                        )}
+                        style={{
+                          background: stateA.model?.id === model.id && stateA.model?.local === model.local ? 'var(--md-primary-container)' : 'transparent',
+                          color: stateA.model?.id === model.id && stateA.model?.local === model.local ? 'var(--md-on-primary-cont)' : 'var(--md-on-surface-var)',
+                        }}
+                        className="w-full text-left px-4 py-2.5 rounded-xl text-xs font-medium transition-all flex flex-col gap-0.5"
                       >
                         <span className="truncate block text-sm flex items-center justify-between">
                           {model.name}
-                          <span className={cn(
-                            "text-[8px] px-1.5 py-0.5 rounded font-mono uppercase",
-                            model.local ? "bg-purple-500/20 text-purple-400 border border-purple-500/30" : "bg-blue-500/20 text-blue-400 border border-blue-500/30"
-                          )}>
+                          <span className="text-[8px] px-1.5 py-0.5 rounded font-mono uppercase"
+                            style={{
+                              background: model.local ? 'var(--md-primary-container)' : 'var(--md-surface-2)',
+                              color: 'var(--md-on-primary-cont)'
+                            }}>
                             {model.local ? 'Local' : 'Cloud'}
                           </span>
                         </span>
-                        <span className="text-[10px] text-gray-500 truncate block font-normal">{model.base_model}</span>
+                        <span className="text-[10px] truncate block font-normal" style={{ color: 'var(--md-on-surface-var)', opacity: 0.7 }}>{model.base_model}</span>
                       </button>
                     ))
                   )}
@@ -413,20 +417,21 @@ export default function ModelComparisonArena() {
           <div className="relative">
             <div 
               onClick={() => setStateB(prev => ({ ...prev, dropdownOpen: !prev.dropdownOpen }))}
-              className="glass px-5 py-4 rounded-2xl flex items-center justify-between border border-white/5 cursor-pointer hover:bg-white/5 transition-all select-none hover:border-purple-500/20"
+              style={{ background: 'var(--md-surface-1)', border: '1px solid var(--md-outline)' }}
+              className="px-5 py-4 rounded-2xl flex items-center justify-between cursor-pointer hover:opacity-95 transition-all select-none"
             >
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-xl bg-purple-500/10 flex items-center justify-center border border-purple-500/20">
                   <Bot className="w-4.5 h-4.5 text-purple-400" />
                 </div>
                 <div>
-                  <span className="text-[10px] text-gray-500 block uppercase font-mono tracking-wider">Model Arena B</span>
-                  <span className="text-sm font-semibold text-white">
+                  <span className="text-[10px] block uppercase font-mono tracking-wider" style={{ color: 'var(--md-on-surface-var)', opacity: 0.7 }}>Model Arena B</span>
+                  <span className="text-sm font-semibold" style={{ color: 'var(--md-on-surface)' }}>
                     {stateB.model ? `${stateB.model.name} ${stateB.model.local ? '[Local]' : '[Cloud]'}` : "Select Model B..."}
                   </span>
                 </div>
               </div>
-              <ChevronDown className={cn("w-4 h-4 text-gray-500 transition-transform duration-200", stateB.dropdownOpen ? "rotate-180" : "")} />
+              <ChevronDown className={cn("w-4 h-4 transition-transform duration-200", stateB.dropdownOpen ? "rotate-180" : "")} style={{ color: 'var(--md-on-surface-var)' }} />
             </div>
 
             <AnimatePresence>
@@ -435,10 +440,11 @@ export default function ModelComparisonArena() {
                   initial={{ opacity: 0, y: 8, scale: 0.98 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 8, scale: 0.98 }}
-                  className="absolute left-0 right-0 top-full mt-2 glass rounded-2xl border border-white/10 p-2 shadow-2xl z-50 flex flex-col bg-black/90 backdrop-blur-xl max-h-64 overflow-y-auto"
+                  style={{ background: 'var(--md-surface-1)', border: '1px solid var(--md-outline)', boxShadow: 'var(--shadow-3)' }}
+                  className="absolute left-0 right-0 top-full mt-2 rounded-2xl p-2 z-50 flex flex-col max-h-64 overflow-y-auto"
                 >
                   {modelsList.length === 0 ? (
-                    <div className="p-4 text-center text-xs text-gray-500">No models found.</div>
+                    <div className="p-4 text-center text-xs" style={{ color: 'var(--md-on-surface-var)' }}>No models found.</div>
                   ) : (
                     modelsList.map((model) => (
                       <button
@@ -461,21 +467,23 @@ export default function ModelComparisonArena() {
                             ]
                           }));
                         }}
-                        className={cn(
-                          "w-full text-left px-4 py-2.5 rounded-xl text-xs font-medium transition-all hover:bg-white/5 flex flex-col gap-0.5",
-                          stateB.model?.id === model.id ? "bg-purple-500/20 text-purple-300 font-semibold" : "text-gray-400 hover:text-white"
-                        )}
+                        style={{
+                          background: stateB.model?.id === model.id && stateB.model?.local === model.local ? 'var(--md-primary-container)' : 'transparent',
+                          color: stateB.model?.id === model.id && stateB.model?.local === model.local ? 'var(--md-on-primary-cont)' : 'var(--md-on-surface-var)',
+                        }}
+                        className="w-full text-left px-4 py-2.5 rounded-xl text-xs font-medium transition-all flex flex-col gap-0.5"
                       >
                         <span className="truncate block text-sm flex items-center justify-between">
                           {model.name}
-                          <span className={cn(
-                            "text-[8px] px-1.5 py-0.5 rounded font-mono uppercase",
-                            model.local ? "bg-purple-500/20 text-purple-400 border border-purple-500/30" : "bg-blue-500/20 text-blue-400 border border-blue-500/30"
-                          )}>
+                          <span className="text-[8px] px-1.5 py-0.5 rounded font-mono uppercase"
+                            style={{
+                              background: model.local ? 'var(--md-primary-container)' : 'var(--md-surface-2)',
+                              color: 'var(--md-on-primary-cont)'
+                            }}>
                             {model.local ? 'Local' : 'Cloud'}
                           </span>
                         </span>
-                        <span className="text-[10px] text-gray-500 truncate block font-normal">{model.base_model}</span>
+                        <span className="text-[10px] truncate block font-normal" style={{ color: 'var(--md-on-surface-var)', opacity: 0.7 }}>{model.base_model}</span>
                       </button>
                     ))
                   )}
@@ -488,28 +496,36 @@ export default function ModelComparisonArena() {
         {/* Dynamic Dual-Chat Panel */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[400px]">
           {/* Chat Window A */}
-          <div className="glass rounded-3xl border border-white/5 flex flex-col overflow-hidden bg-[#050505]/40 backdrop-blur-xl relative">
-            <div className="absolute top-0 left-0 right-0 h-10 bg-gradient-to-b from-black/20 to-transparent pointer-events-none z-10" />
+          <div 
+            style={{ background: 'var(--md-surface-1)', border: '1px solid var(--md-outline)', boxShadow: 'var(--shadow-2)' }}
+            className="rounded-3xl flex flex-col overflow-hidden relative"
+          >
             <div ref={scrollRefA} className="flex-1 overflow-y-auto p-5 space-y-4">
               {stateA.history.map((msg) => (
                 <div key={msg.id} className={cn("flex gap-3 max-w-[90%]", msg.role === 'user' ? "ml-auto flex-row-reverse" : "")}>
-                  <div className={cn(
-                    "w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border",
-                    msg.role === 'assistant' ? "bg-purple-500/10 border-purple-500/20 text-purple-400" : "bg-white/10 border-white/10 text-gray-300"
-                  )}>
+                  <div 
+                    style={
+                      msg.role === 'assistant'
+                        ? { background: 'var(--md-primary)', color: 'var(--md-on-primary)', borderColor: 'var(--md-outline)' }
+                        : { background: 'var(--md-surface-2)', color: 'var(--md-on-surface-var)', borderColor: 'var(--md-outline)' }
+                    }
+                    className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border"
+                  >
                     {msg.role === 'assistant' ? <Bot className="w-4.5 h-4.5" /> : <span className="text-[10px] font-bold">U</span>}
                   </div>
                   <div className="flex flex-col gap-1">
-                    <div className={cn(
-                      "p-3 rounded-2xl text-xs leading-relaxed border",
-                      msg.role === 'assistant' 
-                        ? "bg-white/[0.02] border-white/5 text-gray-200" 
-                        : "bg-purple-600 border-purple-500 text-white"
-                    )}>
+                    <div 
+                      style={
+                        msg.role === 'assistant'
+                          ? { background: 'var(--md-surface-2)', border: '1px solid var(--md-outline)', color: 'var(--md-on-surface)' }
+                          : { background: 'var(--md-primary)', color: 'var(--md-on-primary)' }
+                      }
+                      className="p-3 rounded-2xl text-xs leading-relaxed"
+                    >
                       {msg.content}
                     </div>
                     {msg.role === 'assistant' && msg.latency && msg.latency > 0 ? (
-                      <div className="flex items-center gap-3 px-1 mt-0.5 text-[9px] text-gray-500 font-mono">
+                      <div className="flex items-center gap-3 px-1 mt-0.5 text-[9px] font-mono" style={{ color: 'var(--md-on-surface-var)', opacity: 0.6 }}>
                         <span className="flex items-center gap-0.5"><Clock className="w-3 h-3" /> {msg.latency} ms</span>
                         <span className="flex items-center gap-0.5"><Cpu className="w-3 h-3" /> {msg.tokens} tokens</span>
                       </div>
@@ -519,12 +535,18 @@ export default function ModelComparisonArena() {
               ))}
               {stateA.isTyping && (
                 <div className="flex gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
+                  <div 
+                    style={{ background: 'var(--md-primary)', color: 'var(--md-on-primary)', borderColor: 'var(--md-outline)' }}
+                    className="w-8 h-8 rounded-lg border flex items-center justify-center text-purple-400"
+                  >
                     <Bot className="w-4.5 h-4.5 animate-pulse" />
                   </div>
-                  <div className="bg-white/5 border border-white/5 px-3 py-2 rounded-2xl flex gap-1 items-center">
-                    <span className="w-1.5 h-1.5 bg-gray-500 rounded-full animate-bounce" />
-                    <span className="w-1.5 h-1.5 bg-gray-500 rounded-full animate-bounce [animation-delay:0.2s]" />
+                  <div 
+                    style={{ background: 'var(--md-surface-2)', border: '1px solid var(--md-outline)' }}
+                    className="px-3 py-2 rounded-2xl flex gap-1 items-center"
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: 'var(--md-on-surface-var)' }} />
+                    <span className="w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:0.2s]" style={{ background: 'var(--md-on-surface-var)' }} />
                   </div>
                 </div>
               )}
@@ -532,28 +554,36 @@ export default function ModelComparisonArena() {
           </div>
 
           {/* Chat Window B */}
-          <div className="glass rounded-3xl border border-white/5 flex flex-col overflow-hidden bg-[#050505]/40 backdrop-blur-xl relative">
-            <div className="absolute top-0 left-0 right-0 h-10 bg-gradient-to-b from-black/20 to-transparent pointer-events-none z-10" />
+          <div 
+            style={{ background: 'var(--md-surface-1)', border: '1px solid var(--md-outline)', boxShadow: 'var(--shadow-2)' }}
+            className="rounded-3xl flex flex-col overflow-hidden relative"
+          >
             <div ref={scrollRefB} className="flex-1 overflow-y-auto p-5 space-y-4">
               {stateB.history.map((msg) => (
                 <div key={msg.id} className={cn("flex gap-3 max-w-[90%]", msg.role === 'user' ? "ml-auto flex-row-reverse" : "")}>
-                  <div className={cn(
-                    "w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border",
-                    msg.role === 'assistant' ? "bg-purple-500/10 border-purple-500/20 text-purple-400" : "bg-white/10 border-white/10 text-gray-300"
-                  )}>
+                  <div 
+                    style={
+                      msg.role === 'assistant'
+                        ? { background: 'var(--md-primary)', color: 'var(--md-on-primary)', borderColor: 'var(--md-outline)' }
+                        : { background: 'var(--md-surface-2)', color: 'var(--md-on-surface-var)', borderColor: 'var(--md-outline)' }
+                    }
+                    className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border"
+                  >
                     {msg.role === 'assistant' ? <Bot className="w-4.5 h-4.5" /> : <span className="text-[10px] font-bold">U</span>}
                   </div>
                   <div className="flex flex-col gap-1">
-                    <div className={cn(
-                      "p-3 rounded-2xl text-xs leading-relaxed border",
-                      msg.role === 'assistant' 
-                        ? "bg-white/[0.02] border-white/5 text-gray-200" 
-                        : "bg-purple-600 border-purple-500 text-white"
-                    )}>
+                    <div 
+                      style={
+                        msg.role === 'assistant'
+                          ? { background: 'var(--md-surface-2)', border: '1px solid var(--md-outline)', color: 'var(--md-on-surface)' }
+                          : { background: 'var(--md-primary)', color: 'var(--md-on-primary)' }
+                      }
+                      className="p-3 rounded-2xl text-xs leading-relaxed"
+                    >
                       {msg.content}
                     </div>
                     {msg.role === 'assistant' && msg.latency && msg.latency > 0 ? (
-                      <div className="flex items-center gap-3 px-1 mt-0.5 text-[9px] text-gray-500 font-mono">
+                      <div className="flex items-center gap-3 px-1 mt-0.5 text-[9px] font-mono" style={{ color: 'var(--md-on-surface-var)', opacity: 0.6 }}>
                         <span className="flex items-center gap-0.5"><Clock className="w-3 h-3" /> {msg.latency} ms</span>
                         <span className="flex items-center gap-0.5"><Cpu className="w-3 h-3" /> {msg.tokens} tokens</span>
                       </div>
@@ -563,12 +593,18 @@ export default function ModelComparisonArena() {
               ))}
               {stateB.isTyping && (
                 <div className="flex gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
+                  <div 
+                    style={{ background: 'var(--md-primary)', color: 'var(--md-on-primary)', borderColor: 'var(--md-outline)' }}
+                    className="w-8 h-8 rounded-lg border flex items-center justify-center text-purple-400"
+                  >
                     <Bot className="w-4.5 h-4.5 animate-pulse" />
                   </div>
-                  <div className="bg-white/5 border border-white/5 px-3 py-2 rounded-2xl flex gap-1 items-center">
-                    <span className="w-1.5 h-1.5 bg-gray-500 rounded-full animate-bounce" />
-                    <span className="w-1.5 h-1.5 bg-gray-500 rounded-full animate-bounce [animation-delay:0.2s]" />
+                  <div 
+                    style={{ background: 'var(--md-surface-2)', border: '1px solid var(--md-outline)' }}
+                    className="px-3 py-2 rounded-2xl flex gap-1 items-center"
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: 'var(--md-on-surface-var)' }} />
+                    <span className="w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:0.2s]" style={{ background: 'var(--md-on-surface-var)' }} />
                   </div>
                 </div>
               )}
@@ -577,12 +613,20 @@ export default function ModelComparisonArena() {
         </div>
 
         {/* Input Bar */}
-        <div className="glass rounded-3xl border border-white/5 p-4 bg-black/40 backdrop-blur-md">
+        <div 
+          style={{ background: 'var(--md-surface-2)', border: '1px solid var(--md-outline)' }}
+          className="rounded-3xl p-4"
+        >
           <form onSubmit={handleSend} className="relative">
             <input 
               type="text"
               placeholder="Enter a prompt to broadcast to both Arena models..."
-              className="w-full h-12 bg-white/5 border border-white/10 rounded-2xl pl-5 pr-14 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all text-white"
+              style={{
+                background: 'var(--md-surface)',
+                border: '1px solid var(--md-outline)',
+                color: 'var(--md-on-surface)',
+              }}
+              className="w-full h-12 rounded-2xl pl-5 pr-14 text-xs focus:outline-none transition-all"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               disabled={!stateA.model || !stateB.model || stateA.isTyping || stateB.isTyping}
@@ -592,37 +636,40 @@ export default function ModelComparisonArena() {
               disabled={!input.trim() || stateA.isTyping || stateB.isTyping}
               className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-xl premium-gradient flex items-center justify-center text-white disabled:opacity-50 disabled:grayscale transition-all hover:scale-105 active:scale-95 shadow-lg cursor-pointer"
             >
-              <Send className="w-4 h-4" />
+              <Send className="w-4 h-4" style={{ color: 'var(--md-on-primary)' }} />
             </button>
           </form>
         </div>
 
         {/* High-Fidelity Interactive Telemetry Bar Charts */}
-        <div className="glass rounded-3xl border border-white/5 p-6 space-y-6">
-          <div className="flex items-center justify-between border-b border-white/5 pb-4">
+        <div 
+          style={{ background: 'var(--md-surface-1)', border: '1px solid var(--md-outline)', boxShadow: 'var(--shadow-1)' }}
+          className="rounded-3xl p-6 space-y-6"
+        >
+          <div className="flex items-center justify-between border-b pb-4" style={{ borderColor: 'var(--md-outline-var)' }}>
             <div className="flex items-center gap-2">
               <BarChart3 className="w-5 h-5 text-purple-400 animate-pulse" />
-              <h2 className="text-lg font-bold tracking-tight">Real-Time Performance Analytics</h2>
+              <h2 className="text-lg font-bold tracking-tight" style={{ color: 'var(--md-on-surface)' }}>Real-Time Performance Analytics</h2>
             </div>
-            <span className="text-[9px] font-mono text-gray-500 uppercase tracking-widest bg-white/5 px-2 py-1 rounded">Live Telemetry</span>
+            <span className="text-[9px] font-mono uppercase tracking-widest px-2 py-1 rounded" style={{ background: 'var(--md-surface-2)', color: 'var(--md-on-surface-var)', border: '1px solid var(--md-outline-var)' }}>Live Telemetry</span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {/* Latency (Smaller is better) */}
             <div className="space-y-3">
-              <div className="flex justify-between items-center text-xs font-semibold text-gray-400">
+              <div className="flex justify-between items-center text-xs font-semibold" style={{ color: 'var(--md-on-surface-var)' }}>
                 <span className="flex items-center gap-1.5"><Gauge className="w-3.5 h-3.5 text-blue-400" /> Response Latency</span>
-                <span className="text-[10px] font-mono text-gray-500">Lower is better</span>
+                <span className="text-[10px] font-mono opacity-80">Lower is better</span>
               </div>
               
               <div className="space-y-4 pt-2">
                 {/* Model A */}
                 <div className="space-y-1">
-                  <div className="flex justify-between text-[10px] text-gray-400">
+                  <div className="flex justify-between text-[10px]" style={{ color: 'var(--md-on-surface-var)' }}>
                     <span className="truncate max-w-[70%] font-medium">{stateA.model?.name || "Model A"}</span>
                     <span className="font-mono">{stateA.telemetry.latency} ms</span>
                   </div>
-                  <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
+                  <div className="h-2 w-full rounded-full overflow-hidden" style={{ background: 'var(--md-surface-3)' }}>
                     <motion.div 
                       className="h-full bg-blue-500 rounded-full"
                       initial={{ width: 0 }}
@@ -636,11 +683,11 @@ export default function ModelComparisonArena() {
 
                 {/* Model B */}
                 <div className="space-y-1">
-                  <div className="flex justify-between text-[10px] text-gray-400">
+                  <div className="flex justify-between text-[10px]" style={{ color: 'var(--md-on-surface-var)' }}>
                     <span className="truncate max-w-[70%] font-medium">{stateB.model?.name || "Model B"}</span>
                     <span className="font-mono">{stateB.telemetry.latency} ms</span>
                   </div>
-                  <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
+                  <div className="h-2 w-full rounded-full overflow-hidden" style={{ background: 'var(--md-surface-3)' }}>
                     <motion.div 
                       className="h-full bg-purple-500 rounded-full"
                       initial={{ width: 0 }}
@@ -656,19 +703,19 @@ export default function ModelComparisonArena() {
 
             {/* Generated Tokens (Higher is okay, relates to verbosity) */}
             <div className="space-y-3">
-              <div className="flex justify-between items-center text-xs font-semibold text-gray-400">
+              <div className="flex justify-between items-center text-xs font-semibold" style={{ color: 'var(--md-on-surface-var)' }}>
                 <span className="flex items-center gap-1.5"><Cpu className="w-3.5 h-3.5 text-purple-400" /> Token Count</span>
-                <span className="text-[10px] font-mono text-gray-500">Output length</span>
+                <span className="text-[10px] font-mono opacity-80">Output length</span>
               </div>
               
               <div className="space-y-4 pt-2">
                 {/* Model A */}
                 <div className="space-y-1">
-                  <div className="flex justify-between text-[10px] text-gray-400">
+                  <div className="flex justify-between text-[10px]" style={{ color: 'var(--md-on-surface-var)' }}>
                     <span className="truncate max-w-[70%] font-medium">{stateA.model?.name || "Model A"}</span>
                     <span className="font-mono">{stateA.telemetry.tokens} tokens</span>
                   </div>
-                  <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
+                  <div className="h-2 w-full rounded-full overflow-hidden" style={{ background: 'var(--md-surface-3)' }}>
                     <motion.div 
                       className="h-full bg-blue-500 rounded-full"
                       initial={{ width: 0 }}
@@ -682,11 +729,11 @@ export default function ModelComparisonArena() {
 
                 {/* Model B */}
                 <div className="space-y-1">
-                  <div className="flex justify-between text-[10px] text-gray-400">
+                  <div className="flex justify-between text-[10px]" style={{ color: 'var(--md-on-surface-var)' }}>
                     <span className="truncate max-w-[70%] font-medium">{stateB.model?.name || "Model B"}</span>
                     <span className="font-mono">{stateB.telemetry.tokens} tokens</span>
                   </div>
-                  <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
+                  <div className="h-2 w-full rounded-full overflow-hidden" style={{ background: 'var(--md-surface-3)' }}>
                     <motion.div 
                       className="h-full bg-purple-500 rounded-full"
                       initial={{ width: 0 }}
@@ -702,19 +749,19 @@ export default function ModelComparisonArena() {
 
             {/* Model Confidence / Validation Entropy */}
             <div className="space-y-3">
-              <div className="flex justify-between items-center text-xs font-semibold text-gray-400">
+              <div className="flex justify-between items-center text-xs font-semibold" style={{ color: 'var(--md-on-surface-var)' }}>
                 <span className="flex items-center gap-1.5"><Flame className="w-3.5 h-3.5 text-emerald-400" /> Generation Confidence</span>
-                <span className="text-[10px] font-mono text-gray-500">Heuristic probability</span>
+                <span className="text-[10px] font-mono opacity-80">Heuristic probability</span>
               </div>
               
               <div className="space-y-4 pt-2">
                 {/* Model A */}
                 <div className="space-y-1">
-                  <div className="flex justify-between text-[10px] text-gray-400">
+                  <div className="flex justify-between text-[10px]" style={{ color: 'var(--md-on-surface-var)' }}>
                     <span className="truncate max-w-[70%] font-medium">{stateA.model?.name || "Model A"}</span>
                     <span className="font-mono">{stateA.telemetry.confidence}%</span>
                   </div>
-                  <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
+                  <div className="h-2 w-full rounded-full overflow-hidden" style={{ background: 'var(--md-surface-3)' }}>
                     <motion.div 
                       className="h-full bg-emerald-500 rounded-full"
                       initial={{ width: 0 }}
@@ -726,11 +773,11 @@ export default function ModelComparisonArena() {
 
                 {/* Model B */}
                 <div className="space-y-1">
-                  <div className="flex justify-between text-[10px] text-gray-400">
+                  <div className="flex justify-between text-[10px]" style={{ color: 'var(--md-on-surface-var)' }}>
                     <span className="truncate max-w-[70%] font-medium">{stateB.model?.name || "Model B"}</span>
                     <span className="font-mono">{stateB.telemetry.confidence}%</span>
                   </div>
-                  <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
+                  <div className="h-2 w-full rounded-full overflow-hidden" style={{ background: 'var(--md-surface-3)' }}>
                     <motion.div 
                       className="h-full bg-teal-500 rounded-full"
                       initial={{ width: 0 }}
