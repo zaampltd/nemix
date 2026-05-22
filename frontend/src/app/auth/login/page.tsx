@@ -5,10 +5,11 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Zap, Eye, EyeOff, AlertCircle, Lock, Mail,
-  CheckCircle2, ArrowRight, ShieldCheck, HelpCircle
+  CheckCircle2, ArrowRight, ShieldCheck, Sun, Moon
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/context/AuthContext';
+import { useTheme } from '@/lib/theme';
 import AnimatedMascot from '@/components/auth/AnimatedMascot';
 
 // ─── Custom Floating Ribbon SVG Component ──────────────────────────────────
@@ -73,6 +74,7 @@ function LoginFormInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { loginWithEmail, loginWithGoogle } = useAuth();
+  const { theme, toggle } = useTheme();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -150,29 +152,44 @@ function LoginFormInner() {
   };
 
   return (
-    <div className="relative min-h-screen bg-[#06060c] text-white overflow-hidden flex flex-col font-sans">
+    <div className="relative min-h-screen bg-[var(--md-surface)] text-[var(--md-on-surface)] transition-colors duration-300 overflow-hidden flex flex-col font-sans">
       
       {/* ── Background Glow & Grid ────────────────────────────────────────── */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(124,58,237,0.18),transparent_50%),radial-gradient(circle_at_bottom_left,rgba(236,72,153,0.12),transparent_60%)] pointer-events-none" />
-      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.01)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.01)_1px,transparent_1px)] bg-[size:40px_40px] opacity-20 pointer-events-none" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(124,58,237,0.12),transparent_50%),radial-gradient(circle_at_bottom_left,rgba(236,72,153,0.08),transparent_60%)] dark:bg-[radial-gradient(circle_at_top_right,rgba(124,58,237,0.18),transparent_50%),radial-gradient(circle_at_bottom_left,rgba(236,72,153,0.12),transparent_60%)] pointer-events-none transition-all duration-300" />
+      <div className="absolute inset-0 bg-[linear-gradient(var(--md-outline-var)_1px,transparent_1px),linear-gradient(90deg,var(--md-outline-var)_1px,transparent_1px)] bg-[size:40px_40px] opacity-40 dark:opacity-15 pointer-events-none transition-all duration-300" />
 
       {/* ── Glassmorphic Top Navbar (Dribbble Travel UI Inspired) ────────── */}
       <header className="relative w-full max-w-7xl mx-auto px-6 pt-6 z-40">
-        <div className="flex items-center justify-between px-6 py-3.5 rounded-2xl bg-white/[0.02] border border-white/[0.05] backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.37)]">
+        <div className="flex items-center justify-between px-6 py-3.5 rounded-2xl bg-white/40 dark:bg-white/[0.02] border border-gray-200/50 dark:border-white/[0.05] backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.04)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.37)] transition-all duration-300">
           <Link href="/" className="flex items-center gap-2.5 font-bold tracking-tight">
             <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-violet-600 to-fuchsia-500 flex items-center justify-center shadow-[0_0_15px_rgba(139,92,246,0.5)]">
               <Zap className="w-4.5 h-4.5 text-white fill-white/10" />
             </div>
-            <span className="text-lg font-black tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-300">NEMIX</span>
+            <span className="text-lg font-black tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 transition-all">NEMIX</span>
           </Link>
-          <nav className="hidden sm:flex items-center gap-8 text-[13px] font-semibold text-gray-400">
-            <Link href="/" className="hover:text-white transition-colors">Home</Link>
-            <Link href="/blog" className="hover:text-white transition-colors">Blog</Link>
-            <Link href="/docs" className="hover:text-white transition-colors font-medium">Documentation</Link>
-            <span className="px-3 py-1 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-400 text-[11px] font-bold tracking-wider">v1.2 LAUNCH</span>
+          <nav className="hidden sm:flex items-center gap-8 text-[13px] font-semibold text-gray-500 dark:text-gray-400">
+            <Link href="/" className="hover:text-gray-900 dark:hover:text-white transition-colors">Home</Link>
+            <Link href="/blog" className="hover:text-gray-900 dark:hover:text-white transition-colors">Blog</Link>
+            <Link href="/docs" className="hover:text-gray-900 dark:hover:text-white transition-colors font-medium">Documentation</Link>
+            <span className="px-3 py-1 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-600 dark:text-violet-400 text-[11px] font-bold tracking-wider">v1.2 LAUNCH</span>
           </nav>
-          <div>
-            <Link href="/auth/register" className="text-[13px] font-bold text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-fuchsia-400 hover:from-white hover:to-white transition-all">
+          <div className="flex items-center gap-2">
+            {/* Sleek Theme Switcher Toggle */}
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={toggle}
+              type="button"
+              className="p-2 rounded-xl bg-gray-100/80 dark:bg-white/[0.03] border border-gray-200/60 dark:border-white/10 hover:border-violet-500/30 text-gray-700 dark:text-white transition-all cursor-pointer flex items-center justify-center mr-1"
+              aria-label="Toggle theme"
+            >
+              {theme === "dark" ? (
+                <Sun className="w-4 h-4 text-amber-500 fill-amber-500/20" />
+              ) : (
+                <Moon className="w-4 h-4 text-violet-600 fill-violet-600/10" />
+              )}
+            </motion.button>
+            <Link href="/auth/register" className="text-[13px] font-bold text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-fuchsia-600 dark:from-violet-400 dark:to-fuchsia-400 hover:from-violet-500 hover:to-fuchsia-500 dark:hover:from-white dark:hover:to-white transition-all">
               Sign up free →
             </Link>
           </div>
@@ -190,31 +207,31 @@ function LoginFormInner() {
           className="w-full lg:w-[46%] max-w-[460px] shrink-0"
         >
           {/* Glass Auth Card */}
-          <div className="relative rounded-3xl bg-white/[0.03] border border-white/[0.07] backdrop-blur-2xl p-8 sm:p-10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden">
+          <div className="relative rounded-3xl bg-white/70 dark:bg-white/[0.03] border border-gray-200 dark:border-white/[0.07] backdrop-blur-2xl p-8 sm:p-10 shadow-[0_20px_50px_rgba(0,0,0,0.04)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden transition-all duration-300">
             
             {/* Top decorative gradient glow */}
             <div className="absolute top-0 left-1/4 right-1/4 h-[2px] bg-gradient-to-r from-transparent via-violet-500/50 to-transparent" />
 
             {/* Heading */}
             <div className="mb-8">
-              <h1 className="text-3xl font-extrabold tracking-tight text-white mb-2 bg-gradient-to-r from-white via-gray-100 to-gray-300 bg-clip-text">
+              <h1 className="text-3xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-gray-950 via-gray-800 to-gray-900 dark:from-white dark:via-gray-100 dark:to-gray-300 mb-2">
                 Welcome back 👋
               </h1>
-              <p className="text-sm text-gray-400 font-medium">Log in to enter your futuristic AI workspace</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">Log in to enter your futuristic AI workspace</p>
             </div>
 
             {/* Status alerts */}
             <AnimatePresence>
               {justRegistered && (
                 <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                  className="flex items-center gap-2.5 mb-6 p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold">
+                  className="flex items-center gap-2.5 mb-6 p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-semibold">
                   <CheckCircle2 className="w-4 h-4 shrink-0" />
                   <span>Account successfully created! Sign in below.</span>
                 </motion.div>
               )}
               {sessionExpired && !justRegistered && (
                 <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                  className="flex items-center gap-2.5 mb-6 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-semibold">
+                  className="flex items-center gap-2.5 mb-6 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 text-xs font-semibold">
                   <AlertCircle className="w-4 h-4 shrink-0" />
                   <span>Session expired. Please log in again to continue.</span>
                 </motion.div>
@@ -227,7 +244,8 @@ function LoginFormInner() {
                 whileHover={{ scale: 1.02, y: -1 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={handleGoogleLogin}
-                className="flex items-center justify-center gap-2.5 h-12 rounded-xl bg-white/[0.03] border border-white/10 hover:border-violet-500/30 hover:bg-white/[0.06] text-white text-xs font-bold transition-all cursor-pointer shadow-lg"
+                type="button"
+                className="flex items-center justify-center gap-2.5 h-12 rounded-xl bg-gray-50/50 dark:bg-white/[0.03] border border-gray-200 dark:border-white/10 hover:border-violet-500/30 hover:bg-gray-100 dark:hover:bg-white/[0.06] text-gray-800 dark:text-white text-xs font-bold transition-all cursor-pointer shadow-sm dark:shadow-lg"
               >
                 {/* Custom Google SVG */}
                 <svg className="w-4.5 h-4.5" viewBox="0 0 24 24" fill="currentColor">
@@ -242,7 +260,8 @@ function LoginFormInner() {
                 whileHover={{ scale: 1.02, y: -1 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={handleGoogleLogin} // Wired to same for sandbox fallback compatibility
-                className="flex items-center justify-center gap-2.5 h-12 rounded-xl bg-white/[0.03] border border-white/10 hover:border-fuchsia-500/30 hover:bg-white/[0.06] text-white text-xs font-bold transition-all cursor-pointer shadow-lg"
+                type="button"
+                className="flex items-center justify-center gap-2.5 h-12 rounded-xl bg-gray-50/50 dark:bg-white/[0.03] border border-gray-200 dark:border-white/10 hover:border-fuchsia-500/30 hover:bg-gray-100 dark:hover:bg-white/[0.06] text-gray-800 dark:text-white text-xs font-bold transition-all cursor-pointer shadow-sm dark:shadow-lg"
               >
                 {/* GitHub Icon */}
                 <svg className="w-4.5 h-4.5" viewBox="0 0 24 24" fill="currentColor">
@@ -254,9 +273,9 @@ function LoginFormInner() {
 
             {/* Email Divider */}
             <div className="flex items-center gap-3.5 mb-6">
-              <div className="flex-1 h-[1px] bg-white/10" />
-              <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500">or use email</span>
-              <div className="flex-1 h-[1px] bg-white/10" />
+              <div className="flex-1 h-[1px] bg-gray-200 dark:bg-white/10" />
+              <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">or use email</span>
+              <div className="flex-1 h-[1px] bg-gray-200 dark:bg-white/10" />
             </div>
 
             {/* Auth Form */}
@@ -264,16 +283,16 @@ function LoginFormInner() {
               
               {/* Email */}
               <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-2 px-1">Email Address</label>
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2 px-1">Email Address</label>
                 <div className="relative">
-                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-gray-500" />
+                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-gray-400 dark:text-gray-500" />
                   <input
                     type="email"
                     required
                     placeholder="developer@nemix.ai"
                     value={email}
                     onChange={e => { setEmail(e.target.value); setError(''); }}
-                    className={`w-full h-12 pl-11 pr-4 bg-white/[0.02] border ${error ? 'border-red-500/50 hover:border-red-500/70 focus:border-red-500/80 focus:ring-1 focus:ring-red-500/20' : 'border-white/10 hover:border-white/20 focus:border-violet-500/80 focus:ring-1 focus:ring-violet-500/20'} rounded-xl text-sm text-white placeholder-gray-600 outline-none transition-all`}
+                    className={`w-full h-12 pl-11 pr-4 bg-gray-50/30 dark:bg-white/[0.02] border ${error ? 'border-red-500/50 hover:border-red-500/70 focus:border-red-500/80 focus:ring-1 focus:ring-red-500/20' : 'border-gray-200 dark:border-white/10 hover:border-gray-300 dark:hover:border-white/20 focus:border-violet-500/80 focus:ring-1 focus:ring-violet-500/20'} rounded-xl text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-600 outline-none transition-all`}
                   />
                 </div>
               </div>
@@ -281,23 +300,23 @@ function LoginFormInner() {
               {/* Password */}
               <div>
                 <div className="flex justify-between items-center mb-2 px-1">
-                  <label className="text-[11px] font-bold uppercase tracking-wider text-gray-400">Password</label>
-                  <Link href="#" className="text-xs font-bold text-violet-400 hover:text-violet-300 transition-colors">Forgot password?</Link>
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Password</label>
+                  <Link href="#" className="text-xs font-bold text-violet-600 dark:text-violet-400 hover:text-violet-500 dark:hover:text-violet-300 transition-colors">Forgot password?</Link>
                 </div>
                 <div className="relative">
-                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-gray-500" />
+                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-gray-400 dark:text-gray-500" />
                   <input
                     type={showPw ? 'text' : 'password'}
                     required
                     placeholder="••••••••"
                     value={password}
                     onChange={e => { setPassword(e.target.value); setError(''); }}
-                    className={`w-full h-12 pl-11 pr-12 bg-white/[0.02] border ${error ? 'border-red-500/50 hover:border-red-500/70 focus:border-red-500/80 focus:ring-1 focus:ring-red-500/20' : 'border-white/10 hover:border-white/20 focus:border-violet-500/80 focus:ring-1 focus:ring-violet-500/20'} rounded-xl text-sm text-white placeholder-gray-600 outline-none transition-all`}
+                    className={`w-full h-12 pl-11 pr-12 bg-gray-50/30 dark:bg-white/[0.02] border ${error ? 'border-red-500/50 hover:border-red-500/70 focus:border-red-500/80 focus:ring-1 focus:ring-red-500/20' : 'border-gray-200 dark:border-white/10 hover:border-gray-300 dark:hover:border-white/20 focus:border-violet-500/80 focus:ring-1 focus:ring-violet-500/20'} rounded-xl text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-600 outline-none transition-all`}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPw(p => !p)}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors cursor-pointer flex items-center"
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors cursor-pointer flex items-center"
                   >
                     {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -309,10 +328,10 @@ function LoginFormInner() {
                 <input
                   type="checkbox"
                   id="remember"
-                  className="w-4.5 h-4.5 rounded bg-white/[0.02] border-white/10 accent-violet-600 focus:ring-0 focus:ring-offset-0 cursor-pointer"
+                  className="w-4.5 h-4.5 rounded bg-gray-50 dark:bg-white/[0.02] border-gray-200 dark:border-white/10 accent-violet-600 focus:ring-0 focus:ring-offset-0 cursor-pointer"
                   defaultChecked
                 />
-                <label htmlFor="remember" className="text-xs text-gray-400 font-medium cursor-pointer select-none">
+                <label htmlFor="remember" className="text-xs text-gray-500 dark:text-gray-400 font-medium cursor-pointer select-none">
                   Keep me signed in for 30 days
                 </label>
               </div>
@@ -324,7 +343,7 @@ function LoginFormInner() {
                     initial={{ opacity: 0, y: -6 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0 }}
-                    className="flex items-center gap-2.5 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-semibold"
+                    className="flex items-center gap-2.5 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 text-xs font-semibold"
                   >
                     <AlertCircle className="w-4.5 h-4.5 shrink-0" />
                     <span>{error}</span>
@@ -359,20 +378,20 @@ function LoginFormInner() {
             </form>
 
             {/* Bottom Section */}
-            <div className="mt-8 pt-6 border-t border-white/[0.06] text-center">
-              <span className="text-xs text-gray-500">Don't have a Nemix account? </span>
-              <Link href="/auth/register" className="text-xs font-bold text-violet-400 hover:text-violet-300 transition-colors">
+            <div className="mt-8 pt-6 border-t border-gray-200 dark:border-white/[0.06] text-center">
+              <span className="text-xs text-gray-500 font-medium">Don't have a Nemix account? </span>
+              <Link href="/auth/register" className="text-xs font-bold text-violet-600 dark:text-violet-400 hover:text-violet-500 dark:hover:text-violet-300 transition-colors">
                 Sign up free →
               </Link>
             </div>
 
             {/* Security Compliance badges */}
             <div className="flex justify-center gap-5 mt-5 opacity-40">
-              <div className="flex items-center gap-1 text-[9px] font-bold text-gray-400">
-                <ShieldCheck className="w-3 h-3 text-emerald-400" /> SOC2 COMPLIANT
+              <div className="flex items-center gap-1 text-[9px] font-bold text-gray-500 dark:text-gray-400">
+                <ShieldCheck className="w-3 h-3 text-emerald-500 dark:text-emerald-400" /> SOC2 COMPLIANT
               </div>
-              <div className="flex items-center gap-1 text-[9px] font-bold text-gray-400">
-                <ShieldCheck className="w-3 h-3 text-emerald-400" /> GDPR READY
+              <div className="flex items-center gap-1 text-[9px] font-bold text-gray-500 dark:text-gray-400">
+                <ShieldCheck className="w-3 h-3 text-emerald-500 dark:text-emerald-400" /> GDPR READY
               </div>
             </div>
 
@@ -404,12 +423,12 @@ function LoginFormInner() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="text-4xl font-extrabold tracking-tight text-white mb-3"
+              className="text-4xl font-extrabold tracking-tight text-gray-900 dark:text-white mb-3"
             >
               Build & fine-tune <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-500">AI models instantly.</span>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-600 dark:from-violet-400 dark:via-fuchsia-400 dark:to-pink-500">AI models instantly.</span>
             </motion.h2>
-            <p className="text-[13px] text-gray-400 font-medium leading-relaxed px-6">
+            <p className="text-[13px] text-gray-500 dark:text-gray-400 font-medium leading-relaxed px-6">
               Connect your datasets, finetune LLMs inside our sandbox, and deploy robust APIs with full performance monitoring in a single afternoon.
             </p>
           </div>
@@ -422,7 +441,7 @@ function LoginFormInner() {
       </div>
 
       {/* Footer copyright */}
-      <footer className="w-full text-center py-6 text-[10px] font-bold tracking-widest text-gray-600 uppercase z-30 select-none">
+      <footer className="w-full text-center py-6 text-[10px] font-bold tracking-widest text-gray-400 dark:text-gray-600 uppercase z-30 select-none">
         © {new Date().getFullYear()} Nemix AI Platform Inc. All rights reserved.
       </footer>
     </div>
@@ -432,10 +451,10 @@ function LoginFormInner() {
 export default function LoginPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-[#06060c] flex items-center justify-center text-white">
+      <div className="min-h-screen bg-[var(--md-surface)] flex items-center justify-center text-[var(--md-on-surface)] transition-colors duration-300">
         <div className="flex flex-col items-center gap-3">
           <div className="w-8 h-8 border-4 border-violet-500/20 border-t-violet-500 rounded-full animate-spin" />
-          <span className="text-xs font-bold text-gray-500 tracking-wider">LOADING SAAS PLATFORM...</span>
+          <span className="text-xs font-bold text-gray-500 dark:text-gray-400 tracking-wider">LOADING SAAS PLATFORM...</span>
         </div>
       </div>
     }>

@@ -6,7 +6,7 @@ import { motion } from 'framer-motion';
 // ─── Floating Code Panel Component ──────────────────────────────────────────
 const FloatingCodePanel = ({ className = '', delay = 0, x = 0, y = 0, title = 'MODEL_CONFIG' }) => (
   <motion.div
-    className={`absolute bg-slate-950/80 border border-violet-500/20 rounded-xl p-3.5 backdrop-blur-md shadow-2xl select-none pointer-events-none font-mono text-[10px] text-violet-300 w-44 z-20 ${className}`}
+    className={`absolute bg-white/80 dark:bg-slate-950/80 border border-violet-500/20 dark:border-violet-500/20 rounded-xl p-3.5 backdrop-blur-md shadow-2xl select-none pointer-events-none font-mono text-[10px] text-violet-600 dark:text-violet-300 w-44 z-20 ${className}`}
     initial={{ opacity: 0, scale: 0.8 }}
     animate={{
       opacity: [0.85, 0.95, 0.85],
@@ -21,18 +21,18 @@ const FloatingCodePanel = ({ className = '', delay = 0, x = 0, y = 0, title = 'M
       delay,
     }}
   >
-    <div className="flex items-center gap-1.5 border-b border-white/5 pb-1.5 mb-2 text-gray-500 font-bold text-[8px]">
+    <div className="flex items-center gap-1.5 border-b border-gray-200 dark:border-white/5 pb-1.5 mb-2 text-gray-400 dark:text-gray-500 font-bold text-[8px]">
       <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
       <span className="w-1.5 h-1.5 rounded-full bg-yellow-500" />
       <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
       <span className="ml-1 uppercase tracking-wider">{title}</span>
     </div>
-    <div className="space-y-1 text-gray-400">
-      <p><span className="text-pink-400">const</span> <span className="text-violet-400">model</span> = <span className="text-blue-400">Nemix</span>();</p>
-      <p><span className="text-violet-400">model</span>.<span className="text-yellow-400">train</span>({'{'}</p>
-      <p className="pl-3">epochs: <span className="text-amber-400">150</span>,</p>
-      <p className="pl-3">lr: <span className="text-amber-400">1e-4</span>,</p>
-      <p className="pl-3">loss: <span className="text-emerald-400">"LoRA"</span></p>
+    <div className="space-y-1 text-gray-600 dark:text-gray-400">
+      <p><span className="text-pink-600 dark:text-pink-400 font-semibold">const</span> <span className="text-violet-600 dark:text-violet-400">model</span> = <span className="text-blue-600 dark:text-blue-400">Nemix</span>();</p>
+      <p><span className="text-violet-600 dark:text-violet-400">model</span>.<span className="text-yellow-600 dark:text-yellow-400">train</span>({'{'}</p>
+      <p className="pl-3">epochs: <span className="text-amber-600 dark:text-amber-400">150</span>,</p>
+      <p className="pl-3">lr: <span className="text-amber-600 dark:text-amber-400">1e-4</span>,</p>
+      <p className="pl-3">loss: <span className="text-emerald-600 dark:text-emerald-400">"LoRA"</span></p>
       <p>{'}'});</p>
     </div>
   </motion.div>
@@ -41,7 +41,7 @@ const FloatingCodePanel = ({ className = '', delay = 0, x = 0, y = 0, title = 'M
 // ─── Floating Loss Graph Panel Component ─────────────────────────────────────
 const FloatingGraphPanel = ({ className = '', delay = 0, x = 0, y = 0 }) => (
   <motion.div
-    className={`absolute bg-slate-950/80 border border-fuchsia-500/20 rounded-xl p-3.5 backdrop-blur-md shadow-2xl select-none pointer-events-none w-44 z-20 ${className}`}
+    className={`absolute bg-white/80 dark:bg-slate-950/80 border border-fuchsia-500/20 dark:border-fuchsia-500/20 rounded-xl p-3.5 backdrop-blur-md shadow-2xl select-none pointer-events-none w-44 z-20 ${className}`}
     initial={{ opacity: 0, scale: 0.8 }}
     animate={{
       opacity: [0.85, 0.95, 0.85],
@@ -56,9 +56,9 @@ const FloatingGraphPanel = ({ className = '', delay = 0, x = 0, y = 0 }) => (
       delay,
     }}
   >
-    <div className="flex items-center justify-between border-b border-white/5 pb-1.5 mb-2 text-gray-500 font-mono font-bold text-[8px] uppercase tracking-wider">
+    <div className="flex items-center justify-between border-b border-gray-200 dark:border-white/5 pb-1.5 mb-2 text-gray-400 dark:text-gray-500 font-mono font-bold text-[8px] uppercase tracking-wider">
       <span>LOSS_GRADIENT</span>
-      <span className="text-emerald-400 animate-pulse">● LIVE</span>
+      <span className="text-emerald-600 dark:text-emerald-400 animate-pulse">● LIVE</span>
     </div>
     
     {/* SVG Graph Curve */}
@@ -99,7 +99,7 @@ const FloatingGraphPanel = ({ className = '', delay = 0, x = 0, y = 0 }) => (
 // ─── Floating Synapse Synch Component ────────────────────────────────────────
 const FloatingSynapsePanel = ({ className = '', delay = 0, x = 0, y = 0 }) => (
   <motion.div
-    className={`absolute bg-slate-950/80 border border-blue-500/20 rounded-xl p-3 backdrop-blur-md shadow-2xl select-none pointer-events-none w-36 z-20 ${className}`}
+    className={`absolute bg-white/80 dark:bg-slate-950/80 border border-blue-500/20 dark:border-blue-500/20 rounded-xl p-3 backdrop-blur-md shadow-2xl select-none pointer-events-none w-36 z-20 ${className}`}
     initial={{ opacity: 0, scale: 0.8 }}
     animate={{
       opacity: [0.85, 0.95, 0.85],
@@ -114,7 +114,7 @@ const FloatingSynapsePanel = ({ className = '', delay = 0, x = 0, y = 0 }) => (
       delay,
     }}
   >
-    <div className="border-b border-white/5 pb-1 mb-2 text-gray-500 font-mono font-bold text-[8px] uppercase tracking-wider text-center">
+    <div className="border-b border-gray-200 dark:border-white/5 pb-1 mb-2 text-gray-400 dark:text-gray-500 font-mono font-bold text-[8px] uppercase tracking-wider text-center">
       SYNAPSE_MATRIX
     </div>
     <div className="flex items-center justify-center py-1">
