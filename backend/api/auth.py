@@ -17,18 +17,62 @@ def get_current_user(db: Session = Depends(database.get_db), token: str = Depend
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
+    
+    # 1. Handle Local Sandbox Fallback Token
+    if token.startswith("local-token-"):
+        email = token.replace("local-token-", "")
+        # Standardize demo emails
+        if email in ["google", "google-id", "google-developer", "github", "token"]:
+            email = "developer@nemix.ai"
+        
+        user = db.query(models.User).filter(models.User.email == email).first()
+        if user is None:
+            user = models.User(
+                email=email,
+                hashed_password=utils.get_password_hash("sandbox-password"),
+                full_name=email.split("@")[0].capitalize(),
+                is_active=True
+            )
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+        return user
+
+    # 2. Try Decoding Custom Backend JWT (HS256)
     try:
         payload = jwt.decode(token, utils.SECRET_KEY, algorithms=[utils.ALGORITHM])
         email: str = payload.get("sub")
-        if email is None:
-            raise credentials_exception
-        token_data = schemas.TokenData(email=email)
+        if email is not None:
+            user = db.query(models.User).filter(models.User.email == email).first()
+            if user:
+                return user
     except JWTError:
-        raise credentials_exception
-    user = db.query(models.User).filter(models.User.email == token_data.email).first()
-    if user is None:
-        raise credentials_exception
-    return user
+        pass
+
+    # 3. Try Decoding Firebase ID Token (RS256) via unverified claims
+    try:
+        claims = jwt.get_unverified_claims(token)
+        if claims and claims.get("iss", "").startswith("https://securetoken.google.com/"):
+            email = claims.get("email")
+            if email:
+                user = db.query(models.User).filter(models.User.email == email).first()
+                if user is None:
+                    # Auto-provision Firebase user
+                    user = models.User(
+                        email=email,
+                        hashed_password=utils.get_password_hash("firebase-sso-provisioned"),
+                        full_name=claims.get("name", email.split("@")[0].capitalize()),
+                        is_active=True
+                    )
+                    db.add(user)
+                    db.commit()
+                    db.refresh(user)
+                return user
+    except Exception as e:
+        print(f"Error checking Firebase token: {e}")
+        pass
+
+    raise credentials_exception
 
 @router.post("/register", response_model=schemas.User)
 def register_user(user: schemas.UserCreate, db: Session = Depends(database.get_db)):
