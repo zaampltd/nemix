@@ -10,7 +10,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/lib/theme';
-import AnimatedMascot from '@/components/auth/AnimatedMascot';
+import DashboardMockup from '@/components/auth/DashboardMockup';
 
 // ─── Custom Floating Ribbon SVG Component ──────────────────────────────────
 const FloatingRibbon = ({ className = '', delay = 0, duration = 6, color1 = '#ec4899', color2 = '#8b5cf6' }) => (
@@ -158,7 +158,7 @@ function LoginFormInner() {
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(124,58,237,0.12),transparent_50%),radial-gradient(circle_at_bottom_left,rgba(236,72,153,0.08),transparent_60%)] dark:bg-[radial-gradient(circle_at_top_right,rgba(124,58,237,0.18),transparent_50%),radial-gradient(circle_at_bottom_left,rgba(236,72,153,0.12),transparent_60%)] pointer-events-none transition-all duration-300" />
       <div className="absolute inset-0 bg-[linear-gradient(var(--md-outline-var)_1px,transparent_1px),linear-gradient(90deg,var(--md-outline-var)_1px,transparent_1px)] bg-[size:40px_40px] opacity-40 dark:opacity-15 pointer-events-none transition-all duration-300" />
 
-      {/* ── Glassmorphic Top Navbar (Dribbble Travel UI Inspired) ────────── */}
+      {/* ── Glassmorphic Top Navbar ──────────────────────────────────────── */}
       <header className="relative w-full max-w-7xl mx-auto px-6 pt-6 z-40">
         <div className="flex items-center justify-between px-6 py-3.5 rounded-2xl bg-white/40 dark:bg-white/[0.02] border border-gray-200/50 dark:border-white/[0.05] backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.04)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.37)] transition-all duration-300">
           <Link href="/" className="flex items-center gap-2.5 font-bold tracking-tight">
@@ -212,8 +212,14 @@ function LoginFormInner() {
             {/* Top decorative gradient glow */}
             <div className="absolute top-0 left-1/4 right-1/4 h-[2px] bg-gradient-to-r from-transparent via-violet-500/50 to-transparent" />
 
+            {/* Pill highlight */}
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-600 dark:text-violet-400 text-[10px] font-bold tracking-wider mb-5 uppercase select-none">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              Now in public beta — free to start
+            </div>
+
             {/* Heading */}
-            <div className="mb-8">
+            <div className="mb-6">
               <h1 className="text-3xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-gray-950 via-gray-800 to-gray-900 dark:from-white dark:via-gray-100 dark:to-gray-300 mb-2">
                 Welcome back 👋
               </h1>
@@ -357,7 +363,7 @@ function LoginFormInner() {
                 disabled={loading || success}
                 whileHover={{ scale: 1.01 }}
                 whileTap={{ scale: 0.99 }}
-                className="relative w-full h-12 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white font-extrabold text-sm shadow-[0_4px_20px_rgba(139,92,246,0.35)] hover:shadow-[0_4px_25px_rgba(139,92,246,0.5)] transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-75 disabled:cursor-not-allowed overflow-hidden"
+                className="relative w-full h-12 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-extrabold text-sm shadow-[0_4px_20px_rgba(139,92,246,0.25)] hover:shadow-[0_4px_25px_rgba(139,92,246,0.4)] transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-75 disabled:cursor-not-allowed overflow-hidden"
               >
                 {success ? (
                   <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} className="flex items-center gap-2">
@@ -398,7 +404,7 @@ function LoginFormInner() {
           </div>
         </motion.div>
 
-        {/* ── Right Side: Immersive 3D Mascot Platform Presentation ────────── */}
+        {/* ── Right Side: Immersive Dashboard Mockup presentation ────────── */}
         <motion.div
           initial={{ opacity: 0, x: 30 }}
           animate={{ opacity: 1, x: 0 }}
@@ -417,7 +423,7 @@ function LoginFormInner() {
           <FloatingSphere size="w-7 h-7" position="bottom-28 left-16" delay={1.2} duration={4.8} colorGrad="from-violet-400 to-indigo-800" />
           <FloatingSphere size="w-5 h-5" position="top-2/3 right-1/4" delay={0.8} duration={6} colorGrad="from-pink-400 to-fuchsia-700" />
 
-          {/* Large heavy typography tagline */}
+          {/* Large heavy typography tagline (matching your design screenshot exactly!) */}
           <div className="text-center max-w-[480px] mb-8 z-20">
             <motion.h2 
               initial={{ opacity: 0, y: 10 }}
@@ -425,16 +431,32 @@ function LoginFormInner() {
               transition={{ delay: 0.3 }}
               className="text-4xl font-extrabold tracking-tight text-gray-900 dark:text-white mb-3"
             >
-              Build & fine-tune <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-600 dark:from-violet-400 dark:via-fuchsia-400 dark:to-pink-500">AI models instantly.</span>
+              Train & deploy <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-fuchsia-500 to-indigo-600 dark:from-violet-400 dark:via-fuchsia-400 dark:to-indigo-400">AI models 10x faster.</span>
             </motion.h2>
             <p className="text-[13px] text-gray-500 dark:text-gray-400 font-medium leading-relaxed px-6">
-              Connect your datasets, finetune LLMs inside our sandbox, and deploy robust APIs with full performance monitoring in a single afternoon.
+              Fine-tune LLMs, manage datasets, run evaluations, and deploy production APIs — all in one platform. No infrastructure headaches.
             </p>
           </div>
 
-          {/* Mascot Floating Scene Area */}
-          <AnimatedMascot />
+          {/* Dynamic Mockup Area */}
+          <DashboardMockup />
+          
+          {/* Checklist features underneath the mockup exactly like the screenshot */}
+          <div className="mt-8 flex flex-wrap justify-center gap-x-6 gap-y-2 max-w-[500px] text-[11px] font-bold text-gray-500 dark:text-gray-400 select-none">
+            <span className="flex items-center gap-1.5">
+              <span className="text-emerald-500 font-black text-xs">✓</span> No credit card required
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="text-emerald-500 font-black text-xs">✓</span> LoRA fine-tuning
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="text-emerald-500 font-black text-xs">✓</span> Auto-scaling APIs
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="text-emerald-500 font-black text-xs">✓</span> Open model hub
+            </span>
+          </div>
           
         </motion.div>
 

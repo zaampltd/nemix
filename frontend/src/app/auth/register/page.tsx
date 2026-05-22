@@ -10,7 +10,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/lib/theme';
-import AnimatedMascot from '@/components/auth/AnimatedMascot';
+import DashboardMockup from '@/components/auth/DashboardMockup';
 
 // ─── Custom Floating Ribbon SVG Component ──────────────────────────────────
 const FloatingRibbon = ({ className = '', delay = 0, duration = 6, color1 = '#ec4899', color2 = '#8b5cf6' }) => (
@@ -223,6 +223,12 @@ function RegisterFormInner() {
             {/* Top decorative gradient glow */}
             <div className="absolute top-0 left-1/4 right-1/4 h-[2px] bg-gradient-to-r from-transparent via-fuchsia-500/50 to-transparent" />
 
+            {/* Pill highlight */}
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-600 dark:text-violet-400 text-[10px] font-bold tracking-wider mb-5 uppercase select-none">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              Now in public beta — free to start
+            </div>
+
             {/* Heading */}
             <div className="mb-6">
               <h1 className="text-3xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-gray-950 via-gray-800 to-gray-900 dark:from-white dark:via-gray-100 dark:to-gray-300 mb-2">
@@ -426,26 +432,26 @@ function RegisterFormInner() {
           </div>
         </motion.div>
 
-        {/* ── Right Side: Immersive 3D Presentation Scene ─────────────────── */}
+        {/* ── Right Side: Immersive Dashboard Mockup presentation ────────── */}
         <motion.div
           initial={{ opacity: 0, x: 30 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.6, delay: 0.15 }}
           className="hidden lg:flex flex-1 flex-col items-center justify-center relative min-h-[580px] w-full"
         >
-          {/* Glowing Radial Backdrop Backgrounds */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[380px] h-[380px] bg-fuchsia-600/10 rounded-full blur-[100px] pointer-events-none" />
-          <div className="absolute top-1/3 left-1/2 -translate-x-1/3 -translate-y-1/3 w-[260px] h-[260px] bg-violet-600/8 rounded-full blur-[90px] pointer-events-none" />
+          {/* Main Glowing Background Radial Orbs */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[380px] h-[380px] bg-violet-600/10 rounded-full blur-[100px] pointer-events-none" />
+          <div className="absolute top-1/3 left-1/2 -translate-x-1/3 -translate-y-1/3 w-[260px] h-[260px] bg-fuchsia-600/8 rounded-full blur-[90px] pointer-events-none" />
 
-          {/* Dribbble Style Ornaments */}
-          <FloatingRibbon className="top-12 left-14" delay={0.5} duration={7} color1="#ec4899" color2="#8b5cf6" />
-          <FloatingRibbon className="bottom-10 right-10 scale-75 rotate-45" delay={1.8} duration={8.5} color1="#3b82f6" color2="#a855f7" />
+          {/* Immersive Dribbble Floating Ornaments */}
+          <FloatingRibbon className="top-12 left-14" delay={0.5} duration={7} color1="#a855f7" color2="#3b82f6" />
+          <FloatingRibbon className="bottom-10 right-10 scale-75 rotate-45" delay={1.8} duration={8.5} color1="#ec4899" color2="#f43f5e" />
           
-          <FloatingSphere size="w-12 h-12" position="top-24 right-20" delay={0.2} duration={5.5} colorGrad="from-violet-400 to-fuchsia-800" />
-          <FloatingSphere size="w-7 h-7" position="bottom-28 left-16" delay={1.2} duration={4.8} colorGrad="from-fuchsia-400 to-indigo-800" />
-          <FloatingSphere size="w-5 h-5" position="top-2/3 right-1/4" delay={0.8} duration={6} colorGrad="from-purple-400 to-pink-700" />
+          <FloatingSphere size="w-12 h-12" position="top-24 right-20" delay={0.2} duration={5.5} colorGrad="from-fuchsia-400 to-violet-800" />
+          <FloatingSphere size="w-7 h-7" position="bottom-28 left-16" delay={1.2} duration={4.8} colorGrad="from-violet-400 to-indigo-800" />
+          <FloatingSphere size="w-5 h-5" position="top-2/3 right-1/4" delay={0.8} duration={6} colorGrad="from-pink-400 to-fuchsia-700" />
 
-          {/* Tagline */}
+          {/* Large heavy typography tagline (matching your design screenshot exactly!) */}
           <div className="text-center max-w-[480px] mb-8 z-20">
             <motion.h2 
               initial={{ opacity: 0, y: 10 }}
@@ -453,16 +459,32 @@ function RegisterFormInner() {
               transition={{ delay: 0.3 }}
               className="text-4xl font-extrabold tracking-tight text-gray-900 dark:text-white mb-3"
             >
-              The fastest way to <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-600 via-violet-500 to-blue-600 dark:from-fuchsia-400 dark:via-violet-400 dark:to-blue-500">ship AI models.</span>
+              Train & deploy <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-fuchsia-500 to-indigo-600 dark:from-violet-400 dark:via-fuchsia-400 dark:to-indigo-400">AI models 10x faster.</span>
             </motion.h2>
             <p className="text-[13px] text-gray-500 dark:text-gray-400 font-medium leading-relaxed px-6">
-              Empower your product with custom intelligence. Fine-tune open weights, validate training metrics in real-time, and run instantly at scale.
+              Fine-tune LLMs, manage datasets, run evaluations, and deploy production APIs — all in one platform. No infrastructure headaches.
             </p>
           </div>
 
-          {/* Mascot Scene Area */}
-          <AnimatedMascot />
+          {/* Dynamic Mockup Area */}
+          <DashboardMockup />
+          
+          {/* Checklist features underneath the mockup exactly like the screenshot */}
+          <div className="mt-8 flex flex-wrap justify-center gap-x-6 gap-y-2 max-w-[500px] text-[11px] font-bold text-gray-500 dark:text-gray-400 select-none">
+            <span className="flex items-center gap-1.5">
+              <span className="text-emerald-500 font-black text-xs">✓</span> No credit card required
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="text-emerald-500 font-black text-xs">✓</span> LoRA fine-tuning
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="text-emerald-500 font-black text-xs">✓</span> Auto-scaling APIs
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="text-emerald-500 font-black text-xs">✓</span> Open model hub
+            </span>
+          </div>
           
         </motion.div>
 
