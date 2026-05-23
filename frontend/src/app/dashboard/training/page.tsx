@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { 
   Play, 
   Database, 
@@ -50,6 +51,7 @@ const mockJobs: Job[] = [
 ];
 
 export default function TrainingPage() {
+  const router = useRouter();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [selectedJobId, setSelectedJobId] = useState<string>("ft-9823");
   const [searchQuery, setSearchQuery] = useState("");
@@ -674,7 +676,32 @@ export default function TrainingPage() {
                     )}
                     {selectedJob.status === "completed" && (
                       <button
-                        onClick={() => alert(`Initiating seamless edge deployment for ${selectedJob.name}...`)}
+                        onClick={() => {
+                          const newDepID = `ep_${Date.now()}`;
+                          const newDep = {
+                            id: newDepID,
+                            name: `${selectedJob.name}-endpoint`.toLowerCase().replace(/[^a-z0-9-_]/g, '-'),
+                            model: selectedJob.name,
+                            region: 'us-east-1',
+                            status: 'provisioning',
+                            latency: 0,
+                            rps: 0,
+                            uptime: '—',
+                            calls: '0',
+                            url: `https://api.nemix.ai/v1/${newDepID}/infer`,
+                            created: new Date().toISOString().split('T')[0],
+                            local: true
+                          };
+
+                          try {
+                            const existing = JSON.parse(localStorage.getItem('local_deployments') || '[]');
+                            localStorage.setItem('local_deployments', JSON.stringify([newDep, ...existing]));
+                          } catch (e) {
+                            localStorage.setItem('local_deployments', JSON.stringify([newDep]));
+                          }
+
+                          router.push('/dashboard/deployments');
+                        }}
                         className="px-3 py-1 rounded-lg text-xs font-bold transition hover:opacity-85 flex items-center gap-1"
                         style={{ backgroundColor: "var(--md-primary)", color: "var(--md-on-primary)" }}
                       >
