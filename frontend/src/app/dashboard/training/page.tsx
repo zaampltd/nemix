@@ -56,6 +56,7 @@ export default function TrainingPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newJobName, setNewJobName] = useState("");
   const [newJobModel, setNewJobModel] = useState("llama-3-8b");
+  const [customBaseModel, setCustomBaseModel] = useState("");
   const [newJobDataset, setNewJobDataset] = useState("support_tickets_v2.csv");
   const [newJobEpochs, setNewJobEpochs] = useState(3);
   const [newJobLR, setNewJobLR] = useState("2e-4");
@@ -184,7 +185,7 @@ export default function TrainingPage() {
     const freshJob: Job = {
       id: newJobId,
       name: formattedName,
-      baseModel: newJobModel,
+      baseModel: newJobModel === "custom" ? (customBaseModel.trim() || "custom-model") : newJobModel,
       dataset: newJobDataset,
       status: "running",
       progress: 0,
@@ -200,6 +201,7 @@ export default function TrainingPage() {
 
     // Reset fields
     setNewJobName("");
+    setCustomBaseModel("");
     setNewJobEpochs(3);
     setNewJobLR("2e-4");
     setNewJobBatchSize(8);
@@ -823,6 +825,7 @@ export default function TrainingPage() {
                       <option value="mistral-7b">Mistral (7B)</option>
                       <option value="gemma-2-9b">Gemma 2 (9B)</option>
                       <option value="gpt2-xl">GPT-2 XL (1.5B)</option>
+                      <option value="custom">Custom Model (Hugging Face)...</option>
                     </select>
                     <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none" style={{ color: "var(--md-on-surface-var)" }} />
                   </div>
@@ -854,6 +857,28 @@ export default function TrainingPage() {
                 </div>
 
               </div>
+
+              {/* Custom Model Input (Conditionally rendered) */}
+              {newJobModel === "custom" && (
+                <div className="space-y-1.5 animate-in fade-in slide-in-from-top-2 duration-200">
+                  <label className="text-[10px] uppercase font-bold tracking-wider" style={{ color: "var(--md-on-surface-var)" }}>
+                    Hugging Face Model Repo / Path
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. meta-llama/Meta-Llama-3-8B-Instruct"
+                    value={customBaseModel}
+                    onChange={e => setCustomBaseModel(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl border text-sm focus:outline-none focus:ring-1 focus:ring-purple-500"
+                    style={{
+                      backgroundColor: "var(--md-surface-2)",
+                      borderColor: "var(--md-outline)",
+                      color: "var(--md-on-surface)"
+                    }}
+                  />
+                </div>
+              )}
 
               {/* Slider for Epochs */}
               <div className="space-y-1.5">
