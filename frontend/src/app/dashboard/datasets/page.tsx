@@ -8,11 +8,13 @@ import {
   Database, Trash2, FileText, Search,
   Plus, X, AlertCircle, CheckCircle2, FileJson,
   FileSpreadsheet, File, ChevronDown, Eye, UploadCloud, Loader2,
-  TableProperties, BrainCircuit, ArrowRight, TrendingUp, HardDrive
+  TableProperties, BrainCircuit, ArrowRight, TrendingUp, HardDrive,
+  Sparkles, FolderDown
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { PREMIUM_DATASETS, PremiumDataset } from './datasetsDatabase';
 
 // ─── Firebase Dynamic Backend Imports ──────────────────────────────────
 import { db, storage } from "@/lib/firebase";
@@ -21,7 +23,7 @@ import { collection, addDoc, getDocs, query, orderBy, serverTimestamp, where, de
 
 // ── Types ─────────────────────────────────────────────────────────────
 interface Dataset {
-  id: string; // Updated from number to support Firestore UUID strings
+  id: string; 
   name: string;
   description: string;
   file_type: string;
@@ -30,10 +32,10 @@ interface Dataset {
   created_at: string;
   downloadUrl?: string;
   local?: boolean;
-  preview?: string[][];  // first few rows
+  preview?: string[][];  
+  mockData?: any[];
 }
 
-// ── Standard Fallback Datasets ────────────────────────────────────────
 const initialDatasets: Dataset[] = [
   { id: "ds-01", name: "support_tickets_v2.csv", size_bytes: 14972350, description: "Cleaned customer support queries and response tokens.", file_type: "csv", row_count: 14280, created_at: new Date("2026-05-22").toISOString(), local: false },
   { id: "ds-02", name: "twitter_feedback.jsonl", size_bytes: 3586040, description: "Social media sentiment tags and brand review matrices.", file_type: "jsonl", row_count: 8412, created_at: new Date("2026-05-21").toISOString(), local: false },
@@ -67,7 +69,6 @@ function fileTypeColor(type: string): React.CSSProperties {
   return { color: 'var(--md-warning)', background: 'var(--md-warning-cont)' };
 }
 
-// Estimate row count from raw text
 function estimateRows(text: string, type: string): number {
   if (type === 'csv') return Math.max(0, text.split('\n').filter(l => l.trim()).length - 1);
   try {
@@ -76,7 +77,6 @@ function estimateRows(text: string, type: string): number {
   } catch { return Math.floor(text.split('\n').filter(l => l.trim()).length); }
 }
 
-// Parse first N rows for preview
 function parsePreview(text: string, type: string): string[][] {
   if (type === 'csv') {
     const lines = text.split('\n').filter(l => l.trim()).slice(0, 6);
@@ -99,11 +99,14 @@ export default function DatasetsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('all');
 
-  // ─── Modal & Drawer States (User's Exact Hook Requirements) ───────────────
   const [previewDataset, setPreviewDataset] = useState<any | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<{name: string, size: string, status: 'uploading' | 'completed'}[]>([]);
+
+  // Premium database states
+  const [datasetTab, setDatasetTab] = useState<'my-datasets' | 'premium-hub'>('my-datasets');
+  const [clonedId, setClonedId] = useState<string | null>(null);
 
   // Form parameters
   const [uploadName, setUploadName] = useState('');
@@ -116,7 +119,6 @@ export default function DatasetsPage() {
 
   useEffect(() => { loadDatasets(); }, []);
 
-  // ─── Load Datasets dynamically from Firebase Firestore & fallbacks ─────────
   const loadDatasets = async () => {
     setLoading(true);
     try {
@@ -140,19 +142,17 @@ export default function DatasetsPage() {
           created_at: data.created_at?.toDate ? data.created_at.toDate().toISOString() : new Date().toISOString(),
           downloadUrl: data.downloadUrl || "",
           preview: data.preview || [],
+          mockData: data.mockData || [],
           local: false
         });
       });
 
-      // Sort in-memory to safely bypass missing composite index limitations
       fetched.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
-      // Combine with local storage items and standard fallback presets
       const merged = [...fetched, ...loadLocal(), ...initialDatasets.filter(i => !fetched.some(f => f.name === i.name))];
       setDatasets(merged);
     } catch (err: any) {
       console.error('Failed to query datasets from Firestore:', err);
-      // Failover safely to local storage and static initial datasets
       const merged = [...loadLocal(), ...initialDatasets];
       setDatasets(merged);
     } finally {
@@ -160,7 +160,6 @@ export default function DatasetsPage() {
     }
   };
 
-  // ─── Form submission to write metadata directly to Firestore ───────────────
   const handleUploadSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedFile || !uploadName) return;
@@ -175,7 +174,6 @@ export default function DatasetsPage() {
     const downloadUrl = (selectedFile as any).firebaseUrl || "";
 
     try {
-      // 1. Commit Metadata document to Firestore
       await addDoc(collection(db, "UserDatasets"), {
         userId: "test-user-123",
         name: uploadName.trim(),
@@ -189,11 +187,9 @@ export default function DatasetsPage() {
         local: false
       });
 
-      // 2. Reload grid list dynamically
       await loadDatasets();
     } catch (e: any) {
       console.error("Firestore save failed, falling back to local registry storage:", e);
-      // Fallback: save to LocalStorage
       const newDataset: Dataset = {
         id: `local-${Date.now()}`,
         name: uploadName.trim(),
@@ -210,7 +206,6 @@ export default function DatasetsPage() {
       setDatasets(prev => [newDataset, ...prev]);
     }
 
-    // Reset upload parameters
     setIsModalOpen(false);
     setUploadName(''); 
     setUploadDesc(''); 
@@ -219,18 +214,15 @@ export default function DatasetsPage() {
     setIsUploading(false);
   };
 
-  // ─── Deletion of Dataset document from Firestore/LocalStorage ─────────────
   const handleDelete = async (dataset: Dataset) => {
     if (!confirm(`Delete "${dataset.name}"?`)) return;
     
     if (dataset.local || dataset.id.startsWith("local-") || dataset.id.startsWith("ds-")) {
-      // Remove from local storage index
       const updated = loadLocal().filter(d => d.id !== dataset.id);
       saveLocal(updated);
       setDatasets(prev => prev.filter(d => d.id !== dataset.id));
     } else {
       try {
-        // Delete document directly from Firestore CRUD API
         await deleteDoc(doc(db, "UserDatasets", dataset.id));
         setDatasets(prev => prev.filter(d => d.id !== dataset.id));
       } catch (err: any) {
@@ -244,13 +236,10 @@ export default function DatasetsPage() {
     }
   };
 
-  // ─── Dynamic Upload file to Firebase Storage ───────────────────────────────
   const uploadFileToStorage = (file: File) => {
-    // 1. Establish reference inside Storage Bucket
     const storageRef = ref(storage, `datasets/test-user-123/${Date.now()}_${file.name}`);
     const uploadTask = uploadBytesResumable(storageRef, file);
 
-    // 2. Add to active uploadingFiles hook list (User's Exact Hook Requirements)
     const formattedSize = (file.size / 1024 / 1024).toFixed(2) + " MB";
     const newFile = { 
       name: file.name, 
@@ -259,26 +248,19 @@ export default function DatasetsPage() {
     };
     setUploadedFiles(prev => [...prev, newFile]);
 
-    // 3. Bind events to monitor real upload snapshots
     uploadTask.on('state_changed', 
-      (snapshot) => {
-        // Keeps uploading status active
-      }, 
+      (snapshot) => {}, 
       (error) => {
         console.error("Firebase Storage Upload failed, falling back to local simulation:", error);
         setUploadError("Firebase Storage upload failed. Simulating offline file cache.");
-        // offline simulation backup
         setTimeout(() => {
           setUploadedFiles(prev => prev.map(f => f.name === file.name ? { ...f, status: 'completed' } : f));
         }, 2000);
       }, 
       async () => {
         try {
-          // Fetch compiled URL once upload succeeds
           const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
           setUploadedFiles(prev => prev.map(f => f.name === file.name ? { ...f, status: 'completed' } : f));
-          
-          // Save parameters dynamically onto file object reference
           (file as any).firebaseUrl = downloadUrl;
           setSelectedFile(file);
           if (!uploadName) setUploadName(file.name.replace(/\.[^.]+$/, ''));
@@ -289,7 +271,6 @@ export default function DatasetsPage() {
     );
   };
 
-  // ─── Drag and Drop Handlers (User's Exact Hook Requirements) ───────────────
   const handleDragOver = (e: React.DragEvent) => { 
     e.preventDefault(); 
     setIsDragging(true); 
@@ -309,7 +290,6 @@ export default function DatasetsPage() {
     }
   };
 
-  // File selection from input click
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -317,7 +297,36 @@ export default function DatasetsPage() {
     }
   };
 
+  const handleCloneDataset = async (template: PremiumDataset) => {
+    const newDataset: Dataset = {
+      id: `clone-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      name: `${template.name.replace(/\.[^.]+$/, '')}_clone.${template.file_type}`,
+      description: template.description,
+      file_type: template.file_type,
+      size_bytes: template.size_bytes,
+      row_count: template.row_count,
+      created_at: new Date().toISOString(),
+      local: true,
+      preview: template.mockData ? template.mockData.map(r => Object.keys(r).map(k => String(r[k]))) : [],
+      mockData: template.mockData
+    };
+    
+    const existing = loadLocal();
+    saveLocal([newDataset, ...existing]);
+    
+    setDatasets(prev => [newDataset, ...prev]);
+    setClonedId(template.id);
+    setTimeout(() => setClonedId(null), 2000);
+  };
+
   const filtered = datasets.filter(d => {
+    const matchesSearch = d.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      d.description?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesType = filterType === 'all' || d.file_type === filterType;
+    return matchesSearch && matchesType;
+  });
+
+  const filteredPremium = PREMIUM_DATASETS.filter(d => {
     const matchesSearch = d.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       d.description?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesType = filterType === 'all' || d.file_type === filterType;
@@ -336,7 +345,7 @@ export default function DatasetsPage() {
           </div>
           <button
             onClick={() => { setUploadError(''); setIsModalOpen(true); }}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition duration-200 hover:scale-[1.02] active:scale-[0.98]"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition duration-200 hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
             style={{ 
               backgroundColor: "var(--md-primary)", 
               color: "var(--md-on-primary)",
@@ -348,7 +357,7 @@ export default function DatasetsPage() {
           </button>
         </div>
 
-        {/* ── Stats Bar (Upgraded High-End Apple-meets-Crypto Style) ── */}
+        {/* ── Stats Bar ── */}
         {datasets.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {[
@@ -405,7 +414,38 @@ export default function DatasetsPage() {
           </div>
         )}
 
-        {/* ── Search & Filter (Upgraded glassmorphic focus styles) ── */}
+        {/* ── Dynamic Dual-Tab Datasets Switcher ── */}
+        <div className="flex rounded-2xl p-1 gap-1 border w-full max-w-md shrink-0" style={{ backgroundColor: "var(--md-surface-2)", borderColor: "var(--md-outline-var)" }}>
+          <button
+            type="button"
+            onClick={() => setDatasetTab("my-datasets")}
+            className="flex-1 py-2 rounded-xl text-xs font-bold transition duration-150 cursor-pointer flex items-center justify-center gap-1.5"
+            style={{
+              backgroundColor: datasetTab === "my-datasets" ? "var(--md-surface-1)" : "transparent",
+              color: datasetTab === "my-datasets" ? "var(--md-primary)" : "var(--md-on-surface-var)",
+              boxShadow: datasetTab === "my-datasets" ? "var(--shadow-1)" : "none",
+              border: datasetTab === "my-datasets" ? "1px solid var(--md-outline)" : "1px solid transparent"
+            }}
+          >
+            📂 My Datasets ({datasets.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setDatasetTab("premium-hub")}
+            className="flex-1 py-2 rounded-xl text-xs font-bold transition duration-150 cursor-pointer flex items-center justify-center gap-1.5 relative overflow-hidden"
+            style={{
+              backgroundColor: datasetTab === "premium-hub" ? "var(--md-surface-1)" : "transparent",
+              color: datasetTab === "premium-hub" ? "var(--md-primary)" : "var(--md-on-surface-var)",
+              boxShadow: datasetTab === "premium-hub" ? "var(--shadow-1)" : "none",
+              border: datasetTab === "premium-hub" ? "1px solid var(--md-outline)" : "1px solid transparent"
+            }}
+          >
+            <Sparkles className="w-3.5 h-3.5 text-amber-500 animate-pulse" />
+            Nemix Premium Hub ({PREMIUM_DATASETS.length}+)
+          </button>
+        </div>
+
+        {/* ── Search & Filter ── */}
         <div 
           className="rounded-2xl p-4 flex flex-col sm:flex-row gap-4 border shadow-sm transition-all duration-300 focus-within:border-[var(--md-primary)] focus-within:shadow-[0_0_20px_rgba(124,106,247,0.04)]" 
           style={{ background: 'var(--md-surface-1)', borderColor: 'var(--md-outline-var)' }}
@@ -414,7 +454,7 @@ export default function DatasetsPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--md-on-surface-var)' }} />
             <input
               type="text"
-              placeholder="Search datasets by name or tags..."
+              placeholder={datasetTab === 'my-datasets' ? "Search datasets by name or tags..." : "Search premium dataset templates..."}
               className="w-full bg-transparent border-none outline-none text-sm pl-10 focus:ring-0"
               style={{ color: 'var(--md-on-surface)' }}
               value={searchQuery}
@@ -426,7 +466,7 @@ export default function DatasetsPage() {
               <button
                 key={type}
                 onClick={() => setFilterType(type)}
-                className="px-3.5 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all duration-200"
+                className="px-3.5 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer"
                 style={{
                   background: filterType === type ? 'var(--md-primary)' : 'transparent',
                   color: filterType === type ? 'var(--md-on-primary)' : 'var(--md-on-surface-var)',
@@ -438,92 +478,188 @@ export default function DatasetsPage() {
           </div>
         </div>
 
-        {/* ── Dataset Cards Grid (Upgraded Apple-meets-Crypto Style) ── */}
+        {/* ── Dataset Cards Grid ── */}
         {loading ? (
           <div className="flex flex-col items-center justify-center py-24 rounded-3xl" style={{ background: 'var(--md-surface-1)', border: '1px solid var(--md-outline)' }}>
             <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin mb-4" style={{ borderColor: 'var(--md-primary)', borderTopColor: 'transparent' }} />
             <p className="text-sm" style={{ color: 'var(--md-on-surface-var)' }}>Loading datasets...</p>
           </div>
-        ) : filtered.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <AnimatePresence>
-              {filtered.map(dataset => (
-                <motion.div layout key={dataset.id}
-                  initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}
-                  className="rounded-[24px] p-6 transition-all duration-300 group flex flex-col hover:scale-[1.01] hover:shadow-[0_8px_30px_rgba(124,106,247,0.06)] hover:border-[var(--md-primary)] cursor-pointer border shadow-sm relative overflow-hidden"
-                  style={{ 
-                    background: previewDataset?.id === dataset.id ? 'var(--md-primary-container)' : 'var(--md-surface-1)', 
-                    borderColor: previewDataset?.id === dataset.id ? 'var(--md-primary)' : 'var(--md-outline-var)'
-                  }}
-                  onClick={() => setPreviewDataset(dataset)}
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="p-3.5 rounded-2xl shadow-sm" style={fileTypeColor(dataset.file_type)}>
-                      {fileIcon(dataset.file_type)}
-                    </div>
-                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity" onClick={e => e.stopPropagation()}>
-                      {dataset.downloadUrl && (
-                        <a href={dataset.downloadUrl} target="_blank" rel="noreferrer" 
-                          className="p-2 rounded-xl border text-zinc-400 hover:text-zinc-200 hover:bg-[var(--md-surface-2)] transition" style={{ borderColor: 'var(--md-outline-var)' }} title="Download Raw File">
-                          <HardDrive className="w-4 h-4" />
-                        </a>
-                      )}
-                      <button onClick={() => setPreviewDataset(dataset)}
-                        className="p-2 rounded-xl border text-zinc-400 hover:text-zinc-200 hover:bg-[var(--md-surface-2)] transition" style={{ borderColor: 'var(--md-outline-var)' }} title="Preview">
-                        <Eye className="w-4 h-4" />
-                      </button>
-                      <button onClick={() => handleDelete(dataset)}
-                        className="p-2 rounded-xl border text-zinc-400 hover:text-red-500 hover:bg-red-500/10 transition" style={{ borderColor: 'var(--md-outline-var)' }} title="Delete">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
+        ) : (
+          <div className="space-y-6">
+            <AnimatePresence mode="popLayout">
+              {/* MY CUSTOM DATASETS TAB */}
+              {datasetTab === 'my-datasets' && (
+                filtered.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {filtered.map(dataset => (
+                      <motion.div layout key={dataset.id}
+                        initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}
+                        className="rounded-[24px] p-6 transition-all duration-300 group flex flex-col hover:scale-[1.01] hover:shadow-[0_8px_30px_rgba(124,106,247,0.06)] hover:border-[var(--md-primary)] cursor-pointer border shadow-sm relative overflow-hidden"
+                        style={{ 
+                          background: previewDataset?.id === dataset.id ? 'var(--md-primary-container)' : 'var(--md-surface-1)', 
+                          borderColor: previewDataset?.id === dataset.id ? 'var(--md-primary)' : 'var(--md-outline-var)'
+                        }}
+                        onClick={() => setPreviewDataset(dataset)}
+                      >
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="p-3.5 rounded-2xl shadow-sm" style={fileTypeColor(dataset.file_type)}>
+                            {fileIcon(dataset.file_type)}
+                          </div>
+                          <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity" onClick={e => e.stopPropagation()}>
+                            {dataset.downloadUrl && (
+                              <a href={dataset.downloadUrl} target="_blank" rel="noreferrer" 
+                                className="p-2 rounded-xl border text-zinc-400 hover:text-zinc-200 hover:bg-[var(--md-surface-2)] transition" style={{ borderColor: 'var(--md-outline-var)' }} title="Download Raw File">
+                                <HardDrive className="w-4 h-4" />
+                              </a>
+                            )}
+                            <button onClick={() => setPreviewDataset(dataset)}
+                              className="p-2 rounded-xl border text-zinc-400 hover:text-zinc-200 hover:bg-[var(--md-surface-2)] transition cursor-pointer" style={{ borderColor: 'var(--md-outline-var)' }} title="Preview">
+                              <Eye className="w-4 h-4" />
+                            </button>
+                            <button onClick={() => handleDelete(dataset)}
+                              className="p-2 rounded-xl border text-zinc-400 hover:text-red-500 hover:bg-red-500/10 transition cursor-pointer" style={{ borderColor: 'var(--md-outline-var)' }} title="Delete">
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
 
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1.5">
-                      <h3 className="font-extrabold text-lg truncate group-hover:text-[var(--md-primary)] transition-colors duration-200" style={{ color: 'var(--md-on-surface)' }}>
-                        {dataset.name}
-                      </h3>
-                      {(dataset.local || dataset.id.startsWith("local-") || dataset.id.startsWith("ds-")) && (
-                        <span className="text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider shrink-0"
-                          style={{ background: 'var(--md-primary-container)', color: 'var(--md-on-primary-cont)' }}>local</span>
-                      )}
-                    </div>
-                    <p className="text-xs line-clamp-2 mb-6 min-h-[2.5rem]" style={{ color: 'var(--md-on-surface-var)', opacity: 0.9 }}>
-                      {dataset.description || 'No description provided.'}
-                    </p>
-                  </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1.5">
+                            <h3 className="font-extrabold text-lg truncate group-hover:text-[var(--md-primary)] transition-colors duration-200" style={{ color: 'var(--md-on-surface)' }}>
+                              {dataset.name}
+                            </h3>
+                            {(dataset.local || dataset.id.startsWith("local-") || dataset.id.startsWith("ds-") || dataset.id.startsWith("clone-")) && (
+                              <span className="text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider shrink-0"
+                                style={{ background: 'var(--md-primary-container)', color: 'var(--md-on-primary-cont)' }}>local</span>
+                            )}
+                          </div>
+                          <p className="text-xs line-clamp-2 mb-6 min-h-[2.5rem]" style={{ color: 'var(--md-on-surface-var)', opacity: 0.9 }}>
+                            {dataset.description || 'No description provided.'}
+                          </p>
+                        </div>
 
-                  <div className="grid grid-cols-3 gap-3 pt-4 border-t" style={{ borderColor: 'var(--md-outline-var)' }}>
-                    {[['Type', dataset.file_type.toUpperCase()], ['Rows', dataset.row_count.toLocaleString()], ['Size', formatBytes(dataset.size_bytes)]].map(([l, v]) => (
-                      <div key={l}>
-                        <p className="text-[9px] font-bold uppercase tracking-wider mb-0.5" style={{ color: 'var(--md-on-surface-var)' }}>{l}</p>
-                        <p className="text-xs font-extrabold font-mono" style={{ color: 'var(--md-on-surface)' }}>{v}</p>
-                      </div>
+                        <div className="grid grid-cols-3 gap-3 pt-4 border-t" style={{ borderColor: 'var(--md-outline-var)' }}>
+                          {[['Type', dataset.file_type.toUpperCase()], ['Rows', dataset.row_count.toLocaleString()], ['Size', formatBytes(dataset.size_bytes)]].map(([l, v]) => (
+                            <div key={l}>
+                              <p className="text-[9px] font-bold uppercase tracking-wider mb-0.5" style={{ color: 'var(--md-on-surface-var)' }}>{l}</p>
+                              <p className="text-xs font-extrabold font-mono" style={{ color: 'var(--md-on-surface)' }}>{v}</p>
+                            </div>
+                          ))}
+                        </div>
+                        <p className="text-[10px] mt-4" style={{ color: 'var(--md-on-surface-var)', opacity: 0.6 }}>
+                          Created on {new Date(dataset.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        </p>
+                      </motion.div>
                     ))}
                   </div>
-                  <p className="text-[10px] mt-4" style={{ color: 'var(--md-on-surface-var)', opacity: 0.6 }}>
-                    Created on {new Date(dataset.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                  </p>
-                </motion.div>
-              ))}
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-24 rounded-3xl" style={{ border: '1px dashed var(--md-outline)' }}>
+                    <Database className="w-14 h-14 mb-5" style={{ color: 'var(--md-outline)' }} />
+                    <h3 className="text-xl font-bold mb-2" style={{ color: 'var(--md-on-surface)' }}>No datasets yet</h3>
+                    <p className="mb-8 text-center max-w-xs" style={{ color: 'var(--md-on-surface-var)' }}>
+                      Upload a CSV, JSON, JSONL, or TXT file or click 'Nemix Premium Hub' to save a pre-built template dataset!
+                    </p>
+                    <div className="flex gap-3">
+                      <Button onClick={() => setDatasetTab('premium-hub')} variant="ghost" className="border gap-2">
+                        🚀 Browse Premium Hub
+                      </Button>
+                      <Button onClick={() => setIsModalOpen(true)} className="gap-2">
+                        <UploadCloud className="w-4 h-4" /> Upload First Dataset
+                      </Button>
+                    </div>
+                  </div>
+                )
+              )}
+
+              {/* PREMIUM DATASET HUB TAB */}
+              {datasetTab === 'premium-hub' && (
+                filteredPremium.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {filteredPremium.map(dataset => (
+                      <motion.div layout key={dataset.id}
+                        initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+                        className="rounded-[24px] p-6 transition-all duration-300 group flex flex-col hover:scale-[1.01] hover:shadow-[0_8px_30px_rgba(124,106,247,0.06)] hover:border-[var(--md-primary)] cursor-pointer border shadow-sm relative overflow-hidden"
+                        style={{ 
+                          background: previewDataset?.id === dataset.id ? 'var(--md-primary-container)' : 'var(--md-surface-1)', 
+                          borderColor: previewDataset?.id === dataset.id ? 'var(--md-primary)' : 'var(--md-outline-var)'
+                        }}
+                        onClick={() => setPreviewDataset(dataset)}
+                      >
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="p-3.5 rounded-2xl shadow-sm" style={fileTypeColor(dataset.file_type)}>
+                            {fileIcon(dataset.file_type)}
+                          </div>
+                          <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity" onClick={e => e.stopPropagation()}>
+                            <button onClick={() => setPreviewDataset(dataset)}
+                              className="p-2 rounded-xl border text-zinc-400 hover:text-zinc-200 hover:bg-[var(--md-surface-2)] transition cursor-pointer" style={{ borderColor: 'var(--md-outline-var)' }} title="Preview Template Records">
+                              <Eye className="w-4 h-4" />
+                            </button>
+                            <button onClick={() => handleCloneDataset(dataset)}
+                              className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-[10px] font-bold border transition-all cursor-pointer hover:bg-black/5 dark:hover:bg-white/5"
+                              style={{
+                                  background: clonedId === dataset.id ? 'var(--md-success-cont)' : 'var(--md-surface-2)',
+                                  borderColor: 'var(--md-outline)',
+                                  color: clonedId === dataset.id ? 'var(--md-success)' : 'var(--md-on-surface-var)'
+                              }}
+                              title="Clone to My Datasets"
+                            >
+                              {clonedId === dataset.id ? (
+                                <>
+                                  <CheckCircle2 className="w-3.5 h-3.5 text-green-500" /> Cloned!
+                                </>
+                              ) : (
+                                <>
+                                  <FolderDown className="w-3.5 h-3.5 text-[var(--md-primary)]" /> Save Dataset
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1.5">
+                            <h3 className="font-extrabold text-lg truncate group-hover:text-[var(--md-primary)] transition-colors duration-200" style={{ color: 'var(--md-on-surface)' }}>
+                              {dataset.name}
+                            </h3>
+                            <span className="text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider shrink-0 text-amber-500 bg-amber-500/10 border border-amber-500/20">PREMIUM</span>
+                          </div>
+                          <p className="text-xs line-clamp-3 mb-6 min-h-[2.5rem]" style={{ color: 'var(--md-on-surface-var)', opacity: 0.9 }}>
+                            {dataset.description}
+                          </p>
+                          <div className="flex flex-wrap gap-1.5 mb-4">
+                            {dataset.tags.map(t => (
+                              <span key={t} className="text-[10px] font-medium text-zinc-400">#{t}</span>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-3 pt-4 border-t" style={{ borderColor: 'var(--md-outline-var)' }}>
+                          {[['Type', dataset.file_type.toUpperCase()], ['Rows', dataset.row_count.toLocaleString()], ['Size', formatBytes(dataset.size_bytes)]].map(([l, v]) => (
+                            <div key={l}>
+                              <p className="text-[9px] font-bold uppercase tracking-wider mb-0.5" style={{ color: 'var(--md-on-surface-var)' }}>{l}</p>
+                              <p className="text-xs font-extrabold font-mono" style={{ color: 'var(--md-on-surface)' }}>{v}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-24 rounded-3xl" style={{ border: '1px dashed var(--md-outline)' }}>
+                    <Sparkles className="w-10 h-10 mx-auto mb-3 text-amber-500 animate-pulse" />
+                    <h3 className="text-xl font-bold mb-2" style={{ color: 'var(--md-on-surface)' }}>No templates found</h3>
+                    <p className="mb-4 text-center max-w-xs" style={{ color: 'var(--md-on-surface-var)' }}>
+                      Try adjusting your search criteria or categories to view premium dataset templates.
+                    </p>
+                  </div>
+                )
+              )}
             </AnimatePresence>
-          </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center py-24 rounded-3xl" style={{ border: '1px dashed var(--md-outline)' }}>
-            <Database className="w-14 h-14 mb-5" style={{ color: 'var(--md-outline)' }} />
-            <h3 className="text-xl font-bold mb-2" style={{ color: 'var(--md-on-surface)' }}>No datasets yet</h3>
-            <p className="mb-8 text-center max-w-xs" style={{ color: 'var(--md-on-surface-var)' }}>
-              Upload a CSV, JSON, JSONL, or TXT file to start building your training pipeline.
-            </p>
-            <Button onClick={() => setIsModalOpen(true)} className="gap-2">
-              <UploadCloud className="w-4 h-4" /> Upload First Dataset
-            </Button>
           </div>
         )}
       </div>
 
-      {/* ─── Upload Modal Overlay (CRITICAL: Preserved state & UI layout) ─── */}
+      {/* ─── Upload Modal Overlay ─── */}
       <AnimatePresence>
         {isModalOpen && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -545,6 +681,7 @@ export default function DatasetsPage() {
               exit={{ scale: 0.95, opacity: 0, y: 10 }}
               className="relative w-full max-w-lg rounded-3xl p-8"
               style={{ background: 'var(--md-surface-1)', border: '1px solid var(--md-outline)', boxShadow: 'var(--shadow-3)' }}
+              onClick={e => e.stopPropagation()}
             >
               
               {/* Header */}
@@ -555,7 +692,7 @@ export default function DatasetsPage() {
                 </div>
                 <button 
                   onClick={() => !isUploading && setIsModalOpen(false)}
-                  className="p-2 rounded-xl transition hover:bg-neutral-800" 
+                  className="p-2 rounded-xl transition hover:bg-neutral-800 cursor-pointer" 
                   style={{ color: 'var(--md-on-surface-var)' }}
                 >
                   <X className="w-5 h-5" />
@@ -586,7 +723,7 @@ export default function DatasetsPage() {
                       <button 
                         type="button" 
                         onClick={e => { e.stopPropagation(); setSelectedFile(null); setUploadedFiles([]); }}
-                        className="mt-3 text-xs transition hover:underline" 
+                        className="mt-3 text-xs transition hover:underline cursor-pointer" 
                         style={{ color: 'var(--md-error)' }}
                       >
                         Remove file
@@ -646,7 +783,7 @@ export default function DatasetsPage() {
                 <div className="space-y-2">
                   <label className="text-xs font-semibold uppercase tracking-wider px-1" style={{ color: 'var(--md-on-surface-var)' }}>Description</label>
                   <textarea
-                    className="w-full h-20 rounded-xl px-4 py-3 text-sm transition focus:outline-none resize-none focus:ring-1 focus:ring-purple-500"
+                    className="w-full h-20 rounded-xl px-4 py-3 text-sm transition focus:outline-none resize-none focus:ring-1 focus:ring-purple-500 outline-none"
                     style={{ background: 'var(--md-surface-2)', border: '1px solid var(--md-outline)', color: 'var(--md-on-surface)' }}
                     placeholder="Describe what these data instances are for..."
                     value={uploadDesc}
@@ -686,7 +823,7 @@ export default function DatasetsPage() {
         )}
       </AnimatePresence>
 
-      {/* ─── Data Preview Side Drawer (Ultra-Premium slide-out right) ─── */}
+      {/* ─── Data Preview Side Drawer ─── */}
       <AnimatePresence>
         {previewDataset && (
           <div className="fixed inset-0 z-[110] flex justify-end">
@@ -733,7 +870,7 @@ export default function DatasetsPage() {
                 
                 <button 
                   onClick={() => setPreviewDataset(null)} 
-                  className="p-2 rounded-lg border text-zinc-400 hover:text-zinc-200 transition hover:bg-neutral-800" 
+                  className="p-2 rounded-lg border text-zinc-400 hover:text-zinc-200 transition hover:bg-neutral-800 cursor-pointer" 
                   style={{ borderColor: 'var(--md-outline)' }}
                 >
                   <X className="w-4 h-4" />
@@ -772,7 +909,6 @@ export default function DatasetsPage() {
                   
                   <button
                     onClick={() => {
-                      // Save dataset selection instructions to train models instantly
                       localStorage.setItem('train_dataset_preset', JSON.stringify({
                         id: previewDataset.id,
                         name: previewDataset.name,
@@ -780,7 +916,7 @@ export default function DatasetsPage() {
                       }));
                       router.push('/dashboard/training');
                     }}
-                    className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-bold transition duration-200 hover:scale-[1.01] active:scale-[0.99]"
+                    className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-bold transition duration-200 hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
                     style={{ backgroundColor: 'var(--md-primary)', color: 'var(--md-on-primary)' }}
                   >
                     Start Training Job
@@ -798,6 +934,7 @@ export default function DatasetsPage() {
                   </div>
                   
                   <div className="bg-[#0D1117] border border-[var(--md-outline-var)] rounded-xl overflow-hidden relative group text-left">
+                    
                     {/* Mac OS style window dots for premium feel */}
                     <div className="bg-[#161B22] px-4 py-2 flex items-center gap-2 border-b border-gray-800">
                       <div className="w-2.5 h-2.5 rounded-full bg-red-500/80"></div>
@@ -826,17 +963,19 @@ export default function DatasetsPage() {
               </div>
 
               {/* Drawer Bottom Actions */}
-              <div className="p-6 border-t bg-zinc-900/10 flex items-center justify-between" style={{ borderColor: 'var(--md-outline-var)' }}>
-                <span className="text-[10px] font-mono" style={{ color: 'var(--md-on-surface-var)' }}>
-                  UUID: ds-ref-{previewDataset.id}
-                </span>
-                <button
-                  onClick={() => handleDelete(previewDataset)}
-                  className="px-3.5 py-1.5 rounded-xl border text-xs font-bold text-red-400 border-red-500/30 hover:bg-red-500/10 transition"
-                >
-                  Delete Dataset
-                </button>
-              </div>
+              {!(previewDataset.id.startsWith("pds-")) && (
+                <div className="p-6 border-t bg-zinc-900/10 flex items-center justify-between" style={{ borderColor: 'var(--md-outline-var)' }}>
+                  <span className="text-[10px] font-mono" style={{ color: 'var(--md-on-surface-var)' }}>
+                    UUID: ds-ref-{previewDataset.id}
+                  </span>
+                  <button
+                    onClick={() => handleDelete(previewDataset)}
+                    className="px-3.5 py-1.5 rounded-xl border text-xs font-bold text-red-400 border-red-500/30 hover:bg-red-500/10 transition cursor-pointer"
+                  >
+                    Delete Dataset
+                  </button>
+                </div>
+              )}
 
             </motion.div>
           </div>
