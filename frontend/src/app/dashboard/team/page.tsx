@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Users, Crown, Code2, Eye, UserPlus, X, Send,
   CheckCircle2, Clock, Activity, Shield,
-  Trash2, RefreshCw, ChevronDown, Loader2
+  Trash2, RefreshCw, ChevronDown, Loader2, Sparkles, Key, AlertCircle
 } from 'lucide-react';
 import { db } from "@/lib/firebase";
 import { collection, addDoc, query, where, getDocs, deleteDoc, doc, serverTimestamp, updateDoc } from "firebase/firestore";
@@ -14,36 +14,42 @@ import { collection, addDoc, query, where, getDocs, deleteDoc, doc, serverTimest
 type Role = 'Admin' | 'Developer' | 'Viewer';
 
 interface Member {
-  id: string; name: string; email: string; role: Role;
-  status: 'active' | 'offline' | 'invited'; lastSeen?: string; initials: string; color: string;
+  id: string;
+  name: string;
+  email: string;
+  role: Role;
+  status: 'active' | 'offline' | 'invited';
+  lastSeen?: string;
+  initials: string;
+  color: string;
 }
 
 const INITIAL_MEMBERS: Member[] = [
-  { id: 'm1', name: 'Sarah Chen',   email: 'sarah@company.com',   role: 'Admin',     status: 'active',  initials: 'SC', color: '#5b5bd6' },
-  { id: 'm2', name: 'James Wilson', email: 'james@company.com',   role: 'Developer', status: 'active',  initials: 'JW', color: '#3dd68c' },
-  { id: 'm3', name: 'Amira Patel',  email: 'amira@company.com',   role: 'Developer', status: 'offline', lastSeen: '2h ago', initials: 'AP', color: '#f5a623' },
+  { id: 'm1', name: 'Sarah Chen',   email: 'sarah@company.com',   role: 'Admin',     status: 'active',  initials: 'SC', color: 'var(--md-warning)' },
+  { id: 'm2', name: 'James Wilson', email: 'james@company.com',   role: 'Developer', status: 'active',  initials: 'JW', color: 'var(--md-primary)' },
+  { id: 'm3', name: 'Amira Patel',  email: 'amira@company.com',   role: 'Developer', status: 'offline', lastSeen: '2h ago', initials: 'AP', color: 'var(--md-success)' },
   { id: 'm4', name: 'Tom Bradley',  email: 'tom@company.com',     role: 'Viewer',    status: 'active',  initials: 'TB', color: '#e5534b' },
-  { id: 'm5', name: 'mike@startup.com', email: 'mike@startup.com', role: 'Developer', status: 'invited', initials: 'MI', color: '#8b8b99' },
+  { id: 'm5', name: 'mike@startup.com', email: 'mike@startup.com', role: 'Developer', status: 'invited', initials: 'MI', color: 'var(--md-on-surface-var)' },
 ];
 
 const ACTIVITY = [
-  { user: 'Sarah Chen',   action: 'deployed llama3-sentiment-v2',        time: '5 min ago', icon: CheckCircle2, color: 'var(--md-success)' },
-  { user: 'James Wilson', action: 'started training gpt2-code-assistant', time: '1 hr ago',  icon: Activity,     color: 'var(--md-primary)' },
-  { user: 'Amira Patel',  action: 'uploaded customer-reviews.csv',        time: '3 hr ago',  icon: CheckCircle2, color: 'var(--md-success)' },
-  { user: 'Tom Bradley',  action: 'viewed Analytics dashboard',           time: '5 hr ago',  icon: Eye,          color: 'var(--md-on-surface-var)' },
-  { user: 'Sarah Chen',   action: 'created API key prod-key-v2',          time: 'Yesterday', icon: Shield,       color: 'var(--md-primary)' },
-  { user: 'James Wilson', action: 'deleted bert-ner-v1 model',            time: 'Yesterday', icon: Trash2,       color: 'var(--md-error)' },
+  { user: 'Sarah Chen',   action: 'deployed llama3-sentiment-v2 endpoint', time: '5m ago',  icon: CheckCircle2, color: 'var(--md-success)' },
+  { user: 'James Wilson', action: 'started training gpt2-code-assistant', time: '1h ago',  icon: Activity,     color: 'var(--md-primary)' },
+  { user: 'Amira Patel',  action: 'uploaded customer-reviews-2026.csv',   time: '3h ago',  icon: CheckCircle2, color: 'var(--md-success)' },
+  { user: 'Tom Bradley',  action: 'viewed monitoring metrics feed',       time: '5h ago',  icon: Eye,          color: 'var(--md-on-surface-var)' },
+  { user: 'Sarah Chen',   action: 'issued master endpoint API credentials',time: 'Yesterday',icon: Shield,       color: 'var(--md-primary)' },
+  { user: 'James Wilson', action: 'deleted bert-ner-v1 model checkpoint', time: 'Yesterday',icon: Trash2,       color: 'var(--md-error)' },
 ];
 
 const PERMISSIONS: { action: string; admin: boolean; dev: boolean; viewer: boolean }[] = [
-  { action: 'View dashboard',       admin: true,  dev: true,  viewer: true  },
-  { action: 'Create datasets',      admin: true,  dev: true,  viewer: false },
-  { action: 'Train models',         admin: true,  dev: true,  viewer: false },
-  { action: 'Deploy endpoints',     admin: true,  dev: true,  viewer: false },
-  { action: 'Delete resources',     admin: true,  dev: false, viewer: false },
-  { action: 'Manage API keys',      admin: true,  dev: false, viewer: false },
-  { action: 'Billing & payments',   admin: true,  dev: false, viewer: false },
-  { action: 'Invite team members',  admin: true,  dev: false, viewer: false },
+  { action: 'View metrics & telemetry',admin: true,  dev: true,  viewer: true  },
+  { action: 'Create/Split datasets',   admin: true,  dev: true,  viewer: false },
+  { action: 'Launch fine-tuning runs', admin: true,  dev: true,  viewer: false },
+  { action: 'Deploy edge router APIs', admin: true,  dev: true,  viewer: false },
+  { action: 'Delete cluster resources',admin: true,  dev: false, viewer: false },
+  { action: 'Manage master credentials',admin: true,  dev: false, viewer: false },
+  { action: 'Billing subscription level',admin: true,  dev: false, viewer: false },
+  { action: 'Invite/Remove team members',admin: true,  dev: false, viewer: false },
 ];
 
 function roleIcon(role: Role) {
@@ -51,11 +57,13 @@ function roleIcon(role: Role) {
   if (role === 'Developer') return Code2;
   return Eye;
 }
+
 function roleColor(role: Role) {
   if (role === 'Admin') return 'var(--md-warning)';
   if (role === 'Developer') return 'var(--md-primary)';
   return 'var(--md-on-surface-var)';
 }
+
 function roleContColor(role: Role) {
   if (role === 'Admin') return 'var(--md-warning-cont)';
   if (role === 'Developer') return 'var(--md-primary-container)';
@@ -89,7 +97,7 @@ export default function TeamPage() {
             status: data.status || "active",
             lastSeen: data.lastSeen || undefined,
             initials: data.initials || "TM",
-            color: data.color || "#8b8b99"
+            color: data.color || "var(--md-primary)"
           });
         });
 
@@ -97,7 +105,6 @@ export default function TeamPage() {
           setMembers(fetched);
           localStorage.setItem('local_members', JSON.stringify(fetched));
         } else {
-          // Fallback to localStorage
           const local = localStorage.getItem('local_members');
           if (local) {
             setMembers(JSON.parse(local));
@@ -131,7 +138,7 @@ export default function TeamPage() {
     setSending(true);
     try {
       const initials = inviteEmail.slice(0, 2).toUpperCase();
-      const colors = ['#5b5bd6', '#3dd68c', '#f5a623', '#e5534b', '#8b8b99', '#7c6af7'];
+      const colors = ['var(--md-primary)', 'var(--md-success)', 'var(--md-warning)', '#e5534b', 'var(--logo-grad-start)'];
       const randomColor = colors[Math.floor(Math.random() * colors.length)];
       
       const memberData = {
@@ -177,7 +184,7 @@ export default function TeamPage() {
         role: inviteRole,
         status: 'invited',
         initials: initials,
-        color: '#8b8b99'
+        color: 'var(--md-primary)'
       };
       setMembers(prev => {
         const next = [...prev, newMember];
@@ -236,7 +243,7 @@ export default function TeamPage() {
   };
 
   const S = {
-    card:  { background: 'var(--md-surface-1)', border: '1px solid var(--md-outline)', boxShadow: 'var(--shadow-1)' } as React.CSSProperties,
+    card:  { background: 'var(--md-surface-1)', border: '1px solid var(--md-outline)', boxShadow: 'var(--shadow-1)', backdropFilter: 'blur(12px)' } as React.CSSProperties,
     text:  { color: 'var(--md-on-surface)' } as React.CSSProperties,
     muted: { color: 'var(--md-on-surface-var)' } as React.CSSProperties,
   };
@@ -245,119 +252,148 @@ export default function TeamPage() {
     <DashboardLayout>
       <div className="space-y-6 max-w-5xl">
 
-        {/* Header */}
-        <div className="flex items-start justify-between">
+        {/* Top Header */}
+        <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-semibold" style={S.text}>Team Management</h1>
-            <p className="text-sm mt-1" style={S.muted}>Manage your workspace members, roles, and permissions.</p>
+            <h1 className="text-2xl font-bold tracking-tight" style={S.text}>Team Management</h1>
+            <p className="text-sm mt-1" style={S.muted}>Delegate dashboard permissions, invite developers, and manage workspace access levels.</p>
           </div>
           <button onClick={() => setShowInvite(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity"
+            className="flex items-center gap-2 px-4.5 py-2.5 rounded-xl text-xs font-bold hover:opacity-90 transition-opacity"
             style={{ background: 'var(--md-primary)', color: 'var(--md-on-primary)' }}>
             <UserPlus className="w-4 h-4" /> Invite Member
           </button>
         </div>
 
-        {/* Stats */}
+        {/* Stats Row with visual indicators */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {[
             { label: 'Total Members', value: members.length,  color: 'var(--md-primary)',  icon: Users },
-            { label: 'Active Now',    value: activeCount,     color: 'var(--md-success)',  icon: Activity },
-            { label: 'Admins',        value: adminCount,      color: 'var(--md-warning)',  icon: Crown },
-            { label: 'Pending',       value: invitedCount,    color: 'var(--md-on-surface-var)', icon: Clock },
+            { label: 'Active Now',    value: activeCount,     color: 'var(--md-success)',  icon: Activity, pulse: true },
+            { label: 'Workspace Admins',value: adminCount,      color: 'var(--md-warning)',  icon: Crown },
+            { label: 'Pending Invites',value: invitedCount,    color: 'var(--md-on-surface-var)', icon: Clock },
           ].map(s => (
-            <div key={s.label} className="rounded-2xl p-4" style={S.card}>
-              <div className="flex items-center gap-2 mb-2">
-                <s.icon className="w-4 h-4" style={{ color: s.color }} />
-                <p className="text-[11px] font-mono uppercase tracking-wider" style={S.muted}>{s.label}</p>
+            <div key={s.label} className="rounded-2xl p-5 relative overflow-hidden transition-all hover:scale-[1.02]" style={S.card}>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: s.color + '15' }}>
+                    <s.icon className="w-4.5 h-4.5" style={{ color: s.color }} />
+                  </div>
+                  <p className="text-xs font-semibold" style={S.muted}>{s.label}</p>
+                </div>
+                {s.pulse && <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />}
               </div>
-              <p className="text-2xl font-bold" style={{ color: s.color }}>{isLoading ? "..." : s.value}</p>
+              <p className="text-3xl font-black mt-2" style={{ color: s.color }}>{isLoading ? "..." : s.value}</p>
             </div>
           ))}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Member list */}
+          {/* Member listing column */}
           <div className="lg:col-span-2 space-y-4">
-            <h2 className="font-semibold" style={S.text}>Members</h2>
-            <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <h2 className="font-bold text-lg" style={S.text}>Workspace Members</h2>
+              <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-purple-900 text-purple-200">
+                Firestore database active
+              </span>
+            </div>
+            
+            <div className="space-y-3">
               {isLoading ? (
-                <div className="flex flex-col items-center justify-center p-12 rounded-2xl" style={S.card}>
-                  <Loader2 className="w-8 h-8 text-[var(--md-primary)] animate-spin mb-2" />
-                  <p className="text-xs" style={S.muted}>Loading secure member database...</p>
+                <div className="flex flex-col items-center justify-center p-16 rounded-2xl" style={S.card}>
+                  <Loader2 className="w-8 h-8 text-[var(--md-primary)] animate-spin mb-3" />
+                  <p className="text-xs" style={S.muted}>Establishing secure Firestore handshake...</p>
                 </div>
               ) : members.length === 0 ? (
-                <div className="text-center p-12 rounded-2xl" style={S.card}>
-                  <Users className="w-8 h-8 mx-auto text-[var(--md-outline)] mb-2" />
-                  <p className="text-xs" style={S.muted}>No members in this workspace yet.</p>
+                <div className="text-center p-16 rounded-2xl" style={S.card}>
+                  <Users className="w-10 h-10 mx-auto text-[var(--md-outline)] mb-3 opacity-60" />
+                  <p className="text-sm font-semibold" style={S.text}>Workspace is empty</p>
+                  <p className="text-xs mt-1" style={S.muted}>Invite colleagues to collaborate in this workspace.</p>
                 </div>
               ) : (
                 members.map((m, i) => {
                   const RIcon = roleIcon(m.role);
                   return (
                     <motion.div key={m.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: i * 0.05 }}
-                      className="flex items-center gap-4 p-4 rounded-2xl group relative" style={S.card}>
-                      {/* Avatar */}
-                      <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 font-bold text-sm"
-                        style={{ background: m.color + '22', color: m.color }}>
+                      transition={{ delay: i * 0.04 }}
+                      className="flex items-center gap-4 p-4 rounded-2xl group relative transition-all hover:translate-x-1" style={S.card}>
+                      
+                      {/* Premium gradient rounded avatar */}
+                      <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 font-bold text-sm select-none"
+                        style={{
+                          background: m.status === 'invited' ? 'var(--md-surface-2)' : `linear-gradient(135deg, ${m.color} 0%, rgba(255,255,255,0.1) 100%)`,
+                          color: m.status === 'invited' ? 'var(--md-on-surface-var)' : '#fff',
+                          border: `1px solid ${m.status === 'invited' ? 'var(--md-outline)' : m.color + '40'}`,
+                          textShadow: '0 1px 2px rgba(0,0,0,0.15)'
+                        }}>
                         {m.initials}
                       </div>
-                      {/* Info */}
+
+                      {/* Name and email Details */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <p className="font-semibold text-sm truncate" style={S.text}>
+                          <p className="font-bold text-sm truncate" style={S.text}>
                             {m.status === 'invited' ? m.email : m.name}
                           </p>
-                          {/* Status dot */}
-                          <span className="w-2 h-2 rounded-full shrink-0" style={{
+                          <span className={`w-2 h-2 rounded-full shrink-0 ${m.status === 'active' ? 'animate-pulse' : ''}`} style={{
                             background: m.status === 'active' ? 'var(--md-success)' : m.status === 'offline' ? 'var(--md-outline)' : 'var(--md-warning)',
                           }} />
                           {m.status === 'invited' && (
-                            <span className="text-[10px] px-1.5 py-0.5 rounded font-medium"
-                              style={{ background: 'var(--md-warning-cont)', color: 'var(--md-warning)' }}>PENDING</span>
+                            <span className="text-[9px] px-2 py-0.5 rounded-full font-black animate-pulse bg-amber-500/10 text-amber-500 border border-amber-500/30">
+                              PENDING INVITE
+                            </span>
                           )}
                         </div>
-                        <p className="text-xs" style={S.muted}>
-                          {m.status === 'invited' ? 'Invite sent' : m.status === 'offline' ? `Last seen ${m.lastSeen}` : m.email}
+                        <p className="text-xs mt-0.5" style={S.muted}>
+                          {m.status === 'invited' ? 'Invite pending acceptance' : m.status === 'offline' ? `Last active ${m.lastSeen}` : m.email}
                         </p>
                       </div>
 
-                      {/* Role pill + dropdown */}
+                      {/* Modern Role selector pill */}
                       <div className="relative">
                         <button onClick={() => setOpenRoleMenu(openRoleMenu === m.id ? null : m.id)}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold"
-                          style={{ background: roleContColor(m.role), color: roleColor(m.role) }}>
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border hover:opacity-90"
+                          style={{
+                            background: roleContColor(m.role),
+                            color: roleColor(m.role),
+                            borderColor: roleColor(m.role) + '30'
+                          }}>
                           <RIcon className="w-3.5 h-3.5" />
                           {m.role}
-                          <ChevronDown className="w-3 h-3 opacity-60" />
+                          <ChevronDown className="w-3.5 h-3.5 opacity-60" />
                         </button>
                         <AnimatePresence>
                           {openRoleMenu === m.id && (
-                            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-                              exit={{ opacity: 0, scale: 0.95 }}
-                              className="absolute right-0 top-full mt-1 w-36 rounded-xl p-1 z-10"
-                              style={{ background: 'var(--md-surface-1)', border: '1px solid var(--md-outline)', boxShadow: 'var(--shadow-2)' }}>
-                              {(['Admin', 'Developer', 'Viewer'] as Role[]).map(r => {
-                                const RI = roleIcon(r);
-                                return (
-                                  <button key={r} onClick={() => changeRole(m.id, r)}
-                                    className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all"
-                                    style={{ color: m.role === r ? roleColor(r) : 'var(--md-on-surface-var)', background: m.role === r ? roleContColor(r) : 'transparent' }}>
-                                    <RI className="w-3.5 h-3.5" /> {r}
-                                  </button>
-                                );
-                              })}
-                            </motion.div>
+                            <>
+                              <div className="fixed inset-0 z-10" onClick={() => setOpenRoleMenu(null)} />
+                              <motion.div initial={{ opacity: 0, y: 4, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }}
+                                exit={{ opacity: 0, y: 4, scale: 0.95 }}
+                                className="absolute right-0 top-full mt-1.5 w-36 rounded-2xl p-1 z-20"
+                                style={{ background: 'var(--md-surface-1)', border: '1px solid var(--md-outline)', boxShadow: 'var(--shadow-3)' }}>
+                                {(['Admin', 'Developer', 'Viewer'] as Role[]).map(r => {
+                                  const RI = roleIcon(r);
+                                  return (
+                                    <button key={r} onClick={() => changeRole(m.id, r)}
+                                      className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all hover:bg-neutral-800"
+                                      style={{
+                                        color: m.role === r ? roleColor(r) : 'var(--md-on-surface-var)',
+                                        background: m.role === r ? roleContColor(r) : 'transparent'
+                                      }}>
+                                      <RI className="w-3.5 h-3.5" /> {r}
+                                    </button>
+                                  );
+                                })}
+                              </motion.div>
+                            </>
                           )}
                         </AnimatePresence>
                       </div>
 
-                      {/* Actions */}
+                      {/* Deletion action */}
                       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button onClick={() => removeMember(m.id)} title="Remove"
-                          className="p-1.5 rounded-lg" style={{ color: 'var(--md-error)' }}>
-                          <Trash2 className="w-3.5 h-3.5" />
+                        <button onClick={() => removeMember(m.id)} title="Revoke Access"
+                          className="p-2 rounded-xl hover:bg-red-500/10 transition-colors" style={{ color: 'var(--md-error)' }}>
+                          <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
                     </motion.div>
@@ -366,21 +402,25 @@ export default function TeamPage() {
               )}
             </div>
 
-            {/* Permissions matrix */}
-            <div className="rounded-2xl overflow-hidden mt-6" style={S.card}>
-              <div className="px-5 py-4" style={{ borderBottom: '1px solid var(--md-outline)' }}>
-                <h2 className="font-semibold" style={S.text}>Role Permissions</h2>
+            {/* Premium Role Permissions Matrix table */}
+            <div className="rounded-3xl overflow-hidden mt-6" style={S.card}>
+              <div className="px-6 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid var(--md-outline)' }}>
+                <div>
+                  <h3 className="font-bold text-sm" style={S.text}>Unified Permissions Grid</h3>
+                  <p className="text-xs" style={S.muted}>Role-based security boundaries for automated fine-tuning clusters.</p>
+                </div>
+                <Sparkles className="w-4.5 h-4.5 text-purple-400" />
               </div>
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full text-xs">
                   <thead>
                     <tr style={{ borderBottom: '1px solid var(--md-outline)' }}>
-                      <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider" style={S.muted}>Action</th>
+                      <th className="px-6 py-3.5 text-left font-bold uppercase tracking-widest" style={S.muted}>Scope Action</th>
                       {(['Admin', 'Developer', 'Viewer'] as Role[]).map(r => {
                         const RI = roleIcon(r);
                         return (
-                          <th key={r} className="px-5 py-3 text-center text-xs font-semibold uppercase tracking-wider" style={{ color: roleColor(r) }}>
-                            <div className="flex items-center justify-center gap-1"><RI className="w-3.5 h-3.5" />{r}</div>
+                          <th key={r} className="px-6 py-3.5 text-center font-bold uppercase tracking-widest" style={{ color: roleColor(r) }}>
+                            <div className="flex items-center justify-center gap-1.5"><RI className="w-3.5 h-3.5" />{r}</div>
                           </th>
                         );
                       })}
@@ -388,13 +428,17 @@ export default function TeamPage() {
                   </thead>
                   <tbody>
                     {PERMISSIONS.map((row, i) => (
-                      <tr key={row.action} style={{ borderTop: i > 0 ? '1px solid var(--md-outline-var)' : 'none' }}>
-                        <td className="px-5 py-3 text-sm" style={S.text}>{row.action}</td>
+                      <tr key={row.action} className="transition-colors hover:bg-neutral-800/10" style={{ borderTop: i > 0 ? '1px solid var(--md-outline-var)' : 'none' }}>
+                        <td className="px-6 py-3 text-xs font-semibold" style={S.text}>{row.action}</td>
                         {[row.admin, row.dev, row.viewer].map((has, j) => (
-                          <td key={j} className="px-5 py-3 text-center">
+                          <td key={j} className="px-6 py-3 text-center">
                             {has
-                              ? <CheckCircle2 className="w-4 h-4 mx-auto" style={{ color: 'var(--md-success)' }} />
-                              : <X className="w-4 h-4 mx-auto opacity-30" style={{ color: 'var(--md-on-surface-var)' }} />}
+                              ? <span className="w-5 h-5 rounded-full bg-green-500/10 border border-green-500/25 flex items-center justify-center mx-auto">
+                                  <CheckCircle2 className="w-3.5 h-3.5" style={{ color: 'var(--md-success)' }} />
+                                </span>
+                              : <span className="w-5 h-5 rounded-full bg-red-500/10 border border-red-500/25 flex items-center justify-center mx-auto">
+                                  <X className="w-3.5 h-3.5" style={{ color: 'var(--md-error)' }} />
+                                </span>}
                           </td>
                         ))}
                       </tr>
@@ -405,21 +449,26 @@ export default function TeamPage() {
             </div>
           </div>
 
-          {/* Activity feed */}
+          {/* Audit trail activity log */}
           <div>
-            <h2 className="font-semibold mb-4" style={S.text}>Recent Activity</h2>
+            <h2 className="font-bold text-lg mb-4" style={S.text}>Audit Trail Logs</h2>
             <div className="rounded-2xl p-5 space-y-4" style={S.card}>
               {ACTIVITY.map((a, i) => (
-                <div key={i} className="flex gap-3">
-                  <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
-                    style={{ background: 'var(--md-surface-2)' }}>
+                <div key={i} className="flex gap-3 relative group">
+                  {i < ACTIVITY.length - 1 && (
+                    <span className="absolute left-4 top-8 bottom-[-16px] w-[1px]" style={{ background: 'var(--md-outline-var)' }} />
+                  )}
+                  <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 relative z-10 transition-all group-hover:scale-105"
+                    style={{ background: 'var(--md-surface-2)', border: '1px solid var(--md-outline)' }}>
                     <a.icon className="w-4 h-4" style={{ color: a.color }} />
                   </div>
-                  <div>
-                    <p className="text-xs" style={S.text}>
-                      <span className="font-semibold">{a.user}</span> {a.action}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs leading-normal" style={S.text}>
+                      <span className="font-bold">{a.user}</span> <span className="opacity-80">{a.action}</span>
                     </p>
-                    <p className="text-[11px] mt-0.5" style={S.muted}>{a.time}</p>
+                    <p className="text-[10px] mt-1 font-semibold flex items-center gap-1" style={S.muted}>
+                      <Clock className="w-3 h-3" /> {a.time}
+                    </p>
                   </div>
                 </div>
               ))}
@@ -428,56 +477,62 @@ export default function TeamPage() {
         </div>
       </div>
 
-      {/* Invite Modal */}
+      {/* Modern Invitation Popup Modal */}
       <AnimatePresence>
         {showInvite && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               className="absolute inset-0 backdrop-blur-sm" style={{ background: 'var(--md-scrim)' }}
               onClick={() => !sending && setShowInvite(false)} />
+            
             <motion.div initial={{ scale: 0.95, opacity: 0, y: 10 }} animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="relative w-full max-w-md rounded-3xl p-8"
+              className="relative w-full max-w-md rounded-3xl p-6"
               style={{ background: 'var(--md-surface-1)', border: '1px solid var(--md-outline)', boxShadow: 'var(--shadow-3)' }}>
-              <button onClick={() => setShowInvite(false)} className="absolute top-5 right-5 p-2 rounded-xl" style={S.muted}>
+              
+              <button onClick={() => setShowInvite(false)} className="absolute top-4 right-4 p-2 rounded-xl" style={S.muted}>
                 <X className="w-5 h-5" />
               </button>
+
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-10 h-10 rounded-2xl flex items-center justify-center" style={{ background: 'var(--md-primary-container)' }}>
-                  <UserPlus className="w-5 h-5" style={{ color: 'var(--md-on-primary-cont)' }} />
+                  <UserPlus className="w-5 h-5" style={{ color: 'var(--md-primary)' }} />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold" style={S.text}>Invite Team Member</h2>
-                  <p className="text-xs" style={S.muted}>They'll receive an email invitation</p>
+                  <h2 className="text-lg font-black" style={S.text}>Invite Team Member</h2>
+                  <p className="text-xs mt-0.5" style={S.muted}>They'll receive an invitation email and direct gateway link.</p>
                 </div>
               </div>
+
               {sent ? (
-                <div className="text-center py-6">
-                  <CheckCircle2 className="w-12 h-12 mx-auto mb-3" style={{ color: 'var(--md-success)' }} />
-                  <p className="font-semibold" style={S.text}>Invitation sent!</p>
-                  <p className="text-sm mt-1" style={S.muted}>Check your team's inbox.</p>
+                <div className="text-center py-8">
+                  <CheckCircle2 className="w-14 h-14 mx-auto mb-3 text-green-500 animate-bounce" />
+                  <p className="font-bold text-sm" style={S.text}>Invitation Sent Successfully!</p>
+                  <p className="text-xs mt-1" style={S.muted}>An active profile has been registered in the Firebase database vault.</p>
                 </div>
               ) : (
                 <form onSubmit={handleInvite} className="space-y-4">
                   <div>
-                    <label className="text-xs font-medium mb-1.5 block" style={S.muted}>Email Address</label>
-                    <input type="email" required placeholder="colleague@company.com"
+                    <label className="text-xs font-semibold mb-1.5 block" style={S.muted}>Colleague Email Address</label>
+                    <input type="email" required placeholder="colleague@startup.com"
                       value={inviteEmail} onChange={e => setInviteEmail(e.target.value)}
                       className="w-full h-11 rounded-xl px-4 text-sm"
                       style={{ background: 'var(--md-surface-2)', border: '1px solid var(--md-outline)', color: 'var(--md-on-surface)', outline: 'none' }} />
                   </div>
+                  
                   <div>
-                    <label className="text-xs font-medium mb-1.5 block" style={S.muted}>Role</label>
+                    <label className="text-xs font-semibold mb-1.5 block" style={S.muted}>Workspace Role Level</label>
                     <div className="grid grid-cols-3 gap-2">
                       {(['Admin', 'Developer', 'Viewer'] as Role[]).map(r => {
                         const RI = roleIcon(r);
+                        const isSelected = inviteRole === r;
                         return (
                           <button key={r} type="button" onClick={() => setInviteRole(r)}
-                            className="p-3 rounded-xl text-xs font-semibold flex flex-col items-center gap-1.5 transition-all"
+                            className="p-3 rounded-xl text-xs font-bold flex flex-col items-center gap-1.5 transition-all border hover:scale-[1.02]"
                             style={{
-                              background: inviteRole === r ? roleContColor(r) : 'var(--md-surface-2)',
-                              border: `2px solid ${inviteRole === r ? roleColor(r) : 'var(--md-outline)'}`,
-                              color: inviteRole === r ? roleColor(r) : 'var(--md-on-surface-var)',
+                              background: isSelected ? roleContColor(r) : 'var(--md-surface-2)',
+                              border: `2px solid ${isSelected ? roleColor(r) : 'var(--md-outline)'}`,
+                              color: isSelected ? roleColor(r) : 'var(--md-on-surface-var)',
                             }}>
                             <RI className="w-4 h-4" /> {r}
                           </button>
@@ -485,12 +540,21 @@ export default function TeamPage() {
                       })}
                     </div>
                   </div>
+
+                  <div className="flex items-center gap-2 p-3 rounded-xl mb-2"
+                    style={{ background: 'var(--md-primary-container)', border: '1px solid var(--md-outline-var)' }}>
+                    <AlertCircle className="w-4 h-4 shrink-0 text-purple-600" />
+                    <p className="text-[10px]" style={{ color: 'var(--md-on-surface-var)' }}>
+                      New members default to <strong>Pending</strong> status until they accept invitation credentials.
+                    </p>
+                  </div>
+
                   <button type="submit" disabled={!inviteEmail || sending}
-                    className="w-full h-11 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-opacity hover:opacity-90 disabled:opacity-50"
+                    className="w-full h-11 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-opacity hover:opacity-90 disabled:opacity-50 mt-4"
                     style={{ background: 'var(--md-primary)', color: 'var(--md-on-primary)' }}>
                     {sending
-                      ? <><Loader2 className="w-4 h-4 animate-spin" />Sending...</>
-                      : <><Send className="w-4 h-4" />Send Invitation</>}
+                      ? <><Loader2 className="w-4 h-4 animate-spin" /> Issuing Invite...</>
+                      : <><Send className="w-4 h-4" /> Send Workspace Invite</>}
                   </button>
                 </form>
               )}
