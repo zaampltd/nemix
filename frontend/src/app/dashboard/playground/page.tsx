@@ -15,16 +15,7 @@ interface Message {
 
 export default function PlaygroundPage() {
   // ─── State Management ──────────────────────────────────────────────────────
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      role: "user",
-      text: "How can I deploy a local edge routing gateway?"
-    },
-    {
-      role: "ai",
-      text: "You can deploy it using the Nemix Edge SDK. Navigate to the Edge Router section in the sidebar to download the edge configuration, install `@nemix/sdk` via npm, and initialize it with your secure client-side encryption key.\n\n```javascript\nimport { NemixRouter } from '@nemix/sdk';\n\nconst router = new NemixRouter({\n  apiKey: process.env.NEMIX_API_KEY,\n  fallbackChain: ['openai', 'anthropic', 'gemini']\n});\n```\nThis setup allows full local client execution with absolute offline-first protection."
-    }
-  ]);
+  const [messages, setMessages] = useState<{role: 'user' | 'ai', text: string}[]>([]);
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   
