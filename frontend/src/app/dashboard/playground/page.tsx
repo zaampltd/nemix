@@ -16,8 +16,29 @@ interface Message {
 export default function PlaygroundPage() {
   // ─── State Management ──────────────────────────────────────────────────────
   const [messages, setMessages] = useState<{role: 'user' | 'ai', text: string}[]>([]);
+  const [isMounted, setIsMounted] = useState(false);
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  // Load chat from localStorage on initial mount
+  useEffect(() => {
+    setIsMounted(true);
+    const savedChat = localStorage.getItem("nemix_playground_chat");
+    if (savedChat) {
+      try {
+        setMessages(JSON.parse(savedChat));
+      } catch (e) {
+        console.error("Could not parse saved chat");
+      }
+    }
+  }, []);
+
+  // Save chat to localStorage whenever it changes
+  useEffect(() => {
+    if (isMounted) {
+      localStorage.setItem("nemix_playground_chat", JSON.stringify(messages));
+    }
+  }, [messages, isMounted]);
   
   // Sidebar config settings
   const [routingMode, setRoutingMode] = useState("auto");
