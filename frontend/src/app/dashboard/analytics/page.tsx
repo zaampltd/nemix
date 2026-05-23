@@ -62,17 +62,19 @@ function BarChartComp({ data }: { data: number[] }) {
   const max = Math.max(...data);
   const labels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
   return (
-    <div className="flex items-end gap-2 h-28">
+    <div className="flex items-end gap-3 h-28 pt-2">
       {data.map((v, i) => (
-        <div key={i} className="flex-1 flex flex-col items-center gap-1">
-          <motion.div
-            initial={{ height: 0 }}
-            animate={{ height: `${(v / max) * 100}%` }}
-            transition={{ delay: i * 0.05, duration: 0.5, ease: "easeOut" }}
-            className="w-full rounded-t-lg"
-            style={{ background: "var(--md-primary)", opacity: 0.7 + (v / max) * 0.3 }}
-          />
-          <span className="text-[9px]" style={{ color: "var(--md-on-surface-var)" }}>{labels[i % 7]}</span>
+        <div key={i} className="flex-1 flex flex-col items-center justify-end h-full gap-1.5">
+          <div className="w-full h-20 relative flex items-end">
+            <motion.div
+              initial={{ height: 0 }}
+              animate={{ height: `${(v / max) * 100}%` }}
+              transition={{ delay: i * 0.05, duration: 0.5, ease: "easeOut" }}
+              className="w-full rounded-t-lg"
+              style={{ background: "var(--md-primary)", opacity: 0.7 + (v / max) * 0.3 }}
+            />
+          </div>
+          <span className="text-[9px] font-semibold shrink-0" style={{ color: "var(--md-on-surface-var)" }}>{labels[i % 7]}</span>
         </div>
       ))}
     </div>

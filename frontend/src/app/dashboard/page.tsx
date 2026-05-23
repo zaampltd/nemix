@@ -430,89 +430,131 @@ export default function Dashboard() {
 
         </motion.div>
 
-        {/* ── Dynamic System Status & Active Pipeline Gauge ── */}
+        {/* ── Dynamic System Status, Webhooks & Active Pipeline Gauge ── */}
         <motion.div 
           initial={{ opacity: 0, y: 8 }} 
           animate={{ opacity: 1, y: 0 }} 
           transition={{ delay: 0.2 }}
-          className="grid grid-cols-1 lg:grid-cols-2 gap-6"
+          className="grid grid-cols-1 lg:grid-cols-3 gap-6"
         >
 
           {/* Operational Status Card */}
-          <div className="rounded-2xl p-6 border" style={S.card}>
-            <p className="text-sm font-bold mb-4" style={S.textPrimary}>Nemix Cluster Telemetry</p>
-            <div className="space-y-1">
-              {[
-                { name: "Serverless Training Nodes", latency: "14ms", status: "operational" },
-                { name: "Model Router Gateway", latency: "6ms", status: "operational" },
-                { name: "Vector Dataset Vault", latency: "3ms", status: "operational" },
-                { name: "Model Compiler System", latency: "9ms", status: "operational" },
-              ].map(svc => (
-                <div key={svc.name} className="flex items-center justify-between py-3" style={S.divider}>
-                  <div className="flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full" style={{ background: "var(--md-success)" }} />
-                    <span className="text-xs font-semibold" style={S.textSecondary}>{svc.name}</span>
+          <div className="rounded-2xl p-6 border flex flex-col justify-between" style={S.card}>
+            <div>
+              <p className="text-sm font-bold mb-4" style={S.textPrimary}>Nemix Cluster Telemetry</p>
+              <div className="space-y-1">
+                {[
+                  { name: "Serverless Training Nodes", latency: "14ms", status: "operational" },
+                  { name: "Model Router Gateway", latency: "6ms", status: "operational" },
+                  { name: "Vector Dataset Vault", latency: "3ms", status: "operational" },
+                  { name: "Model Compiler System", latency: "9ms", status: "operational" },
+                ].map(svc => (
+                  <div key={svc.name} className="flex items-center justify-between py-2.5" style={S.divider}>
+                    <div className="flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full" style={{ background: "var(--md-success)" }} />
+                      <span className="text-xs font-semibold" style={S.textSecondary}>{svc.name}</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs font-mono font-medium" style={S.textSecondary}>{svc.latency}</span>
+                      <span className="text-[9px] font-bold font-mono px-2 py-0.5 rounded-full" style={{ background: "var(--md-success-cont)", color: "var(--md-success)" }}>
+                        {svc.status}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-xs font-mono font-medium" style={S.textSecondary}>{svc.latency}</span>
-                    <span className="text-[9px] font-bold font-mono px-2 py-0.5 rounded-full" style={{ background: "var(--md-success-cont)", color: "var(--md-success)" }}>
-                      {svc.status}
-                    </span>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Active Webhook Receivers Card */}
+          <div className="rounded-2xl p-6 border flex flex-col justify-between" style={S.card}>
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-sm font-bold" style={S.textPrimary}>Active Webhooks</p>
+                <Link href="/dashboard/webhooks" className="flex items-center gap-1 text-xs font-bold transition hover:opacity-85" style={S.primary}>
+                  Webhooks Hub <ChevronRight className="w-4 h-4" />
+                </Link>
+              </div>
+              
+              <div className="space-y-1">
+                {[
+                  { name: "Slack Alerts Receiver", url: "hooks.slack.com/services/...", rate: "98.4%", active: true },
+                  { name: "Production API Webhook", url: "api.company.com/v1/webhook", rate: "99.1%", active: true },
+                  { name: "Discord Notifier", url: "discord.com/api/webhooks/...", rate: "84.6%", active: false },
+                ].map(wh => (
+                  <div key={wh.name} className="flex items-center justify-between py-2.5" style={S.divider}>
+                    <div className="min-w-0 flex-1 pr-2 text-left">
+                      <p className="text-xs font-bold truncate" style={S.textPrimary}>{wh.name}</p>
+                      <p className="text-[9px] font-mono opacity-60 truncate mt-0.5" style={S.textSecondary}>{wh.url}</p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-[10px] font-mono font-bold" style={S.textSecondary}>{wh.rate}</span>
+                      <span className={`text-[8px] font-bold font-mono px-2 py-0.5 rounded-full`}
+                        style={{
+                          background: wh.active ? "var(--md-success-cont)" : "var(--md-error-cont)",
+                          color: wh.active ? "var(--md-success)" : "var(--md-error)"
+                        }}
+                      >
+                        {wh.active ? "active" : "failing"}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
 
           {/* Active fine-tuning job gauge */}
-          <div className="rounded-2xl p-6 border flex flex-col" style={S.card}>
-            <div className="flex items-center justify-between mb-4">
-              <p className="text-sm font-bold" style={S.textPrimary}>Cluster Training Monitor</p>
-              <Link href="/dashboard/training" className="flex items-center gap-1 text-xs font-bold transition hover:opacity-85" style={S.primary}>
-                Training Console <ChevronRight className="w-4 h-4" />
-              </Link>
-            </div>
-            
-            <div className="flex-1 flex flex-col justify-center space-y-4">
-              {activeJobsList.length === 0 ? (
-                <div className="py-8 text-center flex flex-col items-center justify-center gap-2.5">
-                  <Activity className="w-8 h-8 text-zinc-500 opacity-60 animate-pulse" />
-                  <p className="text-xs font-bold" style={S.textSecondary}>No active jobs running on cluster</p>
-                  <Link href="/dashboard/training">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-purple-400 hover:underline">Start a training run &rarr;</span>
-                  </Link>
-                </div>
-              ) : (
-                activeJobsList.map(job => (
-                  <div key={job.id} className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="relative flex h-2 w-2">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ backgroundColor: "var(--md-primary)" }}></span>
-                          <span className="relative inline-flex rounded-full h-2 w-2" style={{ backgroundColor: "var(--md-primary)" }}></span>
-                        </span>
-                        <span className="text-xs font-mono font-bold truncate max-w-[190px]" style={S.textSecondary}>{job.name}</span>
-                      </div>
-                      <span className="text-[10px] font-mono font-semibold" style={S.textSecondary}>Epoch {job.epoch} • {job.eta}</span>
-                    </div>
-                    
-                    {/* Linear Progress bar */}
-                    <div className="h-2 rounded-full overflow-hidden" style={{ background: "var(--md-surface-3)" }}>
-                      <motion.div 
-                        initial={{ width: 0 }} 
-                        animate={{ width: `${job.progress}%` }} 
-                        transition={{ duration: 0.8, ease: "easeOut" }}
-                        className="h-full rounded-full" 
-                        style={{ backgroundColor: "var(--md-primary)" }} 
-                      />
-                    </div>
-                    <div className="flex items-center justify-between text-[9px] font-bold" style={S.textSecondary}>
-                      <span>Fine-tuning Active</span>
-                      <span>{job.progress}%</span>
-                    </div>
+          <div className="rounded-2xl p-6 border flex flex-col justify-between" style={S.card}>
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-sm font-bold" style={S.textPrimary}>Cluster Training Monitor</p>
+                <Link href="/dashboard/training" className="flex items-center gap-1 text-xs font-bold transition hover:opacity-85" style={S.primary}>
+                  Training Console <ChevronRight className="w-4 h-4" />
+                </Link>
+              </div>
+              
+              <div className="flex flex-col justify-center space-y-4 pt-1">
+                {activeJobsList.length === 0 ? (
+                  <div className="py-6 text-center flex flex-col items-center justify-center gap-2.5">
+                    <Activity className="w-8 h-8 text-zinc-500 opacity-60 animate-pulse" />
+                    <p className="text-xs font-bold" style={S.textSecondary}>No active jobs running on cluster</p>
+                    <Link href="/dashboard/training">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-purple-400 hover:underline">Start a training run &rarr;</span>
+                    </Link>
                   </div>
-                ))
-              )}
+                ) : (
+                  activeJobsList.map(job => (
+                    <div key={job.id} className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="relative flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ backgroundColor: "var(--md-primary)" }}></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2" style={{ backgroundColor: "var(--md-primary)" }}></span>
+                          </span>
+                          <span className="text-xs font-mono font-bold truncate max-w-[120px]" style={S.textSecondary}>{job.name}</span>
+                        </div>
+                        <span className="text-[9px] font-mono font-semibold" style={S.textSecondary}>Epoch {job.epoch} • {job.eta}</span>
+                      </div>
+                      
+                      {/* Linear Progress bar */}
+                      <div className="h-2 rounded-full overflow-hidden" style={{ background: "var(--md-surface-3)" }}>
+                        <motion.div 
+                          initial={{ width: 0 }} 
+                          animate={{ width: `${job.progress}%` }} 
+                          transition={{ duration: 0.8, ease: "easeOut" }}
+                          className="h-full rounded-full" 
+                          style={{ backgroundColor: "var(--md-primary)" }} 
+                        />
+                      </div>
+                      <div className="flex items-center justify-between text-[9px] font-bold" style={S.textSecondary}>
+                        <span>Fine-tuning Active</span>
+                        <span>{job.progress}%</span>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
           </div>
 
