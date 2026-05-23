@@ -45,10 +45,15 @@ const BASE_MODELS = [
   "llava-hf/llava-1.5-7b-hf"
 ];
 
-const TASK_TYPES = [
-  'Text Classification','Text Generation','Question Answering',
-  'Named Entity Recognition','Sentiment Analysis','Summarization',
-  'Translation','Image Classification','Speech Recognition',
+const taskTypeCards = [
+  { id: "Text Generation", name: "Text Generation", desc: "Chatbots, code generation, and writing.", icon: "✨" },
+  { id: "Text Classification", name: "Classification", desc: "Sentiment analysis & tagging.", icon: "🏷️" },
+  { id: "Question Answering", name: "Q & A", desc: "Extract answers from context.", icon: "💬" },
+  { id: "Summarization", name: "Summarization", desc: "Condense long documents.", icon: "📝" },
+  { id: "Translation", name: "Translation", desc: "Multi-language translation.", icon: "🌍" },
+  { id: "Speech Recognition", name: "Speech-to-Text", desc: "Transcribe audio files.", icon: "🎙️" },
+  { id: "Image Generation", name: "Image Generation", desc: "Create images from text.", icon: "🎨" },
+  { id: "Embeddings", name: "Embeddings", desc: "Vector representations for RAG.", icon: "🧠" }
 ];
 
 interface AIModel {
@@ -76,7 +81,7 @@ export default function ModelsPage() {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [baseModel, setBaseModel] = useState(BASE_MODELS[0]);
-  const [taskType, setTaskType] = useState(TASK_TYPES[0]);
+  const [taskType, setTaskType] = useState(taskTypeCards[0].id);
   const [creating, setCreating] = useState(false);
 
   // States for custom dropdown UI toggles
@@ -184,7 +189,7 @@ export default function ModelsPage() {
       setModels(prev => [localModel, ...prev]);
     }
     closeModal();
-    setName(''); setDescription(''); setBaseModel(BASE_MODELS[0]); setTaskType(TASK_TYPES[0]);
+    setName(''); setDescription(''); setBaseModel(BASE_MODELS[0]); setTaskType(taskTypeCards[0].id);
     setCreating(false);
   };
 
@@ -537,46 +542,37 @@ export default function ModelsPage() {
 
                 {/* STEP 3: Task & Objective */}
                 {currentStep === 3 && (
-                  <div className="space-y-5 animate-in fade-in slide-in-from-right-3 duration-250 min-h-[16rem]">
-                    <div className="relative space-y-2">
+                  <div className="space-y-4 animate-in fade-in slide-in-from-right-3 duration-250 min-h-[16rem]">
+                    <div className="space-y-2">
                       <label className="text-xs font-semibold uppercase tracking-wider px-1" style={{ color: 'var(--md-on-surface-var)' }}>
-                        Task Type
+                        Task Type Objective
                       </label>
-                      <div 
-                        onClick={() => {
-                          setIsTaskTypeOpen(!isTaskTypeOpen);
-                          setIsBaseModelOpen(false);
-                        }}
-                        className="w-full p-3.5 rounded-xl bg-[var(--md-surface-2)] border cursor-pointer flex justify-between items-center transition-all duration-200 hover:border-purple-500/80 hover:shadow-[0_0_12px_rgba(124,106,247,0.1)]"
-                        style={{ borderColor: 'var(--md-outline)' }}
-                      >
-                        <div className="flex items-center gap-2">
-                          <MessageSquare className="w-4 h-4 text-purple-400" />
-                          <span className="text-sm font-semibold" style={{ color: 'var(--md-on-surface)' }}>{taskType}</span>
-                        </div>
-                        <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${isTaskTypeOpen ? 'rotate-180' : ''}`} />
-                      </div>
                       
-                      {isTaskTypeOpen && (
-                        <div className="absolute z-[999] top-[calc(100%+4px)] left-0 w-full max-h-52 overflow-y-auto bg-[var(--md-surface-1)] border rounded-xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2"
-                          style={{ borderColor: 'var(--md-outline)' }}
-                        >
-                          {TASK_TYPES.map(type => (
-                            <div 
-                              key={type}
-                              onClick={() => { setTaskType(type); setIsTaskTypeOpen(false); }}
-                              className={`flex items-center gap-2 p-3 text-sm cursor-pointer transition-colors duration-150 ${
-                                taskType === type 
-                                  ? 'bg-[var(--md-primary-container)] text-[var(--md-on-primary-cont)] font-bold' 
-                                  : 'text-[var(--md-on-surface)] hover:bg-purple-500/10 hover:text-purple-600'
-                              }`}
-                            >
-                              <MessageSquare className="w-3.5 h-3.5 opacity-60" />
-                              {type}
+                      <div className="grid grid-cols-2 gap-3 max-h-60 overflow-y-auto pr-1">
+                        {taskTypeCards.map(card => (
+                          <div 
+                            key={card.id}
+                            onClick={() => setTaskType(card.id)}
+                            className={`p-3.5 rounded-xl border cursor-pointer transition-all duration-200 text-left flex items-start gap-3 hover:scale-[1.01] hover:shadow-md ${
+                              taskType === card.id 
+                                ? 'bg-[var(--md-primary-container)] border-purple-500 shadow-[0_0_12px_rgba(124,106,247,0.15)]' 
+                                : 'bg-[var(--md-surface-2)] border-[var(--md-outline)] hover:border-purple-500/50'
+                            }`}
+                          >
+                            <div className="text-xl p-1.5 bg-black/5 dark:bg-white/5 rounded-lg shrink-0 select-none">
+                              {card.icon}
                             </div>
-                          ))}
-                        </div>
-                      )}
+                            <div className="min-w-0">
+                              <h4 className={`text-xs font-bold truncate ${taskType === card.id ? 'text-purple-600 dark:text-purple-400' : 'text-[var(--md-on-surface)]'}`}>
+                                {card.name}
+                              </h4>
+                              <p className="text-[10px] line-clamp-2 mt-0.5" style={{ color: 'var(--md-on-surface-var)', opacity: 0.8 }}>
+                                {card.desc}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                     <div className="p-4 rounded-xl text-xs leading-relaxed" style={{ backgroundColor: 'var(--md-surface-2)', border: '1px solid var(--md-outline-var)', color: 'var(--md-on-surface-var)' }}>
                       🎯 **Notice:** Task types define the adapter classification objective and shape the token mapping logic of fine-tuning pipelines.
