@@ -91,7 +91,7 @@ export default function DatasetsPage() {
   const [previewDataset, setPreviewDataset] = useState<any | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
-  const [uploadingFiles, setUploadingFiles] = useState<{name: string, size: string, status: 'uploading' | 'completed'}[]>([]);
+  const [uploadedFiles, setUploadedFiles] = useState<{name: string, size: string, status: 'uploading' | 'completed'}[]>([]);
 
   // Form parameters
   const [uploadName, setUploadName] = useState('');
@@ -159,7 +159,7 @@ export default function DatasetsPage() {
     setUploadName(''); 
     setUploadDesc(''); 
     setSelectedFile(null);
-    setUploadingFiles([]);
+    setUploadedFiles([]);
     setIsUploading(false);
   };
 
@@ -218,11 +218,11 @@ export default function DatasetsPage() {
       status: 'uploading' as const 
     };
     
-    setUploadingFiles([newFile]);
+    setUploadedFiles([newFile]);
 
     // Simulate completion in state
     setTimeout(() => {
-      setUploadingFiles(prev => prev.map(f => f.name === file.name ? { ...f, status: 'completed' } : f));
+      setUploadedFiles(prev => prev.map(f => f.name === file.name ? { ...f, status: 'completed' } : f));
     }, 2000);
   };
 
@@ -435,7 +435,7 @@ export default function DatasetsPage() {
                       <p className="text-xs mt-1" style={{ color: 'var(--md-on-surface-var)' }}>{formatBytes(selectedFile.size)}</p>
                       <button 
                         type="button" 
-                        onClick={e => { e.stopPropagation(); setSelectedFile(null); setUploadingFiles([]); }}
+                        onClick={e => { e.stopPropagation(); setSelectedFile(null); setUploadedFiles([]); }}
                         className="mt-3 text-xs transition hover:underline" 
                         style={{ color: 'var(--md-error)' }}
                       >
@@ -461,9 +461,9 @@ export default function DatasetsPage() {
                 </div>
 
                 {/* Upload Progress Monitor */}
-                {uploadingFiles.length > 0 && (
+                {uploadedFiles.length > 0 && (
                   <div className="space-y-2 p-3.5 rounded-xl border" style={{ backgroundColor: 'var(--md-surface-2)', borderColor: 'var(--md-outline-var)' }}>
-                    {uploadingFiles.map((file, idx) => (
+                    {uploadedFiles.map((file, idx) => (
                       <div key={idx} className="flex items-center justify-between text-xs gap-3">
                         <div className="flex items-center gap-2 truncate">
                           <FileText className="h-4 w-4 text-purple-400 shrink-0" />
