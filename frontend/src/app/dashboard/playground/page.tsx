@@ -22,6 +22,8 @@ export default function PlaygroundPage() {
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [trainedModels, setTrainedModels] = useState<any[]>([]);
+  const [playgroundType, setPlaygroundType] = useState<"gateway" | "trained">("gateway");
+  const [selectedTrainedModel, setSelectedTrainedModel] = useState("");
 
   // Load chat from Firebase on initial mount
   useEffect(() => {
@@ -120,6 +122,21 @@ export default function PlaygroundPage() {
     };
     fetchTrainedModels();
   }, [isMounted]);
+
+  // Synchronize routingMode when playgroundType or selectedTrainedModel changes
+  useEffect(() => {
+    if (playgroundType === "gateway") {
+      setRoutingMode("auto");
+    } else {
+      if (selectedTrainedModel) {
+        setRoutingMode(selectedTrainedModel);
+      } else if (trainedModels.length > 0) {
+        const defaultVal = `custom-${trainedModels[0].name}`;
+        setSelectedTrainedModel(defaultVal);
+        setRoutingMode(defaultVal);
+      }
+    }
+  }, [playgroundType, trainedModels, selectedTrainedModel]);
   
   // Sidebar config settings
   const [routingMode, setRoutingMode] = useState("auto");
@@ -342,44 +359,134 @@ export default function PlaygroundPage() {
                     </span>
                   </div>
 
-                  {/* Dropdown: Routing Mode */}
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-wider flex items-center justify-between" style={{ color: "var(--md-on-surface-var)" }}>
-                      Routing Mode
-                      <span title="Edge Router uses low latency model chains, direct options call specific APIs.">
-                        <HelpCircle className="w-3 h-3 opacity-60 cursor-help" />
-                      </span>
+                  {/* Visual Mode Selector Tabs */}
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold uppercase tracking-wider block" style={{ color: "var(--md-on-surface-var)" }}>
+                      Evaluation Mode
                     </label>
-                    <div className="relative">
-                      <select
-                        value={routingMode}
-                        onChange={e => setRoutingMode(e.target.value)}
-                        className="w-full pl-3 pr-9 py-2.5 rounded-xl text-xs font-medium outline-none border cursor-pointer appearance-none transition-colors"
+                    <div className="flex rounded-xl p-1 gap-1 border" style={{ backgroundColor: "var(--md-surface-2)", borderColor: "var(--md-outline-var)" }}>
+                      <button
+                        type="button"
+                        onClick={() => setPlaygroundType("gateway")}
+                        className="flex-1 py-1.5 rounded-lg text-[10px] font-bold transition duration-150 cursor-pointer"
                         style={{
-                          background: "var(--md-surface-2)",
-                          borderColor: "var(--md-outline)",
-                          color: "var(--md-on-surface)"
+                          backgroundColor: playgroundType === "gateway" ? "var(--md-surface-1)" : "transparent",
+                          color: playgroundType === "gateway" ? "var(--md-primary)" : "var(--md-on-surface-var)",
+                          boxShadow: playgroundType === "gateway" ? "0 2px 8px rgba(0,0,0,0.06)" : "none",
+                          border: playgroundType === "gateway" ? "1px solid var(--md-outline)" : "1px solid transparent"
                         }}
                       >
-                        <optgroup label="Gateway & Routing" style={{ background: "var(--md-surface-1)", color: "var(--md-on-surface)" }}>
+                        🌐 Gateway
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPlaygroundType("trained")}
+                        className="flex-1 py-1.5 rounded-lg text-[10px] font-bold transition duration-150 cursor-pointer"
+                        style={{
+                          backgroundColor: playgroundType === "trained" ? "var(--md-surface-1)" : "transparent",
+                          color: playgroundType === "trained" ? "var(--md-primary)" : "var(--md-on-surface-var)",
+                          boxShadow: playgroundType === "trained" ? "0 2px 8px rgba(0,0,0,0.06)" : "none",
+                          border: playgroundType === "trained" ? "1px solid var(--md-outline)" : "1px solid transparent"
+                        }}
+                      >
+                        🧠 Custom Models
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Dropdown: Routing Mode (Gateway) */}
+                  {playgroundType === "gateway" && (
+                    <div className="space-y-2 animate-in fade-in duration-200">
+                      <label className="text-[10px] font-bold uppercase tracking-wider flex items-center justify-between" style={{ color: "var(--md-on-surface-var)" }}>
+                        Gateway Routing Mode
+                        <span title="Edge Router uses low latency model chains, direct options call specific APIs.">
+                          <HelpCircle className="w-3 h-3 opacity-60 cursor-help" />
+                        </span>
+                      </label>
+                      <div className="relative">
+                        <select
+                          value={routingMode.startsWith("custom-") ? "auto" : routingMode}
+                          onChange={e => setRoutingMode(e.target.value)}
+                          className="w-full pl-3 pr-9 py-2.5 rounded-xl text-xs font-medium outline-none border cursor-pointer appearance-none transition-colors"
+                          style={{
+                            background: "var(--md-surface-2)",
+                            borderColor: "var(--md-outline)",
+                            color: "var(--md-on-surface)"
+                          }}
+                        >
                           <option value="auto" style={{ background: "var(--md-surface-1)", color: "var(--md-on-surface)" }}>Nemix Edge Router (Auto)</option>
                           <option value="gemini" style={{ background: "var(--md-surface-1)", color: "var(--md-on-surface)" }}>Direct: Gemini</option>
                           <option value="groq" style={{ background: "var(--md-surface-1)", color: "var(--md-on-surface)" }}>Direct: Groq</option>
-                        </optgroup>
-
-                        {trainedModels.length > 0 && (
-                          <optgroup label="Your Custom Trained Models" style={{ background: "var(--md-surface-1)", color: "var(--md-on-surface)" }}>
-                            {trainedModels.map(model => (
-                              <option key={model.id} value={`custom-${model.name}`} style={{ background: "var(--md-surface-1)", color: "var(--md-on-surface)" }}>
-                                🧠 {model.name} ({model.baseModel})
-                              </option>
-                            ))}
-                          </optgroup>
-                        )}
-                      </select>
-                      <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 opacity-60 pointer-events-none" style={{ color: "var(--md-on-surface)" }} />
+                        </select>
+                        <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 opacity-60 pointer-events-none" style={{ color: "var(--md-on-surface)" }} />
+                      </div>
                     </div>
-                  </div>
+                  )}
+
+                  {/* Dropdown: Custom Trained Models */}
+                  {playgroundType === "trained" && (
+                    <div className="space-y-2 animate-in fade-in duration-200">
+                      <label className="text-[10px] font-bold uppercase tracking-wider block" style={{ color: "var(--md-on-surface-var)" }}>
+                        Select Fine-Tuned Model
+                      </label>
+                      {trainedModels.length === 0 ? (
+                        <div className="p-4 text-center rounded-2xl border text-[10px]" style={{ backgroundColor: "var(--md-surface-2)", borderColor: "var(--md-outline-var)", color: "var(--md-on-surface-var)" }}>
+                          No completed training models found. Launch a training pipeline first!
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          <div className="relative">
+                            <select
+                              value={selectedTrainedModel}
+                              onChange={e => {
+                                setSelectedTrainedModel(e.target.value);
+                                setRoutingMode(e.target.value); // Sync for chat execution
+                              }}
+                              className="w-full pl-3 pr-9 py-2.5 rounded-xl text-xs font-medium outline-none border cursor-pointer appearance-none transition-colors"
+                              style={{
+                                background: "var(--md-surface-2)",
+                                borderColor: "var(--md-outline)",
+                                color: "var(--md-on-surface)"
+                              }}
+                            >
+                              {trainedModels.map(model => (
+                                <option key={model.id} value={`custom-${model.name}`} style={{ background: "var(--md-surface-1)", color: "var(--md-on-surface)" }}>
+                                  🧠 {model.name} ({model.baseModel})
+                                </option>
+                              ))}
+                            </select>
+                            <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 opacity-60 pointer-events-none" style={{ color: "var(--md-on-surface)" }} />
+                          </div>
+
+                          {/* Beautiful Model Metadata Card */}
+                          {(() => {
+                            const activeModelName = selectedTrainedModel.replace("custom-", "");
+                            const modelDetails = trainedModels.find(m => m.name === activeModelName);
+                            if (!modelDetails) return null;
+                            return (
+                              <div className="p-3.5 rounded-2xl border space-y-2 text-[10px]" style={{ backgroundColor: "var(--md-surface-2)", borderColor: "var(--md-outline-var)" }}>
+                                <div className="flex justify-between">
+                                  <span style={{ color: "var(--md-on-surface-var)" }}>Base Architecture</span>
+                                  <span className="font-mono font-bold" style={{ color: "var(--md-on-surface)" }}>{modelDetails.baseModel}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span style={{ color: "var(--md-on-surface-var)" }}>Task Alignment</span>
+                                  <span className="font-bold text-[var(--md-primary)]">{modelDetails.taskType}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span style={{ color: "var(--md-on-surface-var)" }}>Network Status</span>
+                                  <span className="flex items-center gap-1 font-bold text-green-500">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                                    Edge Active
+                                  </span>
+                                </div>
+                              </div>
+                            );
+                          })()}
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   {/* Textarea: System Prompt */}
                   <div className="space-y-2">
