@@ -72,7 +72,7 @@ export default function TrainingPage() {
   const [userDatasets, setUserDatasets] = useState<any[]>([]);
   const [modelSource, setModelSource] = useState<"foundation" | "created">("foundation");
 
-  const terminalEndRef = useRef<HTMLDivElement>(null);
+  const terminalContainerRef = useRef<HTMLDivElement>(null);
   const [streamedLogs, setStreamedLogs] = useState<string[]>([]);
   const lastJobIdRef = useRef<string>("");
 
@@ -291,8 +291,8 @@ export default function TrainingPage() {
 
   // Auto-scroll terminal when active job logs stream/grow
   useEffect(() => {
-    if (terminalEndRef.current) {
-      terminalEndRef.current.scrollIntoView({ behavior: "smooth" });
+    if (terminalContainerRef.current) {
+      terminalContainerRef.current.scrollTop = terminalContainerRef.current.scrollHeight;
     }
   }, [streamedLogs]);
 
@@ -864,7 +864,11 @@ export default function TrainingPage() {
                 </div>
 
                 {/* Console Terminal Screen */}
-                <div className="p-6 h-[340px] overflow-y-auto font-mono text-[11px] leading-relaxed scroll-smooth flex flex-col space-y-1.5" style={{ backgroundColor: "#060608" }}>
+                <div 
+                  ref={terminalContainerRef}
+                  className="p-6 h-[340px] overflow-y-auto font-mono text-[11px] leading-relaxed scroll-smooth flex flex-col space-y-1.5" 
+                  style={{ backgroundColor: "#060608" }}
+                >
                   {streamedLogs.map((line, idx) => {
                     let textColor = "text-zinc-400";
                     if (line.includes("[ERROR]") || line.includes("CRITICAL") || line.includes("FATAL")) {
@@ -885,7 +889,6 @@ export default function TrainingPage() {
                       </div>
                     );
                   })}
-                  <div ref={terminalEndRef} />
                 </div>
               </div>
 
