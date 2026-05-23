@@ -20,9 +20,13 @@ import {
   Search,
   Download,
   Settings2,
-  Trash2
+  Trash2,
+  Sparkles,
+  MessageSquare
 } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
+import { db } from "@/lib/firebase";
+import { collection, getDocs, query, where } from "firebase/firestore";
 
 // ── Types ─────────────────────────────────────────────────────────────
 interface Job {
@@ -52,8 +56,9 @@ export default function TrainingPage() {
   const [statusFilter, setStatusFilter] = useState<"all" | "running" | "completed" | "failed">("all");
   const [isMounted, setIsMounted] = useState(false);
 
-  // New job modal states
+  // New job modal & wizard states
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [wizardStep, setWizardStep] = useState(1);
   const [newJobName, setNewJobName] = useState("");
   const [newJobModel, setNewJobModel] = useState("llama-3-8b");
   const [customBaseModel, setCustomBaseModel] = useState("");
@@ -61,6 +66,8 @@ export default function TrainingPage() {
   const [newJobEpochs, setNewJobEpochs] = useState(3);
   const [newJobLR, setNewJobLR] = useState("2e-4");
   const [newJobBatchSize, setNewJobBatchSize] = useState(8);
+  const [userCreatedModels, setUserCreatedModels] = useState<any[]>([]);
+  const [modelSelectTab, setModelSelectTab] = useState<"foundation" | "user-created">("foundation");
 
   const terminalEndRef = useRef<HTMLDivElement>(null);
   const [streamedLogs, setStreamedLogs] = useState<string[]>([]);
@@ -130,6 +137,60 @@ export default function TrainingPage() {
       localStorage.setItem("nemix_training_jobs", JSON.stringify(jobs));
     }
   }, [jobs, isMounted]);
+
+  // Fetch user created models from Firestore & localStorage fallbacks
+  useEffect(() => {
+    if (!isMounted) return;
+
+    const loadUserModels = async () => {
+      try {
+        const q = query(collection(db, "UserModels"), where("userId", "==", "test-user-123"));
+        const snapshot = await getDocs(q);
+        const fetched: any[] = [];
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          fetched.push({
+            id: doc.id,
+            name: data.name,
+            baseModel: data.base_model || data.baseModel || "llama-3-8b",
+            taskType: data.task_type || data.taskType || "Text Generation",
+            status: data.status || "Ready",
+            version: data.version || "1.0.0"
+          });
+        });
+        
+        if (fetched.length > 0) {
+          setUserCreatedModels(fetched);
+          localStorage.setItem("nemix_user_created_models", JSON.stringify(fetched));
+        } else {
+          // Try loading from localStorage fallback
+          const cachedModels = localStorage.getItem("nemix_user_created_models");
+          if (cachedModels) {
+            setUserCreatedModels(JSON.parse(cachedModels));
+          } else {
+            // Safe mock fallback for user created models
+            setUserCreatedModels([
+              { id: "m-001", name: "Finance-Sentiment-Llama", baseModel: "llama-3-8b", taskType: "Text Classification", status: "Ready", version: "1.0.0" },
+              { id: "m-002", name: "Health-QA-Mistral", baseModel: "mistral-7b", taskType: "Question Answering", status: "Ready", version: "1.0.2" }
+            ]);
+          }
+        }
+      } catch (err) {
+        console.error("Error loading user models:", err);
+        const cachedModels = localStorage.getItem("nemix_user_created_models");
+        if (cachedModels) {
+          setUserCreatedModels(JSON.parse(cachedModels));
+        } else {
+          setUserCreatedModels([
+            { id: "m-001", name: "Finance-Sentiment-Llama", baseModel: "llama-3-8b", taskType: "Text Classification", status: "Ready", version: "1.0.0" },
+            { id: "m-002", name: "Health-QA-Mistral", baseModel: "mistral-7b", taskType: "Question Answering", status: "Ready", version: "1.0.2" }
+          ]);
+        }
+      }
+    };
+
+    loadUserModels();
+  }, [isMounted]);
 
   // Real-time background simulation for active running training jobs
   useEffect(() => {
@@ -205,6 +266,8 @@ export default function TrainingPage() {
     setNewJobEpochs(3);
     setNewJobLR("2e-4");
     setNewJobBatchSize(8);
+    setWizardStep(1);
+    setModelSelectTab("foundation");
   };
 
   // Abort/Cancel a running job
@@ -756,7 +819,7 @@ export default function TrainingPage() {
 
           {/* Modal Container */}
           <div 
-            className="relative w-full max-w-lg rounded-3xl p-6 md:p-8 shadow-2xl border transition duration-300 transform scale-100 z-10"
+            className="relative w-full max-w-2xl rounded-3xl p-6 md:p-8 shadow-2xl border transition duration-300 transform scale-100 z-10 overflow-hidden flex flex-col"
             style={{ backgroundColor: "var(--md-surface-1)", borderColor: "var(--md-outline)" }}
           >
             
@@ -779,222 +842,465 @@ export default function TrainingPage() {
               </button>
             </div>
 
+            {/* Stepper Progress Bar */}
+            <div className="mb-8 relative flex items-center justify-between px-6">
+              {/* Connector line */}
+              <div className="absolute left-[10%] right-[10%] top-1/2 -translate-y-1/2 h-0.5 bg-[var(--md-surface-3)] z-0" />
+              <div 
+                className="absolute left-[10%] top-1/2 -translate-y-1/2 h-0.5 bg-[var(--md-primary)] z-0 transition-all duration-300" 
+                style={{ width: wizardStep === 1 ? "0%" : wizardStep === 2 ? "40%" : "80%" }}
+              />
+
+              {/* Step 1 */}
+              <button
+                type="button"
+                onClick={() => newJobName.trim() && setWizardStep(1)}
+                className="relative z-10 flex flex-col items-center gap-1.5 focus:outline-none"
+                disabled={!newJobName.trim()}
+              >
+                <div 
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition duration-200 ${
+                    wizardStep >= 1 ? "bg-[var(--md-primary)] text-[var(--md-on-primary)]" : "bg-[var(--md-surface-2)] text-[var(--md-on-surface-var)]"
+                  } border`}
+                  style={{ borderColor: wizardStep >= 1 ? "var(--md-primary)" : "var(--md-outline)" }}
+                >
+                  1
+                </div>
+                <span className="text-[9px] uppercase font-bold tracking-wider" style={{ color: wizardStep === 1 ? "var(--md-primary)" : "var(--md-on-surface-var)" }}>
+                  Pipeline
+                </span>
+              </button>
+
+              {/* Step 2 */}
+              <button
+                type="button"
+                onClick={() => newJobName.trim() && setWizardStep(2)}
+                className="relative z-10 flex flex-col items-center gap-1.5 focus:outline-none"
+                disabled={!newJobName.trim()}
+              >
+                <div 
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition duration-200 ${
+                    wizardStep >= 2 ? "bg-[var(--md-primary)] text-[var(--md-on-primary)]" : "bg-[var(--md-surface-2)] text-[var(--md-on-surface-var)]"
+                  } border`}
+                  style={{ borderColor: wizardStep >= 2 ? "var(--md-primary)" : "var(--md-outline)" }}
+                >
+                  2
+                </div>
+                <span className="text-[9px] uppercase font-bold tracking-wider" style={{ color: wizardStep === 2 ? "var(--md-primary)" : "var(--md-on-surface-var)" }}>
+                  Model
+                </span>
+              </button>
+
+              {/* Step 3 */}
+              <button
+                type="button"
+                onClick={() => newJobName.trim() && setWizardStep(3)}
+                className="relative z-10 flex flex-col items-center gap-1.5 focus:outline-none"
+                disabled={!newJobName.trim()}
+              >
+                <div 
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition duration-200 ${
+                    wizardStep >= 3 ? "bg-[var(--md-primary)] text-[var(--md-on-primary)]" : "bg-[var(--md-surface-2)] text-[var(--md-on-surface-var)]"
+                  } border`}
+                  style={{ borderColor: wizardStep >= 3 ? "var(--md-primary)" : "var(--md-outline)" }}
+                >
+                  3
+                </div>
+                <span className="text-[9px] uppercase font-bold tracking-wider" style={{ color: wizardStep === 3 ? "var(--md-primary)" : "var(--md-on-surface-var)" }}>
+                  Compute
+                </span>
+              </button>
+            </div>
+
             {/* Modal Form */}
-            <form onSubmit={handleCreateJob} className="space-y-5">
+            <form onSubmit={handleCreateJob} className="space-y-6 flex-1 overflow-y-auto pr-1">
               
-              {/* Job Name */}
-              <div className="space-y-1.5">
-                <label className="text-[10px] uppercase font-bold tracking-wider" style={{ color: "var(--md-on-surface-var)" }}>
-                  Job Reference Name
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. Finance-Risk-Classifier"
-                  required
-                  value={newJobName}
-                  onChange={e => setNewJobName(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl border text-sm focus:outline-none focus:ring-1 focus:ring-purple-500"
-                  style={{
-                    backgroundColor: "var(--md-surface-2)",
-                    borderColor: "var(--md-outline)",
-                    color: "var(--md-on-surface)"
-                  }}
-                />
-              </div>
-
-              {/* Models & Datasets dropdown row */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                
-                {/* Select Base Model */}
-                <div className="space-y-1.5">
-                  <label className="text-[10px] uppercase font-bold tracking-wider" style={{ color: "var(--md-on-surface-var)" }}>
-                    Foundation Base Model
-                  </label>
-                  <div className="relative">
-                    <select
-                      value={newJobModel}
-                      onChange={e => setNewJobModel(e.target.value)}
-                      className="w-full pl-4 pr-10 py-2.5 rounded-xl border text-sm appearance-none cursor-pointer focus:outline-none"
+              {/* STEP 1: General Info & Target Dataset */}
+              {wizardStep === 1 && (
+                <div className="space-y-5 animate-in fade-in slide-in-from-right-3 duration-250">
+                  {/* Job Name */}
+                  <div className="space-y-1.5">
+                    <label className="block text-[10px] uppercase font-bold tracking-wider" style={{ color: "var(--md-on-surface-var)" }}>
+                      Job Reference Name
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Finance-Risk-Classifier"
+                      required
+                      value={newJobName}
+                      onChange={e => setNewJobName(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-xl border text-sm focus:outline-none focus:ring-1 focus:ring-purple-500"
                       style={{
                         backgroundColor: "var(--md-surface-2)",
                         borderColor: "var(--md-outline)",
                         color: "var(--md-on-surface)"
                       }}
-                    >
-                      <option value="llama-3-8b">Llama 3 (8B) - Recommended</option>
-                      <option value="mistral-7b">Mistral (7B)</option>
-                      <option value="gemma-2-9b">Gemma 2 (9B)</option>
-                      <option value="gpt2-xl">GPT-2 XL (1.5B)</option>
-                      <option value="custom">Custom Model (Hugging Face)...</option>
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none" style={{ color: "var(--md-on-surface-var)" }} />
+                    />
+                  </div>
+
+                  {/* Dataset Selector Grid */}
+                  <div className="space-y-3">
+                    <label className="block text-[10px] uppercase font-bold tracking-wider" style={{ color: "var(--md-on-surface-var)" }}>
+                      Select Target Training Dataset
+                    </label>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-56 overflow-y-auto pr-1">
+                      {[
+                        { id: "support_tickets_v2.csv", name: "support_tickets_v2.csv", size: "14K rows", desc: "Customer support tickets & dialogues.", icon: "🎫" },
+                        { id: "twitter_feedback.jsonl", name: "twitter_feedback.jsonl", size: "8K rows", desc: "Social media reviews & sentiment data.", icon: "🐦" },
+                        { id: "python_snippets.jsonl", name: "python_snippets.jsonl", size: "50K rows", desc: "Python coding samples & syntax structures.", icon: "🐍" },
+                        { id: "medical_dialogues.csv", name: "medical_dialogues.csv", size: "22K rows", desc: "Doctor-patient conversation dialogues.", icon: "🏥" }
+                      ].map(dataset => {
+                        const isSelected = newJobDataset === dataset.id;
+                        return (
+                          <div
+                            key={dataset.id}
+                            onClick={() => setNewJobDataset(dataset.id)}
+                            className="p-4 rounded-2xl border text-left cursor-pointer transition duration-150 flex items-start gap-3 hover:scale-[1.01]"
+                            style={{
+                              backgroundColor: isSelected ? "var(--md-primary-container)" : "var(--md-surface-2)",
+                              borderColor: isSelected ? "var(--md-primary)" : "var(--md-outline-var)",
+                              boxShadow: isSelected ? "0 0 10px rgba(124, 106, 247, 0.1)" : "none"
+                            }}
+                          >
+                            <span className="text-2xl">{dataset.icon}</span>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-bold truncate" style={{ color: "var(--md-on-surface)" }}>
+                                {dataset.name}
+                              </p>
+                              <p className="text-[10px] mt-0.5" style={{ color: isSelected ? "var(--md-primary)" : "var(--md-on-surface-var)" }}>
+                                {dataset.size}
+                              </p>
+                              <p className="text-[9px] mt-1 line-clamp-2" style={{ color: "var(--md-on-surface-var)" }}>
+                                {dataset.desc}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
+              )}
 
-                {/* Select Dataset */}
-                <div className="space-y-1.5">
-                  <label className="text-[10px] uppercase font-bold tracking-wider" style={{ color: "var(--md-on-surface-var)" }}>
-                    Target Dataset
-                  </label>
-                  <div className="relative">
-                    <select
-                      value={newJobDataset}
-                      onChange={e => setNewJobDataset(e.target.value)}
-                      className="w-full pl-4 pr-10 py-2.5 rounded-xl border text-sm appearance-none cursor-pointer focus:outline-none"
+              {/* STEP 2: Foundation & Custom Created Models */}
+              {wizardStep === 2 && (
+                <div className="space-y-5 animate-in fade-in slide-in-from-right-3 duration-250">
+                  {/* Sliding Tabs */}
+                  <div className="flex border-b" style={{ borderColor: "var(--md-outline-var)" }}>
+                    <button
+                      type="button"
+                      onClick={() => setModelSelectTab("foundation")}
+                      className={`flex-1 pb-3 text-xs font-bold uppercase tracking-wider transition ${
+                        modelSelectTab === "foundation" ? "border-b-2" : ""
+                      }`}
                       style={{
-                        backgroundColor: "var(--md-surface-2)",
-                        borderColor: "var(--md-outline)",
-                        color: "var(--md-on-surface)"
+                        borderColor: modelSelectTab === "foundation" ? "var(--md-primary)" : "transparent",
+                        color: modelSelectTab === "foundation" ? "var(--md-primary)" : "var(--md-on-surface-var)"
                       }}
                     >
-                      <option value="support_tickets_v2.csv">support_tickets_v2.csv (14K rows)</option>
-                      <option value="twitter_feedback.jsonl">twitter_feedback.jsonl (8K rows)</option>
-                      <option value="python_snippets.jsonl">python_snippets.jsonl (50K rows)</option>
-                      <option value="medical_dialogues.csv">medical_dialogues.csv (22K rows)</option>
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none" style={{ color: "var(--md-on-surface-var)" }} />
+                      Foundation Models
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setModelSelectTab("user-created")}
+                      className={`flex-1 pb-3 text-xs font-bold uppercase tracking-wider transition ${
+                        modelSelectTab === "user-created" ? "border-b-2" : ""
+                      }`}
+                      style={{
+                        borderColor: modelSelectTab === "user-created" ? "var(--md-primary)" : "transparent",
+                        color: modelSelectTab === "user-created" ? "var(--md-primary)" : "var(--md-on-surface-var)"
+                      }}
+                    >
+                      Your Created Models ({userCreatedModels.length})
+                    </button>
+                  </div>
+
+                  {/* A: Foundation Models List */}
+                  {modelSelectTab === "foundation" && (
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-60 overflow-y-auto pr-1">
+                        {[
+                          { id: "llama-3-8b", name: "Llama 3 (8B)", desc: "Meta's recommended dialog and instruct model.", icon: "🦙" },
+                          { id: "mistral-7b", name: "Mistral (7B)", desc: "High reasoning compact task model.", icon: "🌀" },
+                          { id: "gemma-2-9b", name: "Gemma 2 (9B)", desc: "Google lightweight high-performance SOTA.", icon: "💎" },
+                          { id: "gpt2-xl", name: "GPT-2 XL (1.5B)", desc: "Classic light text autoregressive model.", icon: "⚙️" },
+                          { id: "custom", name: "Custom Path", desc: "Specify any custom Hugging Face model repository.", icon: "🤗" }
+                        ].map(model => {
+                          const isSelected = newJobModel === model.id;
+                          return (
+                            <div
+                              key={model.id}
+                              onClick={() => {
+                                setNewJobModel(model.id);
+                                if (model.id !== "custom") setCustomBaseModel("");
+                              }}
+                              className="p-4 rounded-2xl border text-left cursor-pointer transition duration-150 flex items-start gap-3 hover:scale-[1.01]"
+                              style={{
+                                backgroundColor: isSelected ? "var(--md-primary-container)" : "var(--md-surface-2)",
+                                borderColor: isSelected ? "var(--md-primary)" : "var(--md-outline-var)",
+                                boxShadow: isSelected ? "0 0 10px rgba(124, 106, 247, 0.1)" : "none"
+                              }}
+                            >
+                              <span className="text-2xl">{model.icon}</span>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-bold truncate" style={{ color: "var(--md-on-surface)" }}>
+                                  {model.name}
+                                </p>
+                                <p className="text-[9px] mt-1 line-clamp-2" style={{ color: "var(--md-on-surface-var)" }}>
+                                  {model.desc}
+                                </p>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {/* Custom Model Input path */}
+                      {newJobModel === "custom" && (
+                        <div className="space-y-1.5 animate-in fade-in slide-in-from-top-2 duration-200">
+                          <label className="text-[10px] uppercase font-bold tracking-wider" style={{ color: "var(--md-on-surface-var)" }}>
+                            Hugging Face Model Repo / Path
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            placeholder="e.g. meta-llama/Meta-Llama-3-8B-Instruct"
+                            value={customBaseModel}
+                            onChange={e => setCustomBaseModel(e.target.value)}
+                            className="w-full px-4 py-2.5 rounded-xl border text-sm focus:outline-none focus:ring-1 focus:ring-purple-500"
+                            style={{
+                              backgroundColor: "var(--md-surface-2)",
+                              borderColor: "var(--md-outline)",
+                              color: "var(--md-on-surface)"
+                            }}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* B: User Created Models List */}
+                  {modelSelectTab === "user-created" && (
+                    <div className="space-y-4">
+                      {userCreatedModels.length === 0 ? (
+                        <div className="p-8 text-center rounded-2xl border" style={{ backgroundColor: "var(--md-surface-2)", borderColor: "var(--md-outline-var)" }}>
+                          <AlertCircle className="h-8 w-8 mx-auto mb-2 text-zinc-500" />
+                          <p className="text-xs font-bold" style={{ color: "var(--md-on-surface)" }}>No user models found</p>
+                          <p className="text-[10px] mt-1" style={{ color: "var(--md-on-surface-var)" }}>Create a custom model configuration in the Models page to select it here.</p>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-60 overflow-y-auto pr-1">
+                          {userCreatedModels.map(model => {
+                            const isSelected = newJobModel === model.name;
+                            return (
+                              <div
+                                key={model.id}
+                                onClick={() => {
+                                  setNewJobModel(model.name);
+                                  setCustomBaseModel("");
+                                }}
+                                className="p-4 rounded-2xl border text-left cursor-pointer transition duration-150 flex items-start gap-3 hover:scale-[1.01]"
+                                style={{
+                                  backgroundColor: isSelected ? "var(--md-primary-container)" : "var(--md-surface-2)",
+                                  borderColor: isSelected ? "var(--md-primary)" : "var(--md-outline-var)",
+                                  boxShadow: isSelected ? "0 0 10px rgba(124, 106, 247, 0.1)" : "none"
+                                }}
+                              >
+                                <span className="text-2xl">🧠</span>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-1.5 justify-between">
+                                    <p className="text-xs font-bold truncate max-w-[120px]" style={{ color: "var(--md-on-surface)" }}>
+                                      {model.name}
+                                    </p>
+                                    <span className="text-[7px] font-extrabold uppercase px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
+                                      v{model.version}
+                                    </span>
+                                  </div>
+                                  <p className="text-[9px] mt-1" style={{ color: "var(--md-on-surface-var)" }}>
+                                    Base: <span className="font-mono text-[8px]">{model.baseModel}</span>
+                                  </p>
+                                  <p className="text-[9px] mt-0.5" style={{ color: "var(--md-on-surface-var)" }}>
+                                    Task: <span className="font-bold text-[8px]">{model.taskType}</span>
+                                  </p>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                </div>
+              )}
+
+              {/* STEP 3: Hyperparameter & Compute Configurations */}
+              {wizardStep === 3 && (
+                <div className="space-y-6 animate-in fade-in slide-in-from-right-3 duration-250">
+                  {/* Epochs count slider */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[10px] uppercase font-bold tracking-wider" style={{ color: "var(--md-on-surface-var)" }}>
+                        Training Epochs
+                      </label>
+                      <span className="text-xs font-bold" style={{ color: "var(--md-primary)" }}>
+                        {newJobEpochs} epoch{newJobEpochs > 1 ? "s" : ""}
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min="1"
+                      max="10"
+                      step="1"
+                      value={newJobEpochs}
+                      onChange={e => setNewJobEpochs(Number(e.target.value))}
+                      className="w-full accent-purple-500 cursor-pointer"
+                    />
+                    <div className="flex justify-between text-[9px]" style={{ color: "var(--md-on-surface-var)" }}>
+                      <span>1 (Fast adapter)</span>
+                      <span>5</span>
+                      <span>10 (Full converge)</span>
+                    </div>
+                  </div>
+
+                  {/* Learning Rate & Batch Size Row */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    
+                    {/* Learning Rate Selector */}
+                    <div className="space-y-2">
+                      <label className="block text-[10px] uppercase font-bold tracking-wider" style={{ color: "var(--md-on-surface-var)" }}>
+                        Learning Rate
+                      </label>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        {[
+                          { val: "5e-4", tag: "Aggressive" },
+                          { val: "2e-4", tag: "Recommend" },
+                          { val: "1e-4", tag: "Standard" },
+                          { val: "5e-5", tag: "Conservative" }
+                        ].map(lr => {
+                          const isSel = newJobLR === lr.val;
+                          return (
+                            <button
+                              key={lr.val}
+                              type="button"
+                              onClick={() => setNewJobLR(lr.val)}
+                              className="px-2.5 py-2 rounded-xl border text-[10px] font-bold text-left transition"
+                              style={{
+                                backgroundColor: isSel ? "var(--md-primary-container)" : "var(--md-surface-2)",
+                                borderColor: isSel ? "var(--md-primary)" : "var(--md-outline-var)",
+                                color: isSel ? "var(--md-primary)" : "var(--md-on-surface)"
+                              }}
+                            >
+                              <div>{lr.val}</div>
+                              <div className="text-[7px] font-medium opacity-80 mt-0.5">{lr.tag}</div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Batch Size Selector */}
+                    <div className="space-y-2">
+                      <label className="block text-[10px] uppercase font-bold tracking-wider" style={{ color: "var(--md-on-surface-var)" }}>
+                        Optimizer Batch Size
+                      </label>
+                      <div className="grid grid-cols-3 gap-1.5">
+                        {[2, 4, 8, 16, 32].map(bs => {
+                          const isSel = newJobBatchSize === bs;
+                          let desc = "Low memory";
+                          if (bs === 8) desc = "Recommend";
+                          if (bs === 16) desc = "High VRAM";
+                          if (bs === 32) desc = "A100 Req.";
+                          return (
+                            <button
+                              key={bs}
+                              type="button"
+                              onClick={() => setNewJobBatchSize(bs)}
+                              className="py-2.5 rounded-xl border text-[10px] font-bold text-center transition flex flex-col items-center justify-center"
+                              style={{
+                                backgroundColor: isSel ? "var(--md-primary-container)" : "var(--md-surface-2)",
+                                borderColor: isSel ? "var(--md-primary)" : "var(--md-outline-var)",
+                                color: isSel ? "var(--md-primary)" : "var(--md-on-surface)"
+                              }}
+                            >
+                              <div className="text-xs font-bold">{bs}</div>
+                              <span className="text-[6px] font-medium opacity-70 mt-0.5 uppercase tracking-wide truncate max-w-[45px]">{desc}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                  </div>
+
+                  {/* Monospace real-time Cluster manifest YAML block */}
+                  <div className="p-4 rounded-2xl border" style={{ backgroundColor: "var(--md-surface-2)", borderColor: "var(--md-outline-var)", fontFamily: "monospace", fontSize: "11px" }}>
+                    <div style={{ color: "var(--md-primary)", marginBottom: "4px" }}># Pipeline cluster configuration</div>
+                    <div style={{ color: "var(--md-on-surface-var)" }}>resource_class: <span style={{ color: "var(--md-success)" }}>"on-demand.nvidia-l40s"</span></div>
+                    <div style={{ color: "var(--md-on-surface-var)" }}>dataset: <span style={{ color: "rgb(59, 130, 246)" }}>"{newJobDataset}"</span></div>
+                    <div style={{ color: "var(--md-on-surface-var)" }}>base_model: <span style={{ color: "var(--md-primary)" }}>"{newJobModel === "custom" ? (customBaseModel || "custom-model") : newJobModel}"</span></div>
+                    <div style={{ color: "var(--md-on-surface-var)" }}>hyperparameters: &#123; epochs: {newJobEpochs}, lr: "{newJobLR}", batch_size: {newJobBatchSize} &#125;</div>
                   </div>
                 </div>
+              )}
 
-              </div>
-
-              {/* Custom Model Input (Conditionally rendered) */}
-              {newJobModel === "custom" && (
-                <div className="space-y-1.5 animate-in fade-in slide-in-from-top-2 duration-200">
-                  <label className="text-[10px] uppercase font-bold tracking-wider" style={{ color: "var(--md-on-surface-var)" }}>
-                    Hugging Face Model Repo / Path
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. meta-llama/Meta-Llama-3-8B-Instruct"
-                    value={customBaseModel}
-                    onChange={e => setCustomBaseModel(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl border text-sm focus:outline-none focus:ring-1 focus:ring-purple-500"
+              {/* Submit / Navigation Footer Buttons */}
+              <div className="flex items-center gap-3 pt-5 border-t mt-4" style={{ borderColor: "var(--md-outline-var)" }}>
+                {wizardStep > 1 ? (
+                  <button
+                    type="button"
+                    onClick={() => setWizardStep(wizardStep - 1)}
+                    className="flex-1 py-2.5 rounded-xl border font-bold text-sm transition"
                     style={{
                       backgroundColor: "var(--md-surface-2)",
                       borderColor: "var(--md-outline)",
                       color: "var(--md-on-surface)"
                     }}
-                  />
-                </div>
-              )}
+                  >
+                    Back
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setIsModalOpen(false)}
+                    className="flex-1 py-2.5 rounded-xl border font-bold text-sm transition"
+                    style={{
+                      backgroundColor: "var(--md-surface-2)",
+                      borderColor: "var(--md-outline)",
+                      color: "var(--md-on-surface)"
+                    }}
+                  >
+                    Cancel
+                  </button>
+                )}
 
-              {/* Slider for Epochs */}
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <label className="text-[10px] uppercase font-bold tracking-wider" style={{ color: "var(--md-on-surface-var)" }}>
-                    Training Epochs
-                  </label>
-                  <span className="text-xs font-bold" style={{ color: "var(--md-primary)" }}>
-                    {newJobEpochs} epoch{newJobEpochs > 1 ? "s" : ""}
-                  </span>
-                </div>
-                <input
-                  type="range"
-                  min="1"
-                  max="10"
-                  step="1"
-                  value={newJobEpochs}
-                  onChange={e => setNewJobEpochs(Number(e.target.value))}
-                  className="w-full accent-purple-500 cursor-pointer"
-                />
-                <div className="flex justify-between text-[9px]" style={{ color: "var(--md-on-surface-var)" }}>
-                  <span>1 (Fast adapter)</span>
-                  <span>5</span>
-                  <span>10 (Full converge)</span>
-                </div>
-              </div>
-
-              {/* Learning Rate & Batch Size row */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                
-                {/* Select Learning Rate */}
-                <div className="space-y-1.5">
-                  <label className="text-[10px] uppercase font-bold tracking-wider" style={{ color: "var(--md-on-surface-var)" }}>
-                    Learning Rate
-                  </label>
-                  <div className="relative">
-                    <select
-                      value={newJobLR}
-                      onChange={e => setNewJobLR(e.target.value)}
-                      className="w-full pl-4 pr-10 py-2.5 rounded-xl border text-sm appearance-none cursor-pointer focus:outline-none"
-                      style={{
-                        backgroundColor: "var(--md-surface-2)",
-                        borderColor: "var(--md-outline)",
-                        color: "var(--md-on-surface)"
-                      }}
-                    >
-                      <option value="5e-4">5e-4 (Aggressive)</option>
-                      <option value="2e-4">2e-4 (Recommended)</option>
-                      <option value="1e-4">1e-4 (Standard)</option>
-                      <option value="5e-5">5e-5 (Conservative)</option>
-                      <option value="1e-5">1e-5 (Extremely slow)</option>
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none" style={{ color: "var(--md-on-surface-var)" }} />
-                  </div>
-                </div>
-
-                {/* Select Batch Size */}
-                <div className="space-y-1.5">
-                  <label className="text-[10px] uppercase font-bold tracking-wider" style={{ color: "var(--md-on-surface-var)" }}>
-                    Optimizer Batch Size
-                  </label>
-                  <div className="relative">
-                    <select
-                      value={newJobBatchSize}
-                      onChange={e => setNewJobBatchSize(Number(e.target.value))}
-                      className="w-full pl-4 pr-10 py-2.5 rounded-xl border text-sm appearance-none cursor-pointer focus:outline-none"
-                      style={{
-                        backgroundColor: "var(--md-surface-2)",
-                        borderColor: "var(--md-outline)",
-                        color: "var(--md-on-surface)"
-                      }}
-                    >
-                      <option value="2">2 (Very low memory)</option>
-                      <option value="4">4 (Low memory)</option>
-                      <option value="8">8 (Recommended)</option>
-                      <option value="16">16 (High memory/fused)</option>
-                      <option value="32">32 (A100 required)</option>
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none" style={{ color: "var(--md-on-surface-var)" }} />
-                  </div>
-                </div>
-
-              </div>
-
-              {/* Hyperparameters Config Block */}
-              <div className="p-4 rounded-xl border" style={{ backgroundColor: "var(--md-surface-2)", borderColor: "var(--md-outline-var)", fontFamily: "monospace", fontSize: "11px" }}>
-                <div style={{ color: "var(--md-primary)", marginBottom: "4px" }}># Pipeline cluster manifest</div>
-                <div style={{ color: "var(--md-on-surface-var)" }}>resource_class: <span style={{ color: "var(--md-success)" }}>"on-demand.nvidia-l40s"</span></div>
-                <div style={{ color: "var(--md-on-surface-var)" }}>dataset: <span style={{ color: "rgb(59, 130, 246)" }}>"{newJobDataset}"</span></div>
-                <div style={{ color: "var(--md-on-surface-var)" }}>hyperparameters: &#123; epochs: {newJobEpochs}, lr: "{newJobLR}", batch_size: {newJobBatchSize} &#125;</div>
-              </div>
-
-              {/* Submit Buttons */}
-              <div className="flex items-center gap-3 pt-4 border-t" style={{ borderColor: "var(--md-outline-var)" }}>
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="flex-1 py-2.5 rounded-xl border font-bold text-sm transition"
-                  style={{
-                    backgroundColor: "var(--md-surface-2)",
-                    borderColor: "var(--md-outline)",
-                    color: "var(--md-on-surface)"
-                  }}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 py-2.5 rounded-xl font-bold text-sm hover:scale-[1.01] transition"
-                  style={{
-                    backgroundColor: "var(--md-primary)",
-                    color: "var(--md-on-primary)"
-                  }}
-                >
-                  Launch Pipeline
-                </button>
+                {wizardStep < 3 ? (
+                  <button
+                    type="button"
+                    onClick={() => setWizardStep(wizardStep + 1)}
+                    disabled={!newJobName.trim()}
+                    className="flex-1 py-2.5 rounded-xl font-bold text-sm hover:scale-[1.01] active:scale-[0.98] transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{
+                      backgroundColor: "var(--md-primary)",
+                      color: "var(--md-on-primary)"
+                    }}
+                  >
+                    Next Step
+                  </button>
+                ) : (
+                  <button
+                    type="submit"
+                    className="flex-1 py-2.5 rounded-xl font-bold text-sm hover:scale-[1.01] active:scale-[0.98] transition"
+                    style={{
+                      backgroundColor: "var(--md-primary)",
+                      color: "var(--md-on-primary)",
+                      boxShadow: "0 4px 14px 0 rgba(124, 106, 247, 0.3)"
+                    }}
+                  >
+                    Launch Pipeline
+                  </button>
+                )}
               </div>
 
             </form>
