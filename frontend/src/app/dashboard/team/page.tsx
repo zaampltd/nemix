@@ -317,7 +317,7 @@ export default function TeamPage() {
                     <motion.div key={m.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: i * 0.04 }}
                       className="flex items-center gap-4 p-4 rounded-2xl group relative transition-all hover:translate-x-1"
-                      style={{ ...S.card, zIndex: openRoleMenu === m.id ? 30 : undefined }}>
+                      style={{ ...S.card, zIndex: openRoleMenu === m.id ? 50 : 20 - i }}>
                       
                       {/* Premium gradient rounded avatar */}
                       <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 font-bold text-sm select-none"
