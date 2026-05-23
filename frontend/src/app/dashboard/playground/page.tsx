@@ -24,6 +24,8 @@ export default function PlaygroundPage() {
   const [trainedModels, setTrainedModels] = useState<any[]>([]);
   const [playgroundType, setPlaygroundType] = useState<"gateway" | "trained">("gateway");
   const [selectedTrainedModel, setSelectedTrainedModel] = useState("");
+  const [isGatewayDropdownOpen, setIsGatewayDropdownOpen] = useState(false);
+  const [isTrainedDropdownOpen, setIsTrainedDropdownOpen] = useState(false);
 
   // Load chat from Firebase on initial mount
   useEffect(() => {
@@ -301,6 +303,49 @@ export default function PlaygroundPage() {
 
   return (
     <DashboardLayout>
+      {/* Dynamic injection of range slider styling to guarantee perfect thumb alignment */}
+      <style dangerouslySetInnerHTML={{ __html: `
+        .custom-playground-slider {
+          -webkit-appearance: none !important;
+          appearance: none !important;
+        }
+        .custom-playground-slider::-webkit-slider-thumb {
+          -webkit-appearance: none !important;
+          appearance: none !important;
+          height: 14px !important;
+          width: 14px !important;
+          border-radius: 50% !important;
+          background: var(--md-primary) !important;
+          cursor: pointer !important;
+          border: 2px solid var(--md-surface-1) !important;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.2) !important;
+          margin-top: -4px !important;
+          transition: transform 0.1s ease !important;
+        }
+        .custom-playground-slider::-webkit-slider-thumb:hover {
+          transform: scale(1.2) !important;
+        }
+        .custom-playground-slider::-webkit-slider-thumb:active {
+          transform: scale(0.9) !important;
+        }
+        .custom-playground-slider::-moz-range-thumb {
+          height: 14px !important;
+          width: 14px !important;
+          border-radius: 50% !important;
+          background: var(--md-primary) !important;
+          cursor: pointer !important;
+          border: 2px solid var(--md-surface-1) !important;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.2) !important;
+          transition: transform 0.1s ease !important;
+        }
+        .custom-playground-slider::-moz-range-thumb:hover {
+          transform: scale(1.2) !important;
+        }
+        .custom-playground-slider::-moz-range-thumb:active {
+          transform: scale(0.9) !important;
+        }
+      `}} />
+
       <div className="flex flex-col h-[calc(100vh-9.5rem)] relative gap-4">
         
         {/* Playground Top Bar */}
@@ -396,7 +441,7 @@ export default function PlaygroundPage() {
 
                   {/* Dropdown: Routing Mode (Gateway) */}
                   {playgroundType === "gateway" && (
-                    <div className="space-y-2 animate-in fade-in duration-200">
+                    <div className="space-y-2 animate-in fade-in duration-200 relative z-30">
                       <label className="text-[10px] font-bold uppercase tracking-wider flex items-center justify-between" style={{ color: "var(--md-on-surface-var)" }}>
                         Gateway Routing Mode
                         <span title="Edge Router uses low latency model chains, direct options call specific APIs.">
@@ -404,28 +449,72 @@ export default function PlaygroundPage() {
                         </span>
                       </label>
                       <div className="relative">
-                        <select
-                          value={routingMode.startsWith("custom-") ? "auto" : routingMode}
-                          onChange={e => setRoutingMode(e.target.value)}
-                          className="w-full pl-3 pr-9 py-2.5 rounded-xl text-xs font-medium outline-none border cursor-pointer appearance-none transition-colors"
+                        <button
+                          type="button"
+                          onClick={() => setIsGatewayDropdownOpen(!isGatewayDropdownOpen)}
+                          className="w-full pl-3 pr-9 py-2.5 rounded-xl text-xs font-semibold text-left border flex items-center justify-between cursor-pointer transition select-none"
                           style={{
                             background: "var(--md-surface-2)",
                             borderColor: "var(--md-outline)",
                             color: "var(--md-on-surface)"
                           }}
                         >
-                          <option value="auto" style={{ background: "var(--md-surface-1)", color: "var(--md-on-surface)" }}>Nemix Edge Router (Auto)</option>
-                          <option value="gemini" style={{ background: "var(--md-surface-1)", color: "var(--md-on-surface)" }}>Direct: Gemini</option>
-                          <option value="groq" style={{ background: "var(--md-surface-1)", color: "var(--md-on-surface)" }}>Direct: Groq</option>
-                        </select>
-                        <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 opacity-60 pointer-events-none" style={{ color: "var(--md-on-surface)" }} />
+                          <span>
+                            {routingMode === "auto" ? "Nemix Edge Router (Auto)" :
+                             routingMode === "gemini" ? "Direct: Gemini" :
+                             routingMode === "groq" ? "Direct: Groq" : "Nemix Edge Router (Auto)"}
+                          </span>
+                          <ChevronDown className="w-4 h-4 opacity-60" />
+                        </button>
+                        
+                        <AnimatePresence>
+                          {isGatewayDropdownOpen && (
+                            <>
+                              {/* Transparent backdrop to click outside */}
+                              <div className="fixed inset-0 z-40 cursor-default" onClick={() => setIsGatewayDropdownOpen(false)} />
+                              <motion.div
+                                initial={{ opacity: 0, y: 5 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: 5 }}
+                                className="absolute left-0 right-0 mt-1.5 rounded-2xl border shadow-2xl p-1.5 z-50 space-y-0.5"
+                                style={{
+                                  background: "var(--md-surface-1)",
+                                  borderColor: "var(--md-outline)",
+                                  boxShadow: "0 10px 30px rgba(0,0,0,0.15)"
+                                }}
+                              >
+                                {[
+                                  { val: "auto", label: "Nemix Edge Router (Auto)" },
+                                  { val: "gemini", label: "Direct: Gemini" },
+                                  { val: "groq", label: "Direct: Groq" }
+                                ].map(opt => (
+                                  <button
+                                    key={opt.val}
+                                    type="button"
+                                    onClick={() => {
+                                      setRoutingMode(opt.val);
+                                      setIsGatewayDropdownOpen(false);
+                                    }}
+                                    className="w-full text-left px-3 py-2 rounded-xl text-xs font-medium hover:bg-black/5 dark:hover:bg-white/5 transition cursor-pointer"
+                                    style={{
+                                      color: routingMode === opt.val ? "var(--md-primary)" : "var(--md-on-surface)",
+                                      background: routingMode === opt.val ? "var(--md-primary-container)" : "transparent"
+                                    }}
+                                  >
+                                    {opt.label}
+                                  </button>
+                                ))}
+                              </motion.div>
+                            </>
+                          )}
+                        </AnimatePresence>
                       </div>
                     </div>
                   )}
 
                   {/* Dropdown: Custom Trained Models */}
                   {playgroundType === "trained" && (
-                    <div className="space-y-2 animate-in fade-in duration-200">
+                    <div className="space-y-2 animate-in fade-in duration-200 relative z-30">
                       <label className="text-[10px] font-bold uppercase tracking-wider block" style={{ color: "var(--md-on-surface-var)" }}>
                         Select Fine-Tuned Model
                       </label>
@@ -436,26 +525,66 @@ export default function PlaygroundPage() {
                       ) : (
                         <div className="space-y-3">
                           <div className="relative">
-                            <select
-                              value={selectedTrainedModel}
-                              onChange={e => {
-                                setSelectedTrainedModel(e.target.value);
-                                setRoutingMode(e.target.value); // Sync for chat execution
-                              }}
-                              className="w-full pl-3 pr-9 py-2.5 rounded-xl text-xs font-medium outline-none border cursor-pointer appearance-none transition-colors"
+                            <button
+                              type="button"
+                              onClick={() => setIsTrainedDropdownOpen(!isTrainedDropdownOpen)}
+                              className="w-full pl-3 pr-9 py-2.5 rounded-xl text-xs font-semibold text-left border flex items-center justify-between cursor-pointer transition select-none"
                               style={{
                                 background: "var(--md-surface-2)",
                                 borderColor: "var(--md-outline)",
                                 color: "var(--md-on-surface)"
                               }}
                             >
-                              {trainedModels.map(model => (
-                                <option key={model.id} value={`custom-${model.name}`} style={{ background: "var(--md-surface-1)", color: "var(--md-on-surface)" }}>
-                                  🧠 {model.name} ({model.baseModel})
-                                </option>
-                              ))}
-                            </select>
-                            <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 opacity-60 pointer-events-none" style={{ color: "var(--md-on-surface)" }} />
+                              <span className="truncate pr-1">
+                                🧠 {selectedTrainedModel ? selectedTrainedModel.replace("custom-", "") : "Select Model"}
+                              </span>
+                              <ChevronDown className="w-4 h-4 opacity-60 shrink-0" />
+                            </button>
+                            
+                            <AnimatePresence>
+                              {isTrainedDropdownOpen && (
+                                <>
+                                  {/* Transparent backdrop */}
+                                  <div className="fixed inset-0 z-40 cursor-default" onClick={() => setIsTrainedDropdownOpen(false)} />
+                                  <motion.div
+                                    initial={{ opacity: 0, y: 5 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: 5 }}
+                                    className="absolute left-0 right-0 mt-1.5 rounded-2xl border shadow-2xl p-1.5 z-50 max-h-60 overflow-y-auto space-y-0.5"
+                                    style={{
+                                      background: "var(--md-surface-1)",
+                                      borderColor: "var(--md-outline)",
+                                      boxShadow: "0 10px 30px rgba(0,0,0,0.15)"
+                                    }}
+                                  >
+                                    {trainedModels.map(model => {
+                                      const val = `custom-${model.name}`;
+                                      const isSelected = selectedTrainedModel === val;
+                                      return (
+                                        <button
+                                          key={model.id}
+                                          type="button"
+                                          onClick={() => {
+                                            setSelectedTrainedModel(val);
+                                            setRoutingMode(val); // Sync
+                                            setIsTrainedDropdownOpen(false);
+                                          }}
+                                          className="w-full text-left px-3 py-2 rounded-xl text-xs font-medium hover:bg-black/5 dark:hover:bg-white/5 transition flex items-center gap-1.5 cursor-pointer"
+                                          style={{
+                                            color: isSelected ? "var(--md-primary)" : "var(--md-on-surface)",
+                                            background: isSelected ? "var(--md-primary-container)" : "transparent"
+                                          }}
+                                        >
+                                          <span>🧠</span>
+                                          <span className="truncate flex-1">{model.name}</span>
+                                          <span className="text-[8px] font-mono opacity-50 shrink-0">({model.baseModel})</span>
+                                        </button>
+                                      );
+                                    })}
+                                  </motion.div>
+                                </>
+                              )}
+                            </AnimatePresence>
                           </div>
 
                           {/* Beautiful Model Metadata Card */}
@@ -508,24 +637,36 @@ export default function PlaygroundPage() {
                   </div>
 
                   {/* Range Slider: Temperature */}
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <label className="text-[10px] font-bold uppercase tracking-wider block" style={{ color: "var(--md-on-surface-var)" }}>
                         Temperature
                       </label>
-                      <span className="text-xs font-bold font-mono" style={{ color: "var(--md-primary)" }}>
+                      <span className="text-xs font-bold font-mono animate-pulse" style={{ color: "var(--md-primary)" }}>
                         {temperature.toFixed(1)}
                       </span>
                     </div>
-                    <input
-                      type="range"
-                      min={0.0}
-                      max={1.0}
-                      step={0.1}
-                      value={temperature}
-                      onChange={e => setTemperature(parseFloat(e.target.value))}
-                      className="w-full accent-[var(--md-primary)] cursor-ew-resize bg-black/10 dark:bg-white/10 rounded-lg appearance-none h-1"
-                    />
+                    
+                    <div className="relative w-full py-2">
+                      <input
+                        type="range"
+                        min={0.0}
+                        max={1.0}
+                        step={0.1}
+                        value={temperature}
+                        onChange={e => setTemperature(parseFloat(e.target.value))}
+                        className="w-full cursor-ew-resize accent-[var(--md-primary)] custom-playground-slider"
+                        style={{
+                          height: "6px",
+                          borderRadius: "9999px",
+                          background: `linear-gradient(to right, var(--md-primary) 0%, var(--md-primary) ${temperature * 100}%, var(--md-surface-3) ${temperature * 100}%, var(--md-surface-3) 100%)`,
+                          outline: "none",
+                          appearance: "none",
+                          WebkitAppearance: "none"
+                        }}
+                      />
+                    </div>
+                    
                     <div className="flex justify-between text-[8px] font-semibold opacity-65 tracking-wider uppercase" style={{ color: "var(--md-on-surface-var)" }}>
                       <span>Deterministic</span>
                       <span>Creative</span>
@@ -533,25 +674,41 @@ export default function PlaygroundPage() {
                   </div>
 
                   {/* Range Slider: Max Tokens */}
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <label className="text-[10px] font-bold uppercase tracking-wider block" style={{ color: "var(--md-on-surface-var)" }}>
-                        Max Response Length
-                      </label>
-                      <span className="text-xs font-bold font-mono" style={{ color: "var(--md-primary)" }}>
-                        {maxTokens}
-                      </span>
-                    </div>
-                    <input
-                      type="range"
-                      min={256}
-                      max={4096}
-                      step={128}
-                      value={maxTokens}
-                      onChange={e => setMaxTokens(parseInt(e.target.value))}
-                      className="w-full accent-[var(--md-primary)] cursor-ew-resize bg-black/10 dark:bg-white/10 rounded-lg appearance-none h-1"
-                    />
-                  </div>
+                  {(() => {
+                    const tokensPercentage = ((maxTokens - 256) / (4096 - 256)) * 100;
+                    return (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <label className="text-[10px] font-bold uppercase tracking-wider block" style={{ color: "var(--md-on-surface-var)" }}>
+                            Max Response Length
+                          </label>
+                          <span className="text-xs font-bold font-mono animate-pulse" style={{ color: "var(--md-primary)" }}>
+                            {maxTokens}
+                          </span>
+                        </div>
+                        
+                        <div className="relative w-full py-2">
+                          <input
+                            type="range"
+                            min={256}
+                            max={4096}
+                            step={128}
+                            value={maxTokens}
+                            onChange={e => setMaxTokens(parseInt(e.target.value))}
+                            className="w-full cursor-ew-resize accent-[var(--md-primary)] custom-playground-slider"
+                            style={{
+                              height: "6px",
+                              borderRadius: "9999px",
+                              background: `linear-gradient(to right, var(--md-primary) 0%, var(--md-primary) ${tokensPercentage}%, var(--md-surface-3) ${tokensPercentage}%, var(--md-surface-3) 100%)`,
+                              outline: "none",
+                              appearance: "none",
+                              WebkitAppearance: "none"
+                            }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })()}
 
                 </div>
 
