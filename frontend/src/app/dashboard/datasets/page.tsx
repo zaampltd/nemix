@@ -192,10 +192,20 @@ export default function DatasetsPage() {
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-    
+    // Mocking file upload
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       const file = e.dataTransfer.files[0];
-      processFile(file);
+      const newFile = { name: file.name, size: (file.size / 1024 / 1024).toFixed(2) + " MB", status: 'uploading' as const };
+      setUploadedFiles(prev => [...prev, newFile]);
+      
+      // Simulate upload completion after 2 seconds
+      setTimeout(() => {
+        setUploadedFiles(prev => prev.map(f => f.name === file.name ? { ...f, status: 'completed' } : f));
+      }, 2000);
+
+      // Process it for form variables
+      setSelectedFile(file);
+      if (!uploadName) setUploadName(file.name.replace(/\.[^.]+$/, ''));
     }
   };
 
@@ -203,27 +213,18 @@ export default function DatasetsPage() {
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      processFile(file);
+      const newFile = { name: file.name, size: (file.size / 1024 / 1024).toFixed(2) + " MB", status: 'uploading' as const };
+      setUploadedFiles(prev => [...prev, newFile]);
+      
+      // Simulate upload completion after 2 seconds
+      setTimeout(() => {
+        setUploadedFiles(prev => prev.map(f => f.name === file.name ? { ...f, status: 'completed' } : f));
+      }, 2000);
+
+      // Process it for form variables
+      setSelectedFile(file);
+      if (!uploadName) setUploadName(file.name.replace(/\.[^.]+$/, ''));
     }
-  };
-
-  const processFile = (file: File) => {
-    setSelectedFile(file);
-    if (!uploadName) setUploadName(file.name.replace(/\.[^.]+$/, ''));
-
-    const formattedSize = (file.size / 1024 / 1024).toFixed(2) + " MB";
-    const newFile = { 
-      name: file.name, 
-      size: formattedSize, 
-      status: 'uploading' as const 
-    };
-    
-    setUploadedFiles([newFile]);
-
-    // Simulate completion in state
-    setTimeout(() => {
-      setUploadedFiles(prev => prev.map(f => f.name === file.name ? { ...f, status: 'completed' } : f));
-    }, 2000);
   };
 
   const filtered = datasets.filter(d => {
