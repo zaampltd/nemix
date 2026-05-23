@@ -207,18 +207,37 @@ body {
 @utility premium-text-glow { color: var(--md-on-surface); }
 @utility glow-line { height: 1px; background: var(--md-outline); }
 
-/* ── Scrollbar ────────────────────────────────────── */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--md-outline); border-radius: 99px; }
-::-webkit-scrollbar-thumb:hover { background: var(--md-on-surface-var); }
+/* ── Sleek Custom Scrollbar ───────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.3); /* subtle gray */
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(156, 163, 175, 0.6);
+}
+
+/* For Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(156, 163, 175, 0.3) transparent;
+}
+
 .scrollbar-none { scrollbar-width: none; }
 .scrollbar-none::-webkit-scrollbar { display: none; }
 
-/* ── Focus rings ──────────────────────────────────── */
-input:focus, select:focus, textarea:focus, button:focus-visible {
-  outline: 2px solid var(--md-primary);
-  outline-offset: 2px;
+/* ── Remove Default Browser Focus Rings Globally ───── */
+input:focus, select:focus, textarea:focus, button:focus, button:focus-visible {
+  outline: none !important;
 }
 ::selection { background: var(--md-primary-container); color: var(--md-on-primary-cont); }
 
