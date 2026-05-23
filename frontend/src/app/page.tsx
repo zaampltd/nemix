@@ -194,9 +194,9 @@ export default function LandingPage() {
                 style={{ background: "var(--md-primary)", color: "var(--md-on-primary)" }}>
                 Start Building Free <ArrowRight className="w-4 h-4" />
               </Link>
-              <Link href="/dashboard/playground" className="flex items-center gap-2 px-6 py-3.5 rounded-xl font-bold text-sm border transition-colors hover:bg-neutral-800"
-                style={{ border: "1px solid var(--md-outline)", color: "var(--md-on-surface)" }}>
-                <Play className="w-4 h-4" /> Test Playground
+              <Link href="/dashboard/playground" className="flex items-center gap-2 px-6 py-3.5 rounded-xl font-bold text-sm border transition-colors hover:bg-[var(--md-surface-2)]"
+                style={{ border: "1px solid var(--md-outline)", color: "var(--md-on-surface)", background: "transparent" }}>
+                <Play className="w-4.5 h-4.5" /> Test Playground
               </Link>
             </div>
             <div className="grid grid-cols-2 gap-3 pt-4">
