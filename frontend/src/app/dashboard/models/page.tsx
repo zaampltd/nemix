@@ -51,6 +51,10 @@ export default function ModelsPage() {
   const [taskType, setTaskType] = useState(TASK_TYPES[0]);
   const [creating, setCreating] = useState(false);
 
+  // States for custom dropdown UI toggles
+  const [isBaseModelOpen, setIsBaseModelOpen] = useState(false);
+  const [isTaskTypeOpen, setIsTaskTypeOpen] = useState(false);
+
   useEffect(() => { loadModels(); }, []);
 
   const loadModels = async () => {
@@ -61,6 +65,12 @@ export default function ModelsPage() {
     } catch {
       setModels(loadLocalModels());
     } finally { setLoading(false); }
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setIsBaseModelOpen(false);
+    setIsTaskTypeOpen(false);
   };
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -78,7 +88,7 @@ export default function ModelsPage() {
       saveLocalModels([newModel, ...existing]);
     }
     setModels(prev => [newModel, ...prev]);
-    setIsModalOpen(false);
+    closeModal();
     setName(''); setDescription(''); setBaseModel(BASE_MODELS[0]); setTaskType(TASK_TYPES[0]);
     setCreating(false);
   };
@@ -100,20 +110,6 @@ export default function ModelsPage() {
     m.base_model.toLowerCase().includes(search.toLowerCase())
   );
 
-  // Shared select style using CSS variables
-  const selectStyle: React.CSSProperties = {
-    width: '100%',
-    background: 'var(--md-surface-2)',
-    border: '1px solid var(--md-outline)',
-    borderRadius: '12px',
-    padding: '10px 16px',
-    fontSize: '0.875rem',
-    color: 'var(--md-on-surface)',
-    appearance: 'none',
-    cursor: 'pointer',
-    outline: 'none',
-  };
-
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -124,7 +120,7 @@ export default function ModelsPage() {
             <h1 className="text-xl font-semibold" style={{ color: 'var(--md-on-surface)' }}>AI Models</h1>
             <p className="text-sm mt-1" style={{ color: 'var(--md-on-surface-var)' }}>Create, manage, and deploy your trained models.</p>
           </div>
-          <Button onClick={() => setIsModalOpen(true)} className="gap-2">
+          <Button onClick={() => { setIsModalOpen(true); setIsBaseModelOpen(false); setIsTaskTypeOpen(false); }} className="gap-2">
             <Plus className="w-4 h-4" /> Create New Model
           </Button>
         </div>
@@ -145,9 +141,9 @@ export default function ModelsPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
-                <tr style={{ borderBottom: '1px solid var(--md-outline)' }}>
+                <tr className="bg-[var(--md-surface-2)]" style={{ borderBottom: '1px solid var(--md-outline)' }}>
                   {['Model Name','Base Model','Task','Version','Status','Created','Actions'].map((h, i) => (
-                    <th key={h} className={`px-6 py-4 text-xs font-semibold uppercase tracking-wider${i === 6 ? ' text-right' : ''}`}
+                    <th key={h} className={`px-6 py-3.5 text-[10px] font-bold uppercase tracking-wider${i === 6 ? ' text-right' : ''}`}
                       style={{ color: 'var(--md-on-surface-var)' }}>
                       {h}
                     </th>
@@ -171,20 +167,17 @@ export default function ModelsPage() {
                         style={{ background: 'var(--md-primary-container)' }}>
                         <Layers className="w-7 h-7" style={{ color: 'var(--md-on-primary-cont)' }} />
                       </div>
-                      {/* "No models yet" — FIXED: was text-white which shows as invisible */}
                       <p className="font-bold text-base mb-1" style={{ color: 'var(--md-on-surface)' }}>No models yet</p>
                       <p className="text-sm mb-6" style={{ color: 'var(--md-on-surface-var)' }}>Create your first model to get started.</p>
-                      <Button onClick={() => setIsModalOpen(true)} className="mx-auto">Create Model</Button>
+                      <Button onClick={() => { setIsModalOpen(true); setIsBaseModelOpen(false); setIsTaskTypeOpen(false); }} className="mx-auto">Create Model</Button>
                     </td>
                   </tr>
                 ) : (
                   filtered.map((model, i) => (
                     <motion.tr key={model.id}
                       initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.04 }}
-                      className="group transition-colors"
-                      style={{ borderTop: i > 0 ? '1px solid var(--md-outline-var)' : 'none' }}
-                      onMouseEnter={e => (e.currentTarget.style.background = 'var(--md-surface-2)')}
-                      onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                      className="group hover:bg-[var(--md-surface-2)]/50 transition-colors duration-200"
+                      style={{ borderTop: i > 0 ? '1px solid var(--md-outline-var)' : 'none' }}>
 
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
@@ -193,7 +186,6 @@ export default function ModelsPage() {
                             <Layers className="w-4 h-4" style={{ color: 'var(--md-on-primary-cont)' }} />
                           </div>
                           <div>
-                            {/* Model name — FIXED was text-white */}
                             <p className="font-medium text-sm" style={{ color: 'var(--md-on-surface)' }}>{model.name}</p>
                             {model.description && (
                               <p className="text-xs truncate max-w-[180px]" style={{ color: 'var(--md-on-surface-var)' }}>{model.description}</p>
@@ -202,7 +194,6 @@ export default function ModelsPage() {
                         </div>
                       </td>
 
-                      {/* Base model — FIXED was text-gray-400 */}
                       <td className="px-6 py-4 text-sm" style={{ color: 'var(--md-on-surface-var)' }}>{model.base_model}</td>
                       <td className="px-6 py-4 text-sm" style={{ color: 'var(--md-on-surface-var)' }}>{model.task_type || '—'}</td>
 
@@ -214,14 +205,37 @@ export default function ModelsPage() {
                       </td>
 
                       <td className="px-6 py-4">
-                        <div className="flex items-center gap-2 text-sm" style={statusStyle(model.status)}>
-                          {(model.status === 'deployed' || model.status === 'ready')
-                            ? <CheckCircle2 className="w-4 h-4" />
-                            : model.status === 'failed'
-                            ? <AlertIcon className="w-4 h-4" />
-                            : <Clock className={`w-4 h-4${model.status === 'training' ? ' animate-pulse' : ''}`} />}
-                          <span className="capitalize">{model.status}</span>
-                        </div>
+                        {(() => {
+                          if (model.status === 'deployed' || model.status === 'ready') {
+                            return (
+                              <span className="flex w-fit items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 text-[10px] font-bold uppercase tracking-wider">
+                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+                                Ready
+                              </span>
+                            );
+                          } else if (model.status === 'training') {
+                            return (
+                              <span className="flex w-fit items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-500/10 text-purple-600 text-[10px] font-bold uppercase tracking-wider">
+                                <div className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse"></div>
+                                Training
+                              </span>
+                            );
+                          } else if (model.status === 'failed') {
+                            return (
+                              <span className="flex w-fit items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-500/10 text-rose-600 text-[10px] font-bold uppercase tracking-wider">
+                                <div className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></div>
+                                Failed
+                              </span>
+                            );
+                          } else {
+                            return (
+                              <span className="flex w-fit items-center gap-1.5 px-2.5 py-1 rounded-full bg-gray-500/10 text-gray-500 text-[10px] font-bold uppercase tracking-wider">
+                                <div className="w-1.5 h-1.5 rounded-full bg-gray-500"></div>
+                                {model.status}
+                              </span>
+                            );
+                          }
+                        })()}
                       </td>
 
                       <td className="px-6 py-4 text-sm" style={{ color: 'var(--md-on-surface-var)' }}>
@@ -259,7 +273,7 @@ export default function ModelsPage() {
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               className="absolute inset-0 backdrop-blur-sm" style={{ background: 'var(--md-scrim)' }}
-              onClick={() => !creating && setIsModalOpen(false)} />
+              onClick={() => !creating && closeModal()} />
             <motion.div initial={{ scale: 0.95, opacity: 0, y: 10 }} animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.95, opacity: 0, y: 10 }}
               className="relative w-full max-w-lg rounded-3xl p-8"
@@ -270,55 +284,111 @@ export default function ModelsPage() {
                   <h2 className="text-xl font-bold" style={{ color: 'var(--md-on-surface)' }}>Create New Model</h2>
                   <p className="text-sm mt-1" style={{ color: 'var(--md-on-surface-var)' }}>Define your model configuration</p>
                 </div>
-                <button onClick={() => setIsModalOpen(false)}
+                <button onClick={() => closeModal()}
                   className="p-2 rounded-xl transition-all" style={{ color: 'var(--md-on-surface-var)' }}>
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
               <form onSubmit={handleCreate} className="space-y-5">
-                <Input label="Model Name" placeholder="e.g., sentiment-analyzer-v2"
-                  value={name} onChange={e => setName(e.target.value)} required />
-
-                {/* Base Model select — FIXED uses CSS vars */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium px-1" style={{ color: 'var(--md-on-surface-var)' }}>Base Model</label>
-                  <div className="relative">
-                    <select style={selectStyle} value={baseModel} onChange={e => setBaseModel(e.target.value)}>
-                      {BASE_MODELS.map(m => <option key={m} value={m}>{m}</option>)}
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
-                      style={{ color: 'var(--md-on-surface-var)' }} />
-                  </div>
+                  <label className="block text-xs font-bold text-[var(--md-on-surface-variant)] uppercase tracking-wider px-1">
+                    Model Name
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g., sentiment-analyzer-v2"
+                    value={name}
+                    onChange={e => setName(e.target.value)}
+                    className="w-full h-12 rounded-xl px-4 py-2 text-sm bg-[var(--md-surface-2)] border border-[var(--md-outline-variant)] text-[var(--md-on-surface)] outline-none shadow-inner focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 transition-all animate-in fade-in duration-200"
+                  />
                 </div>
 
-                {/* Task Type select — FIXED uses CSS vars */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium px-1" style={{ color: 'var(--md-on-surface-var)' }}>Task Type</label>
-                  <div className="relative">
-                    <select style={selectStyle} value={taskType} onChange={e => setTaskType(e.target.value)}>
-                      {TASK_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
-                      style={{ color: 'var(--md-on-surface-var)' }} />
+                {/* Custom Base Model Dropdown */}
+                <div className="relative space-y-2">
+                  <label className="block text-xs font-bold text-[var(--md-on-surface-variant)] uppercase tracking-wider px-1">
+                    Base Model
+                  </label>
+                  <div 
+                    onClick={() => {
+                      setIsBaseModelOpen(!isBaseModelOpen);
+                      setIsTaskTypeOpen(false);
+                    }}
+                    className="w-full p-3 rounded-xl bg-[var(--md-surface-2)] border border-[var(--md-outline-variant)] cursor-pointer flex justify-between items-center hover:border-blue-500 transition-colors duration-200"
+                  >
+                    <span className="text-sm text-[var(--md-on-surface)]">{baseModel}</span>
+                    <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${isBaseModelOpen ? 'rotate-180' : ''}`} />
                   </div>
+                  
+                  {isBaseModelOpen && (
+                    <div className="absolute z-[999] top-full left-0 mt-2 w-full max-h-60 overflow-y-auto bg-[var(--md-surface-1)] border border-[var(--md-outline-variant)] rounded-xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2">
+                      {BASE_MODELS.map(model => (
+                        <div 
+                          key={model}
+                          onClick={() => { setBaseModel(model); setIsBaseModelOpen(false); }}
+                          className={`p-3 text-sm cursor-pointer transition-colors duration-150 ${
+                            baseModel === model 
+                              ? 'bg-blue-500/10 text-blue-600 font-semibold' 
+                              : 'text-[var(--md-on-surface)] hover:bg-blue-500/10 hover:text-blue-600'
+                          }`}
+                        >
+                          {model}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
-                {/* Description textarea — FIXED uses CSS vars */}
+                {/* Custom Task Type Dropdown */}
+                <div className="relative space-y-2">
+                  <label className="block text-xs font-bold text-[var(--md-on-surface-variant)] uppercase tracking-wider px-1">
+                    Task Type
+                  </label>
+                  <div 
+                    onClick={() => {
+                      setIsTaskTypeOpen(!isTaskTypeOpen);
+                      setIsBaseModelOpen(false);
+                    }}
+                    className="w-full p-3 rounded-xl bg-[var(--md-surface-2)] border border-[var(--md-outline-variant)] cursor-pointer flex justify-between items-center hover:border-blue-500 transition-colors duration-200"
+                  >
+                    <span className="text-sm text-[var(--md-on-surface)]">{taskType}</span>
+                    <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${isTaskTypeOpen ? 'rotate-180' : ''}`} />
+                  </div>
+                  
+                  {isTaskTypeOpen && (
+                    <div className="absolute z-[999] top-full left-0 mt-2 w-full max-h-60 overflow-y-auto bg-[var(--md-surface-1)] border border-[var(--md-outline-variant)] rounded-xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2">
+                      {TASK_TYPES.map(type => (
+                        <div 
+                          key={type}
+                          onClick={() => { setTaskType(type); setIsTaskTypeOpen(false); }}
+                          className={`p-3 text-sm cursor-pointer transition-colors duration-150 ${
+                            taskType === type 
+                              ? 'bg-blue-500/10 text-blue-600 font-semibold' 
+                              : 'text-[var(--md-on-surface)] hover:bg-blue-500/10 hover:text-blue-600'
+                          }`}
+                        >
+                          {type}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Description textarea */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium px-1" style={{ color: 'var(--md-on-surface-var)' }}>
+                  <label className="block text-xs font-bold text-[var(--md-on-surface-variant)] uppercase tracking-wider px-1">
                     Description <span style={{ opacity: 0.5 }}>(optional)</span>
                   </label>
                   <textarea
-                    className="w-full h-20 rounded-xl px-4 py-3 text-sm transition-all resize-none"
-                    style={{ background: 'var(--md-surface-2)', border: '1px solid var(--md-outline)', color: 'var(--md-on-surface)', outline: 'none' }}
+                    className="w-full h-24 rounded-xl px-4 py-3 text-sm bg-[var(--md-surface-2)] border border-[var(--md-outline-variant)] text-[var(--md-on-surface)] outline-none shadow-inner focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 transition-all resize-none"
                     placeholder="What does this model do?"
                     value={description} onChange={e => setDescription(e.target.value)} />
                 </div>
 
                 <div className="flex gap-3 pt-2">
                   <Button type="button" variant="outline" className="flex-1"
-                    onClick={() => setIsModalOpen(false)} disabled={creating}>
+                    onClick={() => closeModal()} disabled={creating}>
                     Cancel
                   </Button>
                   <Button type="submit" className="flex-1" loading={creating} disabled={!name.trim()}>
