@@ -7,6 +7,8 @@ import {
   HelpCircle, Trash2, RotateCcw, AlertCircle, Info
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { db } from "@/lib/firebase";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 
 interface Message {
   role: "user" | "ai";
@@ -20,24 +22,42 @@ export default function PlaygroundPage() {
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  // Load chat from localStorage on initial mount
+  // Load chat from Firebase on initial mount
   useEffect(() => {
-    setIsMounted(true);
-    const savedChat = localStorage.getItem("nemix_playground_chat");
-    if (savedChat) {
+    const fetchSavedChat = async () => {
       try {
-        setMessages(JSON.parse(savedChat));
-      } catch (e) {
-        console.error("Could not parse saved chat");
+        setIsMounted(true);
+        // In production, 'test-user-123' will be dynamically replaced by authenticated user ID
+        const docRef = doc(db, "PlaygroundHistory", "test-user-123");
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          if (data && Array.isArray(data.messages)) {
+            setMessages(data.messages);
+          }
+        }
+      } catch (error) {
+        console.error("Could not load saved chat from Firestore:", error);
       }
-    }
+    };
+    fetchSavedChat();
   }, []);
 
-  // Save chat to localStorage whenever it changes
+  // Save chat to Firebase whenever it changes
   useEffect(() => {
-    if (isMounted) {
-      localStorage.setItem("nemix_playground_chat", JSON.stringify(messages));
-    }
+    const saveChatToFirebase = async () => {
+      if (isMounted) {
+        try {
+          // In production, 'test-user-123' will be dynamically replaced by authenticated user ID
+          await setDoc(doc(db, "PlaygroundHistory", "test-user-123"), {
+            messages: messages
+          });
+        } catch (error) {
+          console.error("Could not save chat to Firestore:", error);
+        }
+      }
+    };
+    saveChatToFirebase();
   }, [messages, isMounted]);
   
   // Sidebar config settings
