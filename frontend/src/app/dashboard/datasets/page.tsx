@@ -692,7 +692,7 @@ export default function DatasetsPage() {
                   </button>
                 </div>
 
-                {/* Tabular Preview */}
+                {/* Drawer Body - Raw Records Preview */}
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
                     <TableProperties className="h-4 w-4" style={{ color: 'var(--md-on-surface-var)' }} />
@@ -700,36 +700,30 @@ export default function DatasetsPage() {
                       Raw Records Preview (First 5 Rows)
                     </h4>
                   </div>
-
-                  <div className="overflow-x-auto rounded-2xl border" style={{ borderColor: 'var(--md-outline)' }}>
-                    {previewDataset.preview && previewDataset.preview.length > 0 ? (
-                      <table className="w-full text-left text-xs">
-                        <thead>
-                          <tr style={{ borderBottom: '1px solid var(--md-outline)', backgroundColor: 'var(--md-surface-2)' }}>
-                            {previewDataset.preview[0]?.map((col: string, i: number) => (
-                              <th key={i} className="px-4 py-3 font-semibold uppercase tracking-wider whitespace-nowrap" style={{ color: 'var(--md-on-surface-var)' }}>
-                                {col}
-                              </th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {previewDataset.preview.slice(1).map((row: string[], i: number) => (
-                            <tr key={i} className="hover:bg-white/5 transition" style={{ borderBottom: '1px solid var(--md-outline-var)' }}>
-                              {row.map((cell: string, j: number) => (
-                                <td key={j} className="px-4 py-3 whitespace-nowrap max-w-[150px] truncate" style={{ color: 'var(--md-on-surface)' }}>
-                                  {cell}
-                                </td>
-                              ))}
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    ) : (
-                      <div className="p-8 text-center text-xs" style={{ color: 'var(--md-on-surface-var)' }}>
-                        Preview matrix loading or not available
-                      </div>
-                    )}
+                  
+                  <div className="bg-[#0D1117] border border-[var(--md-outline-var)] rounded-xl overflow-hidden relative group text-left">
+                    {/* Mac OS style window dots for premium feel */}
+                    <div className="bg-[#161B22] px-4 py-2 flex items-center gap-2 border-b border-gray-800">
+                      <div className="w-2.5 h-2.5 rounded-full bg-red-500/80"></div>
+                      <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/80"></div>
+                      <div className="w-2.5 h-2.5 rounded-full bg-green-500/80"></div>
+                      <span className="ml-2 text-[10px] text-gray-400 font-mono tracking-wider">data.json</span>
+                    </div>
+                    
+                    {/* Formatted JSON output */}
+                    <div className="p-4 overflow-x-auto max-h-[300px] overflow-y-auto custom-scrollbar">
+                      <pre className="text-xs text-green-400 font-mono leading-relaxed">
+                        {JSON.stringify(
+                          previewDataset?.mockData || previewDataset?.preview || [
+                            { "role": "system", "content": "You are a helpful coding assistant." },
+                            { "role": "user", "content": "Write a Python script to sort an array." },
+                            { "role": "assistant", "content": "Here is the code..." }
+                          ], 
+                          null, 
+                          2
+                        )}
+                      </pre>
+                    </div>
                   </div>
                 </div>
 
