@@ -69,6 +69,7 @@ export default function TrainingPage() {
   const [newJobLR, setNewJobLR] = useState("2e-4");
   const [newJobBatchSize, setNewJobBatchSize] = useState(8);
   const [userCreatedModels, setUserCreatedModels] = useState<any[]>([]);
+  const [userDatasets, setUserDatasets] = useState<any[]>([]);
   const [modelSource, setModelSource] = useState<"foundation" | "created">("foundation");
 
   const terminalEndRef = useRef<HTMLDivElement>(null);
@@ -192,6 +193,68 @@ export default function TrainingPage() {
     };
 
     loadUserModels();
+  }, [isMounted]);
+
+  // Fetch datasets from Firestore UserDatasets & localStorage cache
+  useEffect(() => {
+    if (!isMounted) return;
+
+    const loadDatasets = async () => {
+      try {
+        const q = query(collection(db, "UserDatasets"), where("userId", "==", "test-user-123"));
+        const snapshot = await getDocs(q);
+        const fetched: any[] = [];
+        snapshot.forEach(docSnap => {
+          const data = docSnap.data();
+          fetched.push({
+            id: docSnap.id,
+            name: data.name || "Unnamed Dataset",
+            size: data.row_count ? `${(data.row_count / 1000).toFixed(0)}K rows` : "0 rows",
+            desc: data.description || "Custom user dataset file.",
+            icon: data.file_type === "csv" ? "🎫" : data.file_type === "jsonl" ? "🐦" : "📁"
+          });
+        });
+
+        // Load from LocalStorage
+        let locals: any[] = [];
+        try {
+          const cached = localStorage.getItem("local_datasets");
+          if (cached) {
+            locals = JSON.parse(cached).map((d: any) => ({
+              id: d.id,
+              name: d.name,
+              size: d.row_count ? `${(d.row_count / 1000).toFixed(0)}K rows` : "0 rows",
+              desc: d.description || "Custom user dataset file.",
+              icon: d.file_type === "csv" ? "🎫" : d.file_type === "jsonl" ? "🐦" : "📁"
+            }));
+          }
+        } catch {}
+
+        const initialPresets = [
+          { id: "support_tickets_v2.csv", name: "support_tickets_v2.csv", size: "14K rows", desc: "Customer support tickets & dialogues.", icon: "🎫" },
+          { id: "twitter_feedback.jsonl", name: "twitter_feedback.jsonl", size: "8K rows", desc: "Social media reviews & sentiment data.", icon: "🐦" },
+          { id: "python_snippets.jsonl", name: "python_snippets.jsonl", size: "50K rows", desc: "Python coding samples & syntax structures.", icon: "🐍" },
+          { id: "medical_dialogues.csv", name: "medical_dialogues.csv", size: "22K rows", desc: "Doctor-patient conversation dialogues.", icon: "🏥" }
+        ];
+
+        // Merge them cleanly
+        const combined = [...fetched, ...locals];
+        // Filter presets to avoid duplicates
+        const nonDuplicates = initialPresets.filter(p => !combined.some(c => c.name === p.name));
+        setUserDatasets([...combined, ...nonDuplicates]);
+      } catch (err) {
+        console.error("Failed to load user datasets:", err);
+        // Fallback to presets
+        setUserDatasets([
+          { id: "support_tickets_v2.csv", name: "support_tickets_v2.csv", size: "14K rows", desc: "Customer support tickets & dialogues.", icon: "🎫" },
+          { id: "twitter_feedback.jsonl", name: "twitter_feedback.jsonl", size: "8K rows", desc: "Social media reviews & sentiment data.", icon: "🐦" },
+          { id: "python_snippets.jsonl", name: "python_snippets.jsonl", size: "50K rows", desc: "Python coding samples & syntax structures.", icon: "🐍" },
+          { id: "medical_dialogues.csv", name: "medical_dialogues.csv", size: "22K rows", desc: "Doctor-patient conversation dialogues.", icon: "🏥" }
+        ]);
+      }
+    };
+
+    loadDatasets();
   }, [isMounted]);
 
   // Real-time background simulation for active running training jobs
@@ -992,17 +1055,12 @@ export default function TrainingPage() {
                     </label>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-56 overflow-y-auto pr-1">
-                      {[
-                        { id: "support_tickets_v2.csv", name: "support_tickets_v2.csv", size: "14K rows", desc: "Customer support tickets & dialogues.", icon: "🎫" },
-                        { id: "twitter_feedback.jsonl", name: "twitter_feedback.jsonl", size: "8K rows", desc: "Social media reviews & sentiment data.", icon: "🐦" },
-                        { id: "python_snippets.jsonl", name: "python_snippets.jsonl", size: "50K rows", desc: "Python coding samples & syntax structures.", icon: "🐍" },
-                        { id: "medical_dialogues.csv", name: "medical_dialogues.csv", size: "22K rows", desc: "Doctor-patient conversation dialogues.", icon: "🏥" }
-                      ].map(dataset => {
-                        const isSelected = newJobDataset === dataset.id;
+                      {userDatasets.map(dataset => {
+                        const isSelected = newJobDataset === dataset.id || newJobDataset === dataset.name;
                         return (
                           <div
                             key={dataset.id}
-                            onClick={() => setNewJobDataset(dataset.id)}
+                            onClick={() => setNewJobDataset(dataset.name || dataset.id)}
                             className="p-4 rounded-2xl border text-left cursor-pointer transition duration-150 flex items-start gap-3 hover:scale-[1.01]"
                             style={{
                               backgroundColor: isSelected ? "var(--md-primary-container)" : "var(--md-surface-2)",
