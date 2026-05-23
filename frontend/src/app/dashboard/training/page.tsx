@@ -69,7 +69,7 @@ export default function TrainingPage() {
   const [newJobLR, setNewJobLR] = useState("2e-4");
   const [newJobBatchSize, setNewJobBatchSize] = useState(8);
   const [userCreatedModels, setUserCreatedModels] = useState<any[]>([]);
-  const [modelSelectTab, setModelSelectTab] = useState<"foundation" | "user-created">("foundation");
+  const [modelSource, setModelSource] = useState<"foundation" | "created">("foundation");
 
   const terminalEndRef = useRef<HTMLDivElement>(null);
   const [streamedLogs, setStreamedLogs] = useState<string[]>([]);
@@ -269,7 +269,7 @@ export default function TrainingPage() {
     setNewJobLR("2e-4");
     setNewJobBatchSize(8);
     setWizardStep(1);
-    setModelSelectTab("foundation");
+    setModelSource("foundation");
   };
 
   // Abort/Cancel a running job
@@ -875,7 +875,7 @@ export default function TrainingPage() {
               <div className="absolute left-[10%] right-[10%] top-1/2 -translate-y-1/2 h-0.5 bg-[var(--md-surface-3)] z-0" />
               <div 
                 className="absolute left-[10%] top-1/2 -translate-y-1/2 h-0.5 bg-[var(--md-primary)] z-0 transition-all duration-300" 
-                style={{ width: wizardStep === 1 ? "0%" : wizardStep === 2 ? "40%" : "80%" }}
+                style={{ width: wizardStep === 1 ? "0%" : wizardStep === 2 ? "33%" : wizardStep === 3 ? "66%" : "100%" }}
               />
 
               {/* Step 1 */}
@@ -914,7 +914,7 @@ export default function TrainingPage() {
                   2
                 </div>
                 <span className="text-[9px] uppercase font-bold tracking-wider" style={{ color: wizardStep === 2 ? "var(--md-primary)" : "var(--md-on-surface-var)" }}>
-                  Model
+                  Source
                 </span>
               </button>
 
@@ -934,6 +934,26 @@ export default function TrainingPage() {
                   3
                 </div>
                 <span className="text-[9px] uppercase font-bold tracking-wider" style={{ color: wizardStep === 3 ? "var(--md-primary)" : "var(--md-on-surface-var)" }}>
+                  Model
+                </span>
+              </button>
+
+              {/* Step 4 */}
+              <button
+                type="button"
+                onClick={() => newJobName.trim() && setWizardStep(4)}
+                className="relative z-10 flex flex-col items-center gap-1.5 focus:outline-none"
+                disabled={!newJobName.trim()}
+              >
+                <div 
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition duration-200 ${
+                    wizardStep >= 4 ? "bg-[var(--md-primary)] text-[var(--md-on-primary)]" : "bg-[var(--md-surface-2)] text-[var(--md-on-surface-var)]"
+                  } border`}
+                  style={{ borderColor: wizardStep >= 4 ? "var(--md-primary)" : "var(--md-outline)" }}
+                >
+                  4
+                </div>
+                <span className="text-[9px] uppercase font-bold tracking-wider" style={{ color: wizardStep === 4 ? "var(--md-primary)" : "var(--md-on-surface-var)" }}>
                   Compute
                 </span>
               </button>
@@ -1010,41 +1030,87 @@ export default function TrainingPage() {
                 </div>
               )}
 
-              {/* STEP 2: Foundation & Custom Created Models */}
+              {/* STEP 2: Model Source Selection */}
               {wizardStep === 2 && (
                 <div className="space-y-5 animate-in fade-in slide-in-from-right-3 duration-250">
-                  {/* Sliding Tabs */}
-                  <div className="flex border-b" style={{ borderColor: "var(--md-outline-var)" }}>
-                    <button
-                      type="button"
-                      onClick={() => setModelSelectTab("foundation")}
-                      className={`flex-1 pb-3 text-xs font-bold uppercase tracking-wider transition ${
-                        modelSelectTab === "foundation" ? "border-b-2" : ""
+                  <label className="block text-[10px] uppercase font-bold tracking-wider text-center" style={{ color: "var(--md-on-surface-var)" }}>
+                    Where is the target model coming from?
+                  </label>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                    {/* Source 1: Foundation Models */}
+                    <div
+                      onClick={() => {
+                        setModelSource("foundation");
+                        setNewJobModel("llama-3-8b");
+                        setCustomBaseModel("");
+                        setWizardStep(3); // Auto-advance!
+                      }}
+                      className={`p-6 rounded-3xl border text-left cursor-pointer transition duration-200 flex flex-col items-center text-center gap-4 hover:scale-[1.02] ${
+                        modelSource === "foundation" ? "border-[var(--md-primary)] bg-[var(--md-primary-container)]" : "border-[var(--md-outline-var)] bg-[var(--md-surface-2)]"
                       }`}
                       style={{
-                        borderColor: modelSelectTab === "foundation" ? "var(--md-primary)" : "transparent",
-                        color: modelSelectTab === "foundation" ? "var(--md-primary)" : "var(--md-on-surface-var)"
+                        boxShadow: modelSource === "foundation" ? "0 8px 30px rgba(124, 106, 247, 0.12)" : "none"
                       }}
                     >
-                      Foundation Models
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setModelSelectTab("user-created")}
-                      className={`flex-1 pb-3 text-xs font-bold uppercase tracking-wider transition ${
-                        modelSelectTab === "user-created" ? "border-b-2" : ""
+                      <div className="w-14 h-14 rounded-2xl flex items-center justify-center bg-purple-500/10 text-[var(--md-primary)] text-3xl">
+                        🤗
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-bold" style={{ color: "var(--md-on-surface)" }}>Foundation Models</h4>
+                        <p className="text-[10px] mt-2 leading-relaxed" style={{ color: "var(--md-on-surface-var)" }}>
+                          Fine-tune standard pre-cached LLMs (Llama 3, Mistral, Gemma 2, GPT-2 XL) or specify a Hugging Face hub repository path.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Source 2: User Created Models */}
+                    <div
+                      onClick={() => {
+                        setModelSource("created");
+                        if (userCreatedModels.length > 0) {
+                          setNewJobModel(userCreatedModels[0].name);
+                        } else {
+                          setNewJobModel("");
+                        }
+                        setCustomBaseModel("");
+                        setWizardStep(3); // Auto-advance!
+                      }}
+                      className={`p-6 rounded-3xl border text-left cursor-pointer transition duration-200 flex flex-col items-center text-center gap-4 hover:scale-[1.02] ${
+                        modelSource === "created" ? "border-[var(--md-primary)] bg-[var(--md-primary-container)]" : "border-[var(--md-outline-var)] bg-[var(--md-surface-2)]"
                       }`}
                       style={{
-                        borderColor: modelSelectTab === "user-created" ? "var(--md-primary)" : "transparent",
-                        color: modelSelectTab === "user-created" ? "var(--md-primary)" : "var(--md-on-surface-var)"
+                        boxShadow: modelSource === "created" ? "0 8px 30px rgba(124, 106, 247, 0.12)" : "none"
                       }}
                     >
-                      Your Created Models ({userCreatedModels.length})
-                    </button>
+                      <div className="w-14 h-14 rounded-2xl flex items-center justify-center bg-purple-500/10 text-[var(--md-primary)] text-3xl">
+                        🧠
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-bold" style={{ color: "var(--md-on-surface)" }}>Your Custom Models</h4>
+                        <p className="text-[10px] mt-2 leading-relaxed" style={{ color: "var(--md-on-surface-var)" }}>
+                          Fine-tune one of your custom model configurations created on the Models Page (fetched from Firestore database).
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* STEP 3: Model Selection Grid (Dynamic based on Step 2 Source) */}
+              {wizardStep === 3 && (
+                <div className="space-y-5 animate-in fade-in slide-in-from-right-3 duration-250">
+                  <div className="flex items-center justify-between border-b pb-2" style={{ borderColor: "var(--md-outline-var)" }}>
+                    <label className="text-[10px] uppercase font-bold tracking-wider" style={{ color: "var(--md-on-surface-var)" }}>
+                      Choose Model to Fine-Tune
+                    </label>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-[var(--md-surface-3)] capitalize" style={{ color: "var(--md-primary)" }}>
+                      Source: {modelSource === "foundation" ? "Foundation" : "Custom Created"}
+                    </span>
                   </div>
 
                   {/* A: Foundation Models List */}
-                  {modelSelectTab === "foundation" && (
+                  {modelSource === "foundation" && (
                     <div className="space-y-4">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-60 overflow-y-auto pr-1">
                         {[
@@ -1108,7 +1174,7 @@ export default function TrainingPage() {
                   )}
 
                   {/* B: User Created Models List */}
-                  {modelSelectTab === "user-created" && (
+                  {modelSource === "created" && (
                     <div className="space-y-4">
                       {userCreatedModels.length === 0 ? (
                         <div className="p-8 text-center rounded-2xl border" style={{ backgroundColor: "var(--md-surface-2)", borderColor: "var(--md-outline-var)" }}>
@@ -1162,8 +1228,8 @@ export default function TrainingPage() {
                 </div>
               )}
 
-              {/* STEP 3: Hyperparameter & Compute Configurations */}
-              {wizardStep === 3 && (
+              {/* STEP 4: Hyperparameter & Compute Configurations */}
+              {wizardStep === 4 && (
                 <div className="space-y-6 animate-in fade-in slide-in-from-right-3 duration-250">
                   {/* Epochs count slider */}
                   <div className="space-y-1.5">
@@ -1302,7 +1368,7 @@ export default function TrainingPage() {
                   </button>
                 )}
 
-                {wizardStep < 3 ? (
+                {wizardStep < 4 ? (
                   <button
                     type="button"
                     onClick={() => setWizardStep(wizardStep + 1)}
