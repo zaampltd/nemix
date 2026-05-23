@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import {
   Rocket, Globe, Zap, Activity, Copy, CheckCircle2,
-  RefreshCw, Trash2, ExternalLink, Plus, Shield, Clock, X, ChevronDown, Check, Server
+  RefreshCw, Trash2, ExternalLink, Plus, Shield, Clock, X, ChevronDown, Check, Server, GitMerge, Sliders, ArrowRight
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '@/lib/api';
@@ -14,8 +14,9 @@ import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 interface Deployment {
   id: string;
   name: string;
-  model: string;
-  region: string;
+  type: 'model' | 'router';
+  modelOrRules: string;
+  regionOrPolicy: string;
   status: 'active' | 'sleeping' | 'provisioning';
   latency: number;
   rps: number;
@@ -29,9 +30,10 @@ interface Deployment {
 }
 
 const MOCK_ENDPOINTS: Deployment[] = [
-  { id: 'ep_001', name: 'llama3-sentiment-v2', model: 'LLaMA 3 8B', region: 'us-east-1', status: 'active', latency: 142, rps: 38, uptime: '99.9%', calls: '1.24M', url: 'https://api.nemix.ai/v1/ep_001/infer', computeNode: 'NVIDIA L4 GPU', created: '2026-05-18', apiKey: 'nex_sk_ep_llama3_xxxxxxxx' },
-  { id: 'ep_002', name: 'gpt2-code-assistant', model: 'GPT-2 XL', region: 'eu-west-1', status: 'active', latency: 88, rps: 12, uptime: '100%', calls: '289K', url: 'https://api.nemix.ai/v1/ep_002/infer', computeNode: 'NVIDIA L4 GPU', created: '2026-05-14', apiKey: 'nex_sk_ep_gpt2_xxxxxxxx' },
-  { id: 'ep_003', name: 'bert-ner-pipeline', model: 'BERT Base', region: 'ap-southeast-1', status: 'sleeping', latency: 0, rps: 0, uptime: '—', calls: '54K', url: 'https://api.nemix.ai/v1/ep_003/infer', computeNode: 'Shared CPU Node', created: '2026-05-10', apiKey: 'Use Default System Token' },
+  { id: 'ep_001', name: 'llama3-sentiment-v2', type: 'model', modelOrRules: 'LLaMA 3 8B', regionOrPolicy: 'us-east-1', status: 'active', latency: 142, rps: 38, uptime: '99.9%', calls: '1.24M', url: 'https://api.nemix.ai/v1/ep_001/infer', computeNode: 'NVIDIA L4 GPU', created: '2026-05-18', apiKey: 'nex_sk_ep_llama3_xxxxxxxx' },
+  { id: 'ep_002', name: 'gpt2-code-assistant', type: 'model', modelOrRules: 'GPT-2 XL', regionOrPolicy: 'eu-west-1', status: 'active', latency: 88, rps: 12, uptime: '100%', calls: '289K', url: 'https://api.nemix.ai/v1/ep_002/infer', computeNode: 'NVIDIA L4 GPU', created: '2026-05-14', apiKey: 'nex_sk_ep_gpt2_xxxxxxxx' },
+  { id: 'ep_r01', name: 'global-smart-router', type: 'router', modelOrRules: 'Llama-3, GPT-2 (Smart Routing)', regionOrPolicy: 'Task-Based Routing', status: 'active', latency: 94, rps: 52, uptime: '100%', calls: '1.58M', url: 'https://api.nemix.ai/v1/router/global-smart-router/infer', computeNode: 'Edge Gateway Node', created: '2026-05-20', apiKey: 'nex_sk_ep_router_xxxxxxxx' },
+  { id: 'ep_003', name: 'bert-ner-pipeline', type: 'model', modelOrRules: 'BERT Base', regionOrPolicy: 'ap-southeast-1', status: 'sleeping', latency: 0, rps: 0, uptime: '—', calls: '54K', url: 'https://api.nemix.ai/v1/ep_003/infer', computeNode: 'Shared CPU Node', created: '2026-05-10', apiKey: 'Use Default System Token' },
 ];
 
 const REGIONS = [
@@ -47,11 +49,17 @@ const COMPUTE_NODES = [
   { id: 'nvidia-a100', name: 'NVIDIA A100 GPU', desc: '80GB VRAM, high-scale performance.', price: '$2.20/hr', icon: '🔥' },
 ];
 
-function generateSecretKey(name: string) {
+const ROUTING_POLICIES = [
+  { id: 'smart_routing', name: 'Task-Based Dynamic Routing', desc: 'Queries are auto-routed to the best suited model based on semantic content analysis.', icon: '🧠', tag: 'Recommended' },
+  { id: 'ab_test', name: 'A/B Split Testing', desc: 'Distribute a configurable ratio of traffic between your primary and shadow models.', icon: '🔀', tag: 'Dual-active' },
+  { id: 'load_balancer', name: 'High-Availability Load Balancer', desc: 'Distribute incoming requests equally to maximize throughput and guarantee uptime.', icon: '🔄', tag: 'Round-robin' }
+];
+
+function generateSecretKey(name: string, prefix = 'ep') {
   const rand = Array.from({ length: 24 }, () =>
     'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'[Math.floor(Math.random() * 62)]
   ).join('');
-  return `nex_sk_ep_${name.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 6)}_${rand}`;
+  return `nex_sk_${prefix}_${name.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 6)}_${rand}`;
 }
 
 export default function DeploymentsPage() {
@@ -62,15 +70,22 @@ export default function DeploymentsPage() {
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [wizardStep, setWizardStep] = useState(1);
+  const [deploymentType, setDeploymentType] = useState<'model' | 'router'>('model');
+  
+  // Model Deploy Form states
   const [selectedModel, setSelectedModel] = useState<any>(null);
   const [selectedRegion, setSelectedRegion] = useState(REGIONS[0].id);
   const [selectedCompute, setSelectedCompute] = useState(COMPUTE_NODES[1].id);
+  
+  // Edge Router Form states
+  const [selectedEndpoints, setSelectedEndpoints] = useState<string[]>([]);
+  const [selectedPolicy, setSelectedPolicy] = useState(ROUTING_POLICIES[0].id);
+  const [abSplitRatio, setAbSplitRatio] = useState(50); // 50% split default
+  
+  // Shared Form states
   const [customName, setCustomName] = useState('');
   const [modelDropdownOpen, setModelDropdownOpen] = useState(false);
-  
-  // Dedicated API Key settings inside step 3
   const [generateDedicatedKey, setGenerateDedicatedKey] = useState(true);
-  const [generatedKeyResult, setGeneratedKeyResult] = useState('');
 
   // Load deployments and models
   useEffect(() => {
@@ -141,31 +156,26 @@ export default function DeploymentsPage() {
 
   const handleDeploy = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedModel) return;
 
-    const nameToUse = (customName.trim() || selectedModel.name || 'custom-model')
+    const nameToUse = (customName.trim() || (deploymentType === 'model' ? selectedModel?.name : 'gateway-route') || 'endpoint')
       .toLowerCase()
       .replace(/[^a-z0-9-_]/g, '-');
 
     const newDepID = `ep_${Date.now()}`;
-    const targetCompute = COMPUTE_NODES.find(c => c.id === selectedCompute)?.name || 'Standard CPU';
-    
+    const newKey = generateSecretKey(nameToUse, deploymentType === 'model' ? 'ep' : 'router');
     let activeKeyStr = 'Use Default System Token';
-    
-    // If the user checks the dedicated key generator, create a credential
+
     if (generateDedicatedKey) {
-      const newKey = generateSecretKey(nameToUse);
       activeKeyStr = newKey;
-      
-      // Save it permanently to Firestore security credentials vault
+      // Sync it directly with the Security Credentials Vault in Firestore
       try {
         await addDoc(collection(db, "UserNemixAPIKeys"), {
           userId: "test-user-123",
-          name: `Dedicated endpoint key for ${nameToUse}`,
+          name: `Dedicated ${deploymentType === 'model' ? 'endpoint' : 'edge router'} key for ${nameToUse}`,
           prefix: newKey.slice(0, 16),
           suffix: `...${newKey.slice(-4)}`,
           keyHash: newKey,
-          scopes: ["inference", "models:read"],
+          scopes: deploymentType === 'model' ? ["inference", "models:read"] : ["inference", "admin"],
           created: new Date().toISOString().split('T')[0],
           lastUsed: "Never",
           calls: "0",
@@ -173,26 +183,52 @@ export default function DeploymentsPage() {
           createdAt: serverTimestamp()
         });
       } catch (err) {
-        console.error("Failed to sync API key to firestore vault:", err);
+        console.error("Failed to sync key credentials to Firestore:", err);
       }
     }
 
-    const newDep: Deployment = {
-      id: newDepID,
-      name: nameToUse,
-      model: selectedModel.base_model || selectedModel.name || 'Custom Base',
-      region: selectedRegion,
-      status: 'provisioning',
-      latency: 0,
-      rps: 0,
-      uptime: '—',
-      calls: '0',
-      url: `https://api.nemix.ai/v1/${newDepID}/infer`,
-      computeNode: targetCompute,
-      created: new Date().toISOString().split('T')[0],
-      apiKey: activeKeyStr,
-      local: true
-    };
+    let newDep: Deployment;
+
+    if (deploymentType === 'model') {
+      const targetCompute = COMPUTE_NODES.find(c => c.id === selectedCompute)?.name || 'Standard CPU';
+      newDep = {
+        id: newDepID,
+        name: nameToUse,
+        type: 'model',
+        modelOrRules: selectedModel?.base_model || selectedModel?.name || 'Custom Base',
+        regionOrPolicy: selectedRegion,
+        status: 'provisioning',
+        latency: 0,
+        rps: 0,
+        uptime: '—',
+        calls: '0',
+        url: `https://api.nemix.ai/v1/${newDepID}/infer`,
+        computeNode: targetCompute,
+        created: new Date().toISOString().split('T')[0],
+        apiKey: activeKeyStr,
+        local: true
+      };
+    } else {
+      const policyName = ROUTING_POLICIES.find(p => p.id === selectedPolicy)?.name || 'Smart Routing';
+      const modelsBoundCount = selectedEndpoints.length;
+      newDep = {
+        id: newDepID,
+        name: nameToUse,
+        type: 'router',
+        modelOrRules: `${modelsBoundCount} Active Endpoints linked`,
+        regionOrPolicy: policyName,
+        status: 'active', // Routers deploy instantly on proxy servers
+        latency: 85,
+        rps: 18,
+        uptime: '100%',
+        calls: '0',
+        url: `https://api.nemix.ai/v1/router/${nameToUse}/infer`,
+        computeNode: 'Edge Gateway Node',
+        created: new Date().toISOString().split('T')[0],
+        apiKey: activeKeyStr,
+        local: true
+      };
+    }
 
     const updated = [...endpoints, newDep];
     setEndpoints(updated);
@@ -204,10 +240,10 @@ export default function DeploymentsPage() {
     setIsModalOpen(false);
     setWizardStep(1);
     setCustomName('');
+    setSelectedEndpoints([]);
     setModelDropdownOpen(false);
   };
 
-  // Compute dynamic stats
   const activeCount = endpoints.filter(e => e.status === 'active').length;
   
   const totalCallsNum = endpoints.reduce((acc, ep) => {
@@ -235,7 +271,8 @@ export default function DeploymentsPage() {
   };
 
   // Dedicated dynamic token string for Step 3 Code Block preview
-  const previewTokenString = generateDedicatedKey ? `nex_sk_ep_${(customName || selectedModel?.name || 'api').slice(0, 6).toLowerCase().replace(/[^a-z]/g, 'x')}_xxxxxxxxxxxxxxxx` : 'YOUR_MASTER_API_TOKEN';
+  const previewTokenString = generateDedicatedKey ? `nex_sk_${deploymentType === 'model' ? 'ep' : 'router'}_${(customName || (deploymentType === 'model' ? selectedModel?.name : 'gateway') || 'api').slice(0, 6).toLowerCase().replace(/[^a-z]/g, 'x')}_xxxxxxxxxxxxxxxx` : 'YOUR_MASTER_API_TOKEN';
+  const previewUrlString = deploymentType === 'model' ? `https://api.nemix.ai/v1/ep_0142/infer` : `https://api.nemix.ai/v1/router/${customName || 'smart-gateway'}/infer`;
 
   return (
     <DashboardLayout>
@@ -246,9 +283,9 @@ export default function DeploymentsPage() {
           <div>
             <h1 className="text-xl font-semibold flex items-center gap-2" style={S.text}>
               <Rocket className="w-5 h-5 animate-pulse" style={{ color: 'var(--md-primary)' }} />
-              API Deployments
+              API Deployments & Routers
             </h1>
-            <p className="text-sm mt-1" style={S.muted}>One-click deployed model endpoints with auto-scaling and global routing.</p>
+            <p className="text-sm mt-1" style={S.muted}>Deploy single model endpoints or compile complex edge routers to group all models into a single smart gateway.</p>
           </div>
           <button 
             onClick={() => {
@@ -258,7 +295,7 @@ export default function DeploymentsPage() {
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-opacity hover:opacity-90 cursor-pointer shadow-sm"
             style={{ background: 'var(--md-primary)', color: 'var(--md-on-primary)' }}
           >
-            <Plus className="w-4 h-4" /> Deploy New Model
+            <Plus className="w-4 h-4" /> Deploy & Route
           </button>
         </div>
 
@@ -296,19 +333,28 @@ export default function DeploymentsPage() {
                 <motion.div key={ep.id}
                   initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, x: -20 }} transition={{ delay: i * 0.05 }}
-                  className="rounded-2xl p-5 transition-all" style={S.card}>
+                  className="rounded-2xl p-5 transition-all relative overflow-hidden" style={S.card}>
+
+                  {/* Top-right subtle badge indicating Gateway vs Single Model */}
+                  <div className="absolute top-0 right-0 p-3 flex gap-2">
+                    <span className="text-[7px] font-mono uppercase tracking-wider px-2 py-0.5 rounded border border-neutral-500/20 bg-neutral-500/5" style={S.muted}>
+                      {ep.type === 'model' ? 'Single Inference API' : 'Edge Smart Router'}
+                    </span>
+                  </div>
 
                   <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                     {/* Left */}
                     <div className="flex items-start gap-4">
                       <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border"
                         style={{
-                          background: ep.status === 'active' ? 'var(--md-success-cont)' : ep.status === 'provisioning' ? 'var(--md-warning-cont)' : 'var(--md-surface-3)',
-                          color: ep.status === 'active' ? 'var(--md-success)' : ep.status === 'provisioning' ? 'var(--md-warning)' : 'var(--md-on-surface-var)',
+                          background: ep.type === 'router' ? 'var(--md-primary-container)' : ep.status === 'active' ? 'var(--md-success-cont)' : ep.status === 'provisioning' ? 'var(--md-warning-cont)' : 'var(--md-surface-3)',
+                          color: ep.type === 'router' ? 'var(--md-primary)' : ep.status === 'active' ? 'var(--md-success)' : ep.status === 'provisioning' ? 'var(--md-warning)' : 'var(--md-on-surface-var)',
                           borderColor: 'var(--md-outline)'
                         }}>
                         {ep.status === 'provisioning' ? (
                           <RefreshCw className="w-5 h-5 animate-spin" />
+                        ) : ep.type === 'router' ? (
+                          <GitMerge className="w-5 h-5" />
                         ) : (
                           <Globe className="w-5 h-5" />
                         )}
@@ -328,7 +374,9 @@ export default function DeploymentsPage() {
                             {ep.computeNode || 'NVIDIA L4 GPU'}
                           </span>
                         </div>
-                        <p className="text-[11px]" style={S.muted}>{ep.model} · {ep.region} · deployed {ep.created}</p>
+                        <p className="text-[11px]" style={S.muted}>
+                          {ep.type === 'model' ? `Base: ${ep.modelOrRules}` : `Bindings: ${ep.modelOrRules}`} · Routing: {ep.regionOrPolicy} · {ep.created}
+                        </p>
 
                         <div className="flex items-center gap-2 rounded-lg px-3 py-1.5 max-w-sm mt-2"
                           style={{ background: 'var(--md-surface-2)', border: '1px solid var(--md-outline)' }}>
@@ -344,7 +392,7 @@ export default function DeploymentsPage() {
                         {ep.apiKey && (
                           <div className="flex items-center gap-1.5 text-[9px] font-mono" style={S.muted}>
                             <Shield className="w-3 h-3 text-purple-400" /> 
-                            <span>Credential:</span>
+                            <span>Routing Access Key:</span>
                             <code className="text-purple-400 font-semibold">{ep.apiKey.slice(0, 16)}••••</code>
                           </div>
                         )}
@@ -418,8 +466,10 @@ export default function DeploymentsPage() {
                       <Rocket className="w-5 h-5 text-[var(--md-primary)]" />
                     </div>
                     <div>
-                      <h2 className="text-sm font-bold" style={S.text}>Deploy New Model Endpoint</h2>
-                      <p className="text-[10px]" style={S.muted}>Step {wizardStep} of 3</p>
+                      <h2 className="text-sm font-bold" style={S.text}>
+                        {wizardStep === 1 ? 'Select Deployment Architecture' : deploymentType === 'model' ? 'Deploy Single Model API' : 'Compile Intelligent Edge Router'}
+                      </h2>
+                      <p className="text-[10px] uppercase font-mono tracking-wider" style={S.muted}>Step {wizardStep} of 3</p>
                     </div>
                   </div>
                   <button onClick={() => setIsModalOpen(false)} style={S.muted} className="p-1 rounded-full hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer">
@@ -446,146 +496,299 @@ export default function DeploymentsPage() {
 
                 <form onSubmit={handleDeploy} className="space-y-5">
                   <AnimatePresence mode="wait">
-                    {/* WIZARD STEP 1: Basic Config */}
+                    {/* WIZARD STEP 1: Select Deployment Type + Core Config */}
                     {wizardStep === 1 && (
                       <motion.div key="step-1" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} className="space-y-4">
-                        {/* Model Dropdown Selector */}
-                        <div className="space-y-1.5 relative">
-                          <label className="text-xs font-semibold" style={S.muted}>Select Model *</label>
-                          <div 
-                            onClick={() => setModelDropdownOpen(prev => !prev)}
-                            style={{ background: 'var(--md-surface-2)', border: '1px solid var(--md-outline)' }}
-                            className="h-11 rounded-xl px-4 flex items-center justify-between cursor-pointer select-none"
-                          >
-                            <span className="text-xs font-medium" style={S.text}>
-                              {selectedModel ? `${selectedModel.name} (${selectedModel.base_model || 'Fine-tuned'})` : 'Select a Model...'}
-                            </span>
-                            <ChevronDown className="w-4 h-4 text-purple-400" />
+                        
+                        {/* High-Fidelity Type Choice Cards */}
+                        <div className="space-y-2">
+                          <label className="text-xs font-semibold" style={S.muted}>Select API Framework Type</label>
+                          <div className="grid grid-cols-2 gap-3">
+                            {[
+                              { id: 'model', title: 'Single Model Inference API', desc: 'Deploy one fine-tuned checkpoint directly to autoscaling computing GPU clusters.', icon: Rocket },
+                              { id: 'router', title: 'Intelligent Edge Router Gateway', desc: 'Join all model APIs into a single gateway routing. Decides optimal targets in real-time.', icon: GitMerge }
+                            ].map(t => {
+                              const active = deploymentType === t.id;
+                              return (
+                                <button
+                                  key={`type-${t.id}`}
+                                  type="button"
+                                  onClick={() => setDeploymentType(t.id as 'model' | 'router')}
+                                  style={{
+                                    background: active ? 'var(--md-primary-container)' : 'var(--md-surface-2)',
+                                    borderColor: active ? 'var(--md-primary)' : 'var(--md-outline)',
+                                    color: active ? 'var(--md-on-primary-cont)' : 'var(--md-on-surface)',
+                                  }}
+                                  className="p-4 rounded-2xl text-left border flex flex-col justify-between h-40 transition-all cursor-pointer hover:opacity-95"
+                                >
+                                  <div className="flex items-center justify-between w-full">
+                                    <div className="w-8 h-8 rounded-lg flex items-center justify-center border bg-black/5 dark:bg-white/5" style={{ borderColor: active ? 'var(--md-primary)' : 'var(--md-outline)' }}>
+                                      <t.icon className="w-4 h-4" />
+                                    </div>
+                                    <div className="w-4 h-4 rounded-full border flex items-center justify-center shrink-0"
+                                      style={{ borderColor: active ? 'var(--md-primary)' : 'var(--md-outline)', background: active ? 'var(--md-primary)' : 'transparent' }}>
+                                      {active && <Check className="w-2.5 h-2.5 text-[var(--md-on-primary)]" />}
+                                    </div>
+                                  </div>
+                                  <div className="mt-2">
+                                    <p className="text-xs font-bold">{t.title}</p>
+                                    <p className="text-[9px] mt-1 leading-relaxed opacity-85">{t.desc}</p>
+                                  </div>
+                                </button>
+                              );
+                            })}
                           </div>
+                        </div>
 
-                          <AnimatePresence>
-                            {modelDropdownOpen && (
-                              <motion.div
-                                initial={{ opacity: 0, y: 6 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: 6 }}
-                                style={{ background: 'var(--md-surface-1)', border: '1px solid var(--md-outline)', boxShadow: 'var(--shadow-2)' }}
-                                className="absolute left-0 right-0 top-full mt-1.5 rounded-xl p-1.5 max-h-48 overflow-y-auto z-50 flex flex-col"
+                        {/* Condition-based config render */}
+                        {deploymentType === 'model' ? (
+                          <div className="space-y-3 border-t pt-4" style={{ borderColor: 'var(--md-outline-var)' }}>
+                            {/* Model Select */}
+                            <div className="space-y-1.5 relative">
+                              <label className="text-xs font-semibold" style={S.muted}>Target Model *</label>
+                              <div 
+                                onClick={() => setModelDropdownOpen(prev => !prev)}
+                                style={{ background: 'var(--md-surface-2)', border: '1px solid var(--md-outline)' }}
+                                className="h-11 rounded-xl px-4 flex items-center justify-between cursor-pointer select-none"
                               >
-                                {modelsList.length === 0 ? (
-                                  <div className="p-3 text-center text-xs" style={S.muted}>No models found. Create one first!</div>
-                                ) : (
-                                  modelsList.map(m => (
-                                    <button
-                                      key={`deploy-model-${m.id}`}
-                                      type="button"
+                                <span className="text-xs font-medium" style={S.text}>
+                                  {selectedModel ? `${selectedModel.name} (${selectedModel.base_model || 'Fine-tuned'})` : 'Select a Model...'}
+                                </span>
+                                <ChevronDown className="w-4 h-4 text-purple-400" />
+                              </div>
+
+                              <AnimatePresence>
+                                {modelDropdownOpen && (
+                                  <motion.div
+                                    initial={{ opacity: 0, y: 6 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: 6 }}
+                                    style={{ background: 'var(--md-surface-1)', border: '1px solid var(--md-outline)', boxShadow: 'var(--shadow-2)' }}
+                                    className="absolute left-0 right-0 top-full mt-1.5 rounded-xl p-1.5 max-h-40 overflow-y-auto z-50 flex flex-col"
+                                  >
+                                    {modelsList.map(m => (
+                                      <button
+                                        key={`deploy-model-${m.id}`}
+                                        type="button"
+                                        onClick={() => {
+                                          setSelectedModel(m);
+                                          setModelDropdownOpen(false);
+                                        }}
+                                        style={{
+                                          background: selectedModel?.id === m.id ? 'var(--md-primary-container)' : 'transparent',
+                                          color: selectedModel?.id === m.id ? 'var(--md-on-primary-cont)' : 'var(--md-on-surface)',
+                                        }}
+                                        className="w-full text-left px-3 py-2 rounded-lg text-xs font-medium hover:bg-purple-500/10 transition-colors"
+                                      >
+                                        {m.name} <span className="opacity-70 font-normal">({m.base_model || m.baseModel || 'Fine-tuned'})</span>
+                                      </button>
+                                    ))}
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
+                            </div>
+
+                            {/* Custom Name */}
+                            <div className="space-y-1.5">
+                              <label className="text-xs font-semibold" style={S.muted}>Endpoint Naming *</label>
+                              <input 
+                                type="text"
+                                placeholder="e.g. llama3-sentiment-v2"
+                                value={customName}
+                                onChange={(e) => setCustomName(e.target.value)}
+                                style={{ background: 'var(--md-surface-2)', border: '1px solid var(--md-outline)', color: 'var(--md-on-surface)' }}
+                                className="w-full h-11 rounded-xl px-4 text-xs focus:outline-none"
+                              />
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="space-y-3 border-t pt-4" style={{ borderColor: 'var(--md-outline-var)' }}>
+                            {/* Checkbox grid listing active model endpoints */}
+                            <div className="space-y-2">
+                              <label className="text-xs font-semibold block" style={S.muted}>Select Active APIs to Bind to Router *</label>
+                              <div className="grid grid-cols-1 gap-2 max-h-40 overflow-y-auto pr-1">
+                                {endpoints.filter(e => e.type === 'model').map(ep => {
+                                  const checked = selectedEndpoints.includes(ep.id);
+                                  return (
+                                    <div
+                                      key={`bind-${ep.id}`}
                                       onClick={() => {
-                                        setSelectedModel(m);
-                                        setModelDropdownOpen(false);
+                                        setSelectedEndpoints(prev => 
+                                          checked ? prev.filter(x => x !== ep.id) : [...prev, ep.id]
+                                        );
                                       }}
                                       style={{
-                                        background: selectedModel?.id === m.id ? 'var(--md-primary-container)' : 'transparent',
-                                        color: selectedModel?.id === m.id ? 'var(--md-on-primary-cont)' : 'var(--md-on-surface)',
+                                        background: checked ? 'var(--md-primary-container)' : 'var(--md-surface-2)',
+                                        borderColor: checked ? 'var(--md-primary)' : 'var(--md-outline)',
+                                        color: checked ? 'var(--md-on-primary-cont)' : 'var(--md-on-surface)',
                                       }}
-                                      className="w-full text-left px-3 py-2 rounded-lg text-xs font-medium hover:bg-purple-500/10 transition-colors"
+                                      className="p-3 rounded-xl border flex items-center justify-between cursor-pointer select-none hover:opacity-95"
                                     >
-                                      {m.name} <span className="opacity-70 font-normal">({m.base_model || m.baseModel || 'Fine-tuned'})</span>
-                                    </button>
-                                  ))
-                                )}
-                              </motion.div>
-                            )}
-                          </AnimatePresence>
-                        </div>
+                                      <div>
+                                        <p className="text-xs font-semibold font-mono">{ep.name}</p>
+                                        <p className="text-[9px] opacity-75">{ep.modelOrRules} · {ep.computeNode} · {ep.regionOrPolicy}</p>
+                                      </div>
+                                      <input 
+                                        type="checkbox"
+                                        checked={checked}
+                                        onChange={() => {}}
+                                        style={{ accentColor: 'var(--md-primary)' }}
+                                        className="w-4 h-4 pointer-events-none"
+                                      />
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
 
-                        {/* Custom Name */}
-                        <div className="space-y-1.5">
-                          <label className="text-xs font-semibold" style={S.muted}>Endpoint Name (Optional)</label>
-                          <input 
-                            type="text"
-                            placeholder="e.g. llama3-sentiment-v2"
-                            value={customName}
-                            onChange={(e) => setCustomName(e.target.value)}
-                            style={{ background: 'var(--md-surface-2)', border: '1px solid var(--md-outline)', color: 'var(--md-on-surface)' }}
-                            className="w-full h-11 rounded-xl px-4 text-xs focus:outline-none"
-                          />
-                          <p className="text-[10px]" style={S.muted}>Your routing path: <code>https://api.nemix.ai/v1/{customName || 'endpoint-id'}/infer</code></p>
-                        </div>
+                            {/* Gateway Custom Name */}
+                            <div className="space-y-1.5">
+                              <label className="text-xs font-semibold" style={S.muted}>Edge Router URL Gateway Name *</label>
+                              <input 
+                                type="text"
+                                placeholder="e.g. global-smart-router"
+                                value={customName}
+                                onChange={(e) => setCustomName(e.target.value)}
+                                style={{ background: 'var(--md-surface-2)', border: '1px solid var(--md-outline)', color: 'var(--md-on-surface)' }}
+                                className="w-full h-11 rounded-xl px-4 text-xs focus:outline-none"
+                              />
+                            </div>
+                          </div>
+                        )}
                       </motion.div>
                     )}
 
-                    {/* WIZARD STEP 2: Server & Infrastructure */}
+                    {/* WIZARD STEP 2: Infra Nodes (Model) OR Routing Logic (Router) */}
                     {wizardStep === 2 && (
                       <motion.div key="step-2" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} className="space-y-4">
-                        {/* Region Grid Selection (Custom dropdown bypass!) */}
-                        <div className="space-y-2">
-                          <label className="text-xs font-semibold" style={S.muted}>Deployment Region</label>
-                          <div className="grid grid-cols-2 gap-3">
-                            {REGIONS.map(r => {
-                              const active = selectedRegion === r.id;
-                              return (
-                                <button
-                                  key={`reg-${r.id}`}
-                                  type="button"
-                                  onClick={() => setSelectedRegion(r.id)}
-                                  style={{
-                                    background: active ? 'var(--md-primary-container)' : 'var(--md-surface-2)',
-                                    borderColor: active ? 'var(--md-primary)' : 'var(--md-outline)',
-                                    color: active ? 'var(--md-on-primary-cont)' : 'var(--md-on-surface)',
-                                  }}
-                                  className="p-3 rounded-2xl text-left border flex items-center justify-between transition-all cursor-pointer hover:opacity-95"
-                                >
-                                  <div>
-                                    <p className="text-xs font-semibold flex items-center gap-1.5">
-                                      <span>{r.flag}</span> {r.name.split(' ')[0]}
-                                    </p>
-                                    <p className="text-[9px] font-mono mt-0.5 opacity-70">Latency: {r.latency}</p>
-                                  </div>
-                                  <div className="w-4 h-4 rounded-full border flex items-center justify-center shrink-0"
-                                    style={{ borderColor: active ? 'var(--md-primary)' : 'var(--md-outline)', background: active ? 'var(--md-primary)' : 'transparent' }}>
-                                    {active && <Check className="w-2.5 h-2.5 text-[var(--md-on-primary)]" />}
-                                  </div>
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
+                        {deploymentType === 'model' ? (
+                          <div className="space-y-4">
+                            {/* Region selector */}
+                            <div className="space-y-2">
+                              <label className="text-xs font-semibold" style={S.muted}>Target Deployment Region</label>
+                              <div className="grid grid-cols-2 gap-3">
+                                {REGIONS.map(r => {
+                                  const active = selectedRegion === r.id;
+                                  return (
+                                    <button
+                                      key={`reg-${r.id}`}
+                                      type="button"
+                                      onClick={() => setSelectedRegion(r.id)}
+                                      style={{
+                                        background: active ? 'var(--md-primary-container)' : 'var(--md-surface-2)',
+                                        borderColor: active ? 'var(--md-primary)' : 'var(--md-outline)',
+                                        color: active ? 'var(--md-on-primary-cont)' : 'var(--md-on-surface)',
+                                      }}
+                                      className="p-3 rounded-2xl text-left border flex items-center justify-between transition-all cursor-pointer hover:opacity-95"
+                                    >
+                                      <div>
+                                        <p className="text-xs font-semibold flex items-center gap-1.5">
+                                          <span>{r.flag}</span> {r.name.split(' ')[0]}
+                                        </p>
+                                        <p className="text-[9px] font-mono mt-0.5 opacity-70">Latency: {r.latency}</p>
+                                      </div>
+                                      <div className="w-4 h-4 rounded-full border flex items-center justify-center shrink-0"
+                                        style={{ borderColor: active ? 'var(--md-primary)' : 'var(--md-outline)', background: active ? 'var(--md-primary)' : 'transparent' }}>
+                                        {active && <Check className="w-2.5 h-2.5 text-[var(--md-on-primary)]" />}
+                                      </div>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
 
-                        {/* Compute Resource Selection */}
-                        <div className="space-y-2">
-                          <label className="text-xs font-semibold" style={S.muted}>Instance Compute Level</label>
-                          <div className="grid grid-cols-1 gap-2">
-                            {COMPUTE_NODES.map(c => {
-                              const active = selectedCompute === c.id;
-                              return (
-                                <button
-                                  key={`comp-${c.id}`}
-                                  type="button"
-                                  onClick={() => setSelectedCompute(c.id)}
-                                  style={{
-                                    background: active ? 'var(--md-primary-container)' : 'var(--md-surface-2)',
-                                    borderColor: active ? 'var(--md-primary)' : 'var(--md-outline)',
-                                    color: active ? 'var(--md-on-primary-cont)' : 'var(--md-on-surface)',
-                                  }}
-                                  className="p-3 rounded-2xl text-left border flex items-center gap-3 transition-all cursor-pointer hover:opacity-95"
-                                >
-                                  <span className="text-2xl shrink-0">{c.icon}</span>
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-center justify-between">
-                                      <p className="text-xs font-semibold">{c.name}</p>
-                                      <span className="text-[10px] font-bold px-2 py-0.5 rounded border border-neutral-500/20 bg-neutral-500/5">{c.price}</span>
-                                    </div>
-                                    <p className="text-[10px] mt-0.5 opacity-85">{c.desc}</p>
-                                  </div>
-                                </button>
-                              );
-                            })}
+                            {/* Compute Selector */}
+                            <div className="space-y-2">
+                              <label className="text-xs font-semibold" style={S.muted}>Model Cluster Compute Level</label>
+                              <div className="grid grid-cols-1 gap-2">
+                                {COMPUTE_NODES.map(c => {
+                                  const active = selectedCompute === c.id;
+                                  return (
+                                    <button
+                                      key={`comp-${c.id}`}
+                                      type="button"
+                                      onClick={() => setSelectedCompute(c.id)}
+                                      style={{
+                                        background: active ? 'var(--md-primary-container)' : 'var(--md-surface-2)',
+                                        borderColor: active ? 'var(--md-primary)' : 'var(--md-outline)',
+                                        color: active ? 'var(--md-on-primary-cont)' : 'var(--md-on-surface)',
+                                      }}
+                                      className="p-3 rounded-2xl text-left border flex items-center gap-3 transition-all cursor-pointer hover:opacity-95"
+                                    >
+                                      <span className="text-2xl shrink-0">{c.icon}</span>
+                                      <div className="flex-1 min-w-0">
+                                        <div className="flex items-center justify-between">
+                                          <p className="text-xs font-semibold">{c.name}</p>
+                                          <span className="text-[10px] font-bold px-2 py-0.5 rounded border border-neutral-500/20 bg-neutral-500/5">{c.price}</span>
+                                        </div>
+                                        <p className="text-[10px] mt-0.5 opacity-85">{c.desc}</p>
+                                      </div>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
                           </div>
-                        </div>
+                        ) : (
+                          <div className="space-y-4">
+                            {/* Routing Policies */}
+                            <div className="space-y-2">
+                              <label className="text-xs font-semibold" style={S.muted}>Select Intelligent Routing Policy</label>
+                              <div className="grid grid-cols-1 gap-2.5">
+                                {ROUTING_POLICIES.map(p => {
+                                  const active = selectedPolicy === p.id;
+                                  return (
+                                    <button
+                                      key={`policy-${p.id}`}
+                                      type="button"
+                                      onClick={() => setSelectedPolicy(p.id)}
+                                      style={{
+                                        background: active ? 'var(--md-primary-container)' : 'var(--md-surface-2)',
+                                        borderColor: active ? 'var(--md-primary)' : 'var(--md-outline)',
+                                        color: active ? 'var(--md-on-primary-cont)' : 'var(--md-on-surface)',
+                                      }}
+                                      className="p-3 rounded-2xl text-left border flex items-start gap-3 transition-all cursor-pointer hover:opacity-95"
+                                    >
+                                      <span className="text-2xl shrink-0 mt-0.5">{p.icon}</span>
+                                      <div className="flex-1 min-w-0">
+                                        <div className="flex items-center justify-between">
+                                          <p className="text-xs font-semibold">{p.name}</p>
+                                          <span className="text-[8px] font-mono uppercase px-2 py-0.5 rounded-full border border-purple-500/20 bg-purple-500/5">{p.tag}</span>
+                                        </div>
+                                        <p className="text-[10px] mt-1 leading-relaxed opacity-85">{p.desc}</p>
+                                      </div>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+
+                            {/* Dynamic Ratio slider if A/B test selected */}
+                            {selectedPolicy === 'ab_test' && (
+                              <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} className="p-4 rounded-2xl border space-y-3" style={{ background: 'var(--md-surface-2)', borderColor: 'var(--md-outline)' }}>
+                                <div className="flex justify-between items-center text-xs font-mono">
+                                  <span style={{ color: 'var(--md-primary)' }}>Primary API: {abSplitRatio}%</span>
+                                  <span style={{ color: 'var(--md-success)' }}>Shadow API: {100 - abSplitRatio}%</span>
+                                </div>
+                                <input 
+                                  type="range"
+                                  min="1"
+                                  max="99"
+                                  value={abSplitRatio}
+                                  onChange={(e) => setAbSplitRatio(parseInt(e.target.value))}
+                                  className="w-full h-1 bg-neutral-300 dark:bg-neutral-700 rounded-lg appearance-none cursor-pointer accent-[var(--md-primary)]"
+                                />
+                                <p className="text-[9px]" style={S.muted}>
+                                  Incoming gateway calls will be split dynamically on our Edge Nodes according to this exact weight ratio.
+                                </p>
+                              </motion.div>
+                            )}
+                          </div>
+                        )}
                       </motion.div>
                     )}
 
-                    {/* WIZARD STEP 3: Security & Key Selector */}
+                    {/* WIZARD STEP 3: Security, Dedicated Key Generation & Code block preview */}
                     {wizardStep === 3 && (
                       <motion.div key="step-3" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} className="space-y-4">
                         {/* Token Generator Selector */}
@@ -601,10 +804,10 @@ export default function DeploymentsPage() {
                             />
                             <div className="flex-1 min-w-0">
                               <label htmlFor="dedicated-key" className="text-xs font-bold block cursor-pointer" style={S.text}>
-                                Generate a New Dedicated Key for this endpoint
+                                Generate a New Dedicated Key for this {deploymentType === 'model' ? 'endpoint' : 'gateway router'}
                               </label>
                               <p className="text-[10px] mt-0.5" style={S.muted}>
-                                Highly recommended. A unique, dedicated security token will be auto-generated for this specific model router, keeping your master training token separate and safe.
+                                Highly recommended. Creates a unique, dedicated security token for this routing gateway, keeping your master model credentials isolated.
                               </p>
                             </div>
                           </div>
@@ -613,17 +816,17 @@ export default function DeploymentsPage() {
                             <div className="flex items-center gap-2 p-2 rounded-xl border border-dashed text-[10px] font-mono text-purple-400" style={{ background: 'var(--md-surface-1)', borderColor: 'var(--md-primary)' }}>
                               <Shield className="w-3.5 h-3.5 shrink-0" />
                               <span>Token prefix will be: </span>
-                              <code>{`nex_sk_ep_${(customName || selectedModel?.name || 'api').slice(0, 6).toLowerCase().replace(/[^a-z]/g, 'x')}_...`}</code>
+                              <code>{`nex_sk_${deploymentType === 'model' ? 'ep' : 'router'}_${(customName || 'api').slice(0, 6).toLowerCase().replace(/[^a-z]/g, 'x')}_...`}</code>
                             </div>
                           )}
                         </div>
 
                         {/* Interactive cURL Code Block Preview */}
                         <div className="space-y-1.5">
-                          <label className="text-xs font-semibold" style={S.muted}>cURL Connection Preview</label>
+                          <label className="text-xs font-semibold" style={S.muted}>cURL Integration Preview</label>
                           <pre className="p-4 rounded-2xl text-[10px] font-mono overflow-x-auto select-all"
                             style={{ background: 'var(--md-surface-2)', border: '1px solid var(--md-outline)', color: 'var(--md-on-surface)' }}>
-{`curl -X POST https://api.nemix.ai/v1/ep_${Date.now().toString().slice(-4)}/infer \\
+{`curl -X POST ${previewUrlString} \\
   -H "Authorization: Bearer ${previewTokenString}" \\
   -H "Content-Type: application/json" \\
   -d '{"prompt": "Hello World"}'`}
@@ -662,7 +865,10 @@ export default function DeploymentsPage() {
                         <button
                           type="button"
                           onClick={() => setWizardStep(p => Math.min(3, p + 1))}
-                          disabled={wizardStep === 1 && !selectedModel}
+                          disabled={
+                            (wizardStep === 1 && deploymentType === 'model' && !selectedModel) ||
+                            (wizardStep === 1 && deploymentType === 'router' && (selectedEndpoints.length === 0 || !customName.trim()))
+                          }
                           className="h-10 rounded-xl px-5 text-xs font-semibold cursor-pointer shadow-sm disabled:opacity-50"
                           style={{ background: 'var(--md-primary)', color: 'var(--md-on-primary)' }}
                         >
