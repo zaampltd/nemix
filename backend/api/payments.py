@@ -17,8 +17,10 @@ WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", "")
 
 # ── Plan price mapping ────────────────────────────────────────────
 PLAN_PRICES = {
-    "pro":      {"amount": 4900,  "currency": "usd", "name": "Nemix Pro"},
-    "business": {"amount": 19900, "currency": "usd", "name": "Nemix Business"},
+    "pro":             {"amount": 4900,   "currency": "usd", "name": "Nemix Pro (Monthly)"},
+    "pro_annual":      {"amount": 46800,  "currency": "usd", "name": "Nemix Pro (Annual)"},
+    "business":        {"amount": 19900,  "currency": "usd", "name": "Nemix Business (Monthly)"},
+    "business_annual": {"amount": 190800, "currency": "usd", "name": "Nemix Business (Annual)"},
 }
 
 # ── Schemas ───────────────────────────────────────────────────────
@@ -139,43 +141,52 @@ async def stripe_webhook(
 
 @router.get("/plans")
 async def get_plans():
-    """Return available plans and pricing."""
+    """Return available plans, billing rates, and quota boundaries."""
     return {
         "plans": [
             {
                 "id": "free",
-                "name": "Free",
-                "price_usd": 0,
+                "name": "Free Sandbox",
+                "monthly_price_usd": 0,
+                "annual_price_equivalent_usd": 0,
                 "features": {
                     "api_calls_per_month": 1000,
-                    "models": 1,
+                    "gpu_hours_per_month": 1,
+                    "storage_gb": 1,
                     "deployments": 1,
                     "support": "community",
+                    "priority": "shared-cpu"
                 },
             },
             {
                 "id": "pro",
-                "name": "Pro",
-                "price_usd": 49,
+                "name": "Developer Pro",
+                "monthly_price_usd": 49,
+                "annual_price_equivalent_usd": 39,
                 "features": {
                     "api_calls_per_month": 100000,
-                    "models": 10,
+                    "gpu_hours_per_month": 20,
+                    "storage_gb": 20,
                     "deployments": 5,
                     "support": "priority",
                     "custom_domains": True,
+                    "priority": "dedicated-l4"
                 },
             },
             {
                 "id": "business",
-                "name": "Business",
-                "price_usd": 199,
+                "name": "Business Enterprise",
+                "monthly_price_usd": 199,
+                "annual_price_equivalent_usd": 159,
                 "features": {
                     "api_calls_per_month": 5000000,
-                    "models": -1,  # unlimited
-                    "deployments": -1,
+                    "gpu_hours_per_month": 100,
+                    "storage_gb": 100,
+                    "deployments": -1,  # unlimited
                     "support": "24/7",
                     "sla": True,
                     "team_seats": 10,
+                    "priority": "dedicated-warm-pods"
                 },
             },
         ],
