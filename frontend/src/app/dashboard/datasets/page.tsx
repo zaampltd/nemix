@@ -13,7 +13,6 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import api from '@/lib/api';
 
 // ─── Firebase Dynamic Backend Imports ──────────────────────────────────
 import { db, storage } from "@/lib/firebase";
