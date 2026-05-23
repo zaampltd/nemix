@@ -58,11 +58,33 @@ function ScoreBar({ score }: { score: number }) {
 }
 
 export default function EvaluationsPage() {
+  const [models, setModels] = useState<string[]>(MODELS_AVAILABLE);
   const [selectedModel, setSelectedModel] = useState(MODELS_AVAILABLE[0]);
   const [selectedBench, setSelectedBench] = useState(BENCHMARKS[0].id);
   const [runs, setRuns] = useState<RunResult[]>([]);
   const [running, setRunning] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Dropdown overlay states
+  const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
+  const [isBenchDropdownOpen, setIsBenchDropdownOpen] = useState(false);
+
+  // Dynamic models integration load
+  useEffect(() => {
+    try {
+      const localJobs = JSON.parse(localStorage.getItem("nemix_training_jobs") || "[]");
+      const completedNames = localJobs.filter((j: any) => j.status === "completed").map((j: any) => `custom-${j.name}`);
+      
+      const localModels = JSON.parse(localStorage.getItem("local_models") || "[]");
+      const customNames = localModels.map((m: any) => `custom-${m.name}`);
+      
+      const allModels = [...MODELS_AVAILABLE, ...completedNames, ...customNames];
+      const unique = allModels.filter((v, i, self) => self.indexOf(v) === i);
+      setModels(unique);
+    } catch (err) {
+      setModels(MODELS_AVAILABLE);
+    }
+  }, []);
 
   const handleRun = () => {
     if (running) return;
@@ -109,56 +131,163 @@ export default function EvaluationsPage() {
       <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-xl font-semibold" style={{ color: "var(--md-on-surface)" }}>Evaluations</h1>
-          <p className="text-sm mt-0.5" style={{ color: "var(--md-on-surface-var)" }}>
+          <h1 className="text-xl font-bold tracking-tight" style={{ color: "var(--md-on-surface)" }}>Evaluations</h1>
+          <p className="text-xs mt-0.5" style={{ color: "var(--md-on-surface-var)" }}>
             Benchmark your models on standardized test suites and compare results.
           </p>
         </div>
 
         {/* Run panel */}
-        <div className="rounded-2xl p-6" style={{ background: "var(--md-surface-1)", border: "1px solid var(--md-outline)", boxShadow: "var(--shadow-1)" }}>
+        <div className="rounded-2xl p-6 relative z-20" style={{ background: "var(--md-surface-1)", border: "1px solid var(--md-outline)", boxShadow: "var(--shadow-1)" }}>
           <h2 className="text-sm font-semibold mb-4" style={{ color: "var(--md-on-surface)" }}>Configure Evaluation</h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-            {/* Model selector */}
-            <div>
-              <label className="text-xs font-medium mb-1.5 block" style={{ color: "var(--md-on-surface-var)" }}>Model</label>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 relative z-30">
+            {/* Custom Model Selector */}
+            <div className="relative">
+              <label className="text-xs font-semibold mb-1.5 block" style={{ color: "var(--md-on-surface-var)" }}>Model</label>
               <div className="relative">
-                <select value={selectedModel} onChange={e => setSelectedModel(e.target.value)}
-                  className="w-full appearance-none px-3.5 py-2.5 pr-9 rounded-xl text-sm"
-                  style={{ background: "var(--md-surface-2)", border: "1px solid var(--md-outline)", color: "var(--md-on-surface)" }}>
-                  {MODELS_AVAILABLE.map(m => <option key={m} value={m}>{m}</option>)}
-                </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: "var(--md-on-surface-var)" }} />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsModelDropdownOpen(!isModelDropdownOpen);
+                    setIsBenchDropdownOpen(false);
+                  }}
+                  className="w-full px-3.5 py-2.5 pr-9 rounded-xl text-xs font-bold text-left border flex items-center justify-between cursor-pointer transition select-none outline-none"
+                  style={{
+                    background: "var(--md-surface-2)",
+                    borderColor: "var(--md-outline)",
+                    color: "var(--md-on-surface)"
+                  }}
+                >
+                  <span className="truncate">🤖 {selectedModel}</span>
+                  <ChevronDown className="w-4 h-4 opacity-60 shrink-0" />
+                </button>
+                
+                <AnimatePresence>
+                  {isModelDropdownOpen && (
+                    <>
+                      {/* Click outside backdrop */}
+                      <div className="fixed inset-0 z-40 cursor-default" onClick={() => setIsModelDropdownOpen(false)} />
+                      <motion.div
+                        initial={{ opacity: 0, y: 5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 5 }}
+                        className="absolute left-0 right-0 mt-1.5 rounded-2xl border shadow-2xl p-1.5 z-50 max-h-60 overflow-y-auto space-y-0.5"
+                        style={{
+                          background: "var(--md-surface-1)",
+                          borderColor: "var(--md-outline)",
+                          boxShadow: "0 10px 30px rgba(0,0,0,0.15)"
+                        }}
+                      >
+                        {models.map(m => {
+                          const isSelected = selectedModel === m;
+                          return (
+                            <button
+                              key={m}
+                              type="button"
+                              onClick={() => {
+                                setSelectedModel(m);
+                                setIsModelDropdownOpen(false);
+                              }}
+                              className="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold hover:bg-black/5 dark:hover:bg-white/5 transition flex items-center justify-between cursor-pointer"
+                              style={{
+                                color: isSelected ? "var(--md-primary)" : "var(--md-on-surface)",
+                                background: isSelected ? "var(--md-primary-container)" : "transparent"
+                              }}
+                            >
+                              <span className="truncate">{m}</span>
+                              {isSelected && <Check className="w-3.5 h-3.5 shrink-0" style={{ color: "var(--md-primary)" }} />}
+                            </button>
+                          );
+                        })}
+                      </motion.div>
+                    </>
+                  )}
+                </AnimatePresence>
               </div>
             </div>
 
-            {/* Benchmark selector */}
-            <div>
-              <label className="text-xs font-medium mb-1.5 block" style={{ color: "var(--md-on-surface-var)" }}>Benchmark</label>
+            {/* Custom Benchmark Selector */}
+            <div className="relative">
+              <label className="text-xs font-semibold mb-1.5 block" style={{ color: "var(--md-on-surface-var)" }}>Benchmark</label>
               <div className="relative">
-                <select value={selectedBench} onChange={e => setSelectedBench(e.target.value)}
-                  className="w-full appearance-none px-3.5 py-2.5 pr-9 rounded-xl text-sm"
-                  style={{ background: "var(--md-surface-2)", border: "1px solid var(--md-outline)", color: "var(--md-on-surface)" }}>
-                  {BENCHMARKS.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-                </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: "var(--md-on-surface-var)" }} />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsBenchDropdownOpen(!isBenchDropdownOpen);
+                    setIsModelDropdownOpen(false);
+                  }}
+                  className="w-full px-3.5 py-2.5 pr-9 rounded-xl text-xs font-bold text-left border flex items-center justify-between cursor-pointer transition select-none outline-none"
+                  style={{
+                    background: "var(--md-surface-2)",
+                    borderColor: "var(--md-outline)",
+                    color: "var(--md-on-surface)"
+                  }}
+                >
+                  <span className="truncate">📊 {BENCHMARKS.find(b => b.id === selectedBench)?.name}</span>
+                  <ChevronDown className="w-4 h-4 opacity-60 shrink-0" />
+                </button>
+                
+                <AnimatePresence>
+                  {isBenchDropdownOpen && (
+                    <>
+                      {/* Click outside backdrop */}
+                      <div className="fixed inset-0 z-40 cursor-default" onClick={() => setIsBenchDropdownOpen(false)} />
+                      <motion.div
+                        initial={{ opacity: 0, y: 5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 5 }}
+                        className="absolute left-0 right-0 mt-1.5 rounded-2xl border shadow-2xl p-1.5 z-50 space-y-0.5"
+                        style={{
+                          background: "var(--md-surface-1)",
+                          borderColor: "var(--md-outline)",
+                          boxShadow: "0 10px 30px rgba(0,0,0,0.15)"
+                        }}
+                      >
+                        {BENCHMARKS.map(b => {
+                          const isSelected = selectedBench === b.id;
+                          return (
+                            <button
+                              key={b.id}
+                              type="button"
+                              onClick={() => {
+                                setSelectedBench(b.id);
+                                setIsBenchDropdownOpen(false);
+                              }}
+                              className="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold hover:bg-black/5 dark:hover:bg-white/5 transition flex items-center justify-between cursor-pointer"
+                              style={{
+                                color: isSelected ? "var(--md-primary)" : "var(--md-on-surface)",
+                                background: isSelected ? "var(--md-primary-container)" : "transparent"
+                              }}
+                            >
+                              <div className="truncate flex-1 pr-2 text-left">
+                                <span className="block font-bold">{b.name}</span>
+                                <span className="block text-[9px] font-normal opacity-70 truncate mt-0.5">{b.desc}</span>
+                              </div>
+                              {isSelected && <Check className="w-3.5 h-3.5 shrink-0" style={{ color: "var(--md-primary)" }} />}
+                            </button>
+                          );
+                        })}
+                      </motion.div>
+                    </>
+                  )}
+                </AnimatePresence>
               </div>
             </div>
           </div>
 
           {/* Benchmark info */}
-          <div className="rounded-xl p-4 mb-5" style={{ background: "var(--md-surface-2)", border: "1px solid var(--md-outline)" }}>
-            <p className="text-xs font-medium mb-1" style={{ color: "var(--md-on-surface)" }}>{bench.name}</p>
-            <p className="text-xs mb-2" style={{ color: "var(--md-on-surface-var)" }}>{bench.desc}</p>
-            <div className="flex items-center gap-1 text-xs" style={{ color: "var(--md-on-surface-var)" }}>
-              <BarChart2 className="w-3.5 h-3.5" />
+          <div className="rounded-xl p-4 mb-5 relative z-10" style={{ background: "var(--md-surface-2)", border: "1px solid var(--md-outline)" }}>
+            <p className="text-xs font-bold mb-1" style={{ color: "var(--md-on-surface)" }}>{bench.name}</p>
+            <p className="text-xs mb-2 opacity-85" style={{ color: "var(--md-on-surface-var)" }}>{bench.desc}</p>
+            <div className="flex items-center gap-1.5 text-xs font-semibold" style={{ color: "var(--md-on-surface-var)" }}>
+              <BarChart2 className="w-3.5 h-3.5 text-[var(--md-primary)]" />
               {bench.tasks.toLocaleString()} test samples
             </div>
           </div>
 
           <button onClick={handleRun} disabled={running}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-opacity"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition duration-150 hover:scale-[1.01] active:scale-[0.99]"
             style={{
               background: running ? "var(--md-surface-3)" : "var(--md-primary)",
               color: running ? "var(--md-on-surface-var)" : "var(--md-on-primary)",
@@ -183,26 +312,26 @@ export default function EvaluationsPage() {
                 {runs.map(run => (
                   <motion.div key={run.id}
                     initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
-                    className="rounded-2xl p-5"
-                    style={{ background: "var(--md-surface-1)", border: "1px solid var(--md-outline)", boxShadow: "var(--shadow-1)" }}>
+                    className="rounded-2xl p-5 border shadow-sm"
+                    style={{ background: "var(--md-surface-1)", borderColor: "var(--md-outline)", boxShadow: "var(--shadow-1)" }}>
 
                     {/* Run header */}
                     <div className="flex items-start justify-between mb-4">
                       <div>
                         <div className="flex items-center gap-2 mb-0.5">
                           {run.status === "running" && <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: "var(--md-primary)" }} />}
-                          {run.status === "done" && <Check className="w-3.5 h-3.5" style={{ color: "var(--md-success)" }} />}
+                          {run.status === "done" && <Check className="w-3.5 h-3.5 text-[var(--md-primary)]" style={{ color: "var(--md-success)" }} />}
                           {run.status === "failed" && <AlertCircle className="w-3.5 h-3.5" style={{ color: "var(--md-error)" }} />}
-                          <span className="text-sm font-medium" style={{ color: "var(--md-on-surface)" }}>{run.benchmark}</span>
+                          <span className="text-sm font-semibold" style={{ color: "var(--md-on-surface)" }}>{run.benchmark}</span>
                         </div>
-                        <p className="text-xs font-mono" style={{ color: "var(--md-on-surface-var)" }}>{run.model}</p>
+                        <p className="text-[10px] font-mono opacity-80" style={{ color: "var(--md-on-surface-var)" }}>{run.model}</p>
                       </div>
                       <div className="text-right">
-                        <div className="flex items-center gap-1 text-xs" style={{ color: "var(--md-on-surface-var)" }}>
-                          <Clock className="w-3 h-3" />
+                        <div className="flex items-center gap-1 text-xs font-semibold" style={{ color: "var(--md-on-surface-var)" }}>
+                          <Clock className="w-3 h-3 text-[var(--md-primary)]" />
                           {run.status === "done" ? run.duration : run.startedAt}
                         </div>
-                        <span className="text-[10px] px-2 py-0.5 rounded-full mt-1 inline-block"
+                        <span className="text-[9px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full mt-1.5 inline-block"
                           style={{
                             background: run.status === "done" ? "var(--md-success-cont)" : run.status === "running" ? "var(--md-primary-container)" : "var(--md-error-cont)",
                             color: run.status === "done" ? "var(--md-success)" : run.status === "running" ? "var(--md-on-primary-cont)" : "var(--md-error)",
@@ -233,9 +362,9 @@ export default function EvaluationsPage() {
                         {run.metrics && (
                           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                             {Object.entries(run.metrics).map(([k, v]) => (
-                              <div key={k} className="rounded-xl p-3 text-center" style={{ background: "var(--md-surface-2)" }}>
-                                <p className="text-[10px] mb-0.5" style={{ color: "var(--md-on-surface-var)" }}>{k}</p>
-                                <p className="text-sm font-bold" style={{ color: "var(--md-on-surface)" }}>{v}</p>
+                              <div key={k} className="rounded-xl p-3 text-center border" style={{ background: "var(--md-surface-2)", borderColor: "var(--md-outline-var)" }}>
+                                <p className="text-[10px] mb-0.5 font-bold uppercase tracking-wider" style={{ color: "var(--md-on-surface-var)" }}>{k}</p>
+                                <p className="text-sm font-black" style={{ color: "var(--md-on-surface)" }}>{v}</p>
                               </div>
                             ))}
                           </div>
