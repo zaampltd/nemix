@@ -62,6 +62,50 @@ export default function TrainingPage() {
   const [newJobBatchSize, setNewJobBatchSize] = useState(8);
 
   const terminalEndRef = useRef<HTMLDivElement>(null);
+  const [streamedLogs, setStreamedLogs] = useState<string[]>([]);
+  const lastJobIdRef = useRef<string>("");
+
+  // Stream logs dynamically line by line
+  useEffect(() => {
+    const selectedJob = jobs.find(j => j.id === selectedJobId) || jobs[0];
+    if (!selectedJob) return;
+
+    const targetLogs = getLogsForActiveJob(selectedJob);
+    
+    // If the job changed, clear streamed logs immediately and start from index 0
+    if (selectedJobId !== lastJobIdRef.current) {
+      lastJobIdRef.current = selectedJobId;
+      setStreamedLogs([]);
+      
+      let index = 0;
+      const delay = selectedJob.status === "running" ? 250 : 100;
+      const timer = setInterval(() => {
+        if (index < targetLogs.length) {
+          const line = targetLogs[index];
+          setStreamedLogs(prev => [...prev, line]);
+          index++;
+        } else {
+          clearInterval(timer);
+        }
+      }, delay);
+      return () => clearInterval(timer);
+    } else {
+      // Same job: logs might have grown because of a progress update.
+      // Catch up smoothly from streamedLogs.length to targetLogs.length.
+      const delay = selectedJob.status === "running" ? 250 : 100;
+      const timer = setInterval(() => {
+        setStreamedLogs(current => {
+          if (current.length < targetLogs.length) {
+            return [...current, targetLogs[current.length]];
+          } else {
+            clearInterval(timer);
+            return current;
+          }
+        });
+      }, delay);
+      return () => clearInterval(timer);
+    }
+  }, [selectedJobId, jobs]);
 
   // Load from localStorage on mount safely
   useEffect(() => {
@@ -118,12 +162,12 @@ export default function TrainingPage() {
     return () => clearInterval(interval);
   }, [isMounted]);
 
-  // Auto-scroll terminal when active job logs grow
+  // Auto-scroll terminal when active job logs stream/grow
   useEffect(() => {
     if (terminalEndRef.current) {
       terminalEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  }, [jobs, selectedJobId]);
+  }, [streamedLogs]);
 
   // Reset demo states back to clean mocks
   const handleResetData = () => {
@@ -652,7 +696,7 @@ export default function TrainingPage() {
                   <div className="flex items-center gap-2">
                     <button 
                       onClick={() => {
-                        const logs = getLogsForActiveJob(selectedJob).join("\n");
+                        const logs = streamedLogs.join("\n");
                         navigator.clipboard.writeText(logs);
                         alert("Console logs copied to clipboard!");
                       }}
@@ -666,7 +710,7 @@ export default function TrainingPage() {
 
                 {/* Console Terminal Screen */}
                 <div className="p-6 h-[340px] overflow-y-auto font-mono text-[11px] leading-relaxed scroll-smooth flex flex-col space-y-1.5" style={{ backgroundColor: "#060608" }}>
-                  {getLogsForActiveJob(selectedJob).map((line, idx) => {
+                  {streamedLogs.map((line, idx) => {
                     let textColor = "text-zinc-400";
                     if (line.includes("[ERROR]") || line.includes("CRITICAL") || line.includes("FATAL")) {
                       textColor = "text-red-400 font-medium";
