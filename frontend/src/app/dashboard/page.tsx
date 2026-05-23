@@ -21,7 +21,9 @@ import {
   Zap, 
   ChevronRight,
   Play,
-  Key
+  Key,
+  Bell,
+  Info
 } from "lucide-react";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, query, orderBy, limit, where } from "firebase/firestore";
@@ -466,40 +468,63 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Active Webhook Receivers Card */}
+          {/* Recent Workspace Notifications Card */}
           <div className="rounded-2xl p-6 border flex flex-col justify-between" style={S.card}>
             <div>
               <div className="flex items-center justify-between mb-4">
-                <p className="text-sm font-bold" style={S.textPrimary}>Active Webhooks</p>
-                <Link href="/dashboard/webhooks" className="flex items-center gap-1 text-xs font-bold transition hover:opacity-85" style={S.primary}>
-                  Webhooks Hub <ChevronRight className="w-4 h-4" />
-                </Link>
+                <div className="flex items-center gap-2">
+                  <Bell className="w-4.5 h-4.5" style={S.primary} />
+                  <p className="text-sm font-bold" style={S.textPrimary}>Recent Notifications</p>
+                </div>
+                <button
+                  onClick={() => router.push("/dashboard/notifications")}
+                  className="flex items-center gap-0.5 text-xs font-bold transition hover:opacity-85"
+                  style={S.primary}
+                >
+                  View All <ChevronRight className="w-3.5 h-3.5" />
+                </button>
               </div>
               
-              <div className="space-y-1">
+              <div className="space-y-3">
                 {[
-                  { name: "Slack Alerts Receiver", url: "hooks.slack.com/services/...", rate: "98.4%", active: true },
-                  { name: "Production API Webhook", url: "api.company.com/v1/webhook", rate: "99.1%", active: true },
-                  { name: "Discord Notifier", url: "discord.com/api/webhooks/...", rate: "84.6%", active: false },
-                ].map(wh => (
-                  <div key={wh.name} className="flex items-center justify-between py-2.5" style={S.divider}>
-                    <div className="min-w-0 flex-1 pr-2 text-left">
-                      <p className="text-xs font-bold truncate" style={S.textPrimary}>{wh.name}</p>
-                      <p className="text-[9px] font-mono opacity-60 truncate mt-0.5" style={S.textSecondary}>{wh.url}</p>
+                  { id: 'n1', type: 'success', title: 'Training Complete', body: 'llama3-sentiment-v2 finished training with 94.2% accuracy.', time: '2m ago' },
+                  { id: 'n2', type: 'error', title: 'Deployment Failed', body: 'bert-ner-pipeline deployment to ap-southeast-1 failed.', time: '15m ago' },
+                  { id: 'n3', type: 'warning', title: 'API Limit Warning', body: "You've used 87% of your monthly API call quota.", time: '1h ago' },
+                ].map(notif => {
+                  let badgeColor = 'var(--md-primary)';
+                  let badgeBg = 'var(--md-primary-container)';
+                  let IconComp = Info;
+                  
+                  if (notif.type === 'success') {
+                    badgeColor = 'var(--md-success)';
+                    badgeBg = 'var(--md-success-cont)';
+                    IconComp = CheckCircle2;
+                  } else if (notif.type === 'error') {
+                    badgeColor = 'var(--md-error)';
+                    badgeBg = 'var(--md-error-cont)';
+                    IconComp = AlertCircle;
+                  } else if (notif.type === 'warning') {
+                    badgeColor = 'var(--md-warning)';
+                    badgeBg = 'var(--md-warning-cont)';
+                    IconComp = AlertCircle;
+                  }
+                  
+                  return (
+                    <div key={notif.id} className="flex gap-3 py-2 items-start" style={S.divider}>
+                      <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
+                        style={{ background: badgeBg }}>
+                        <IconComp className="w-4 h-4" style={{ color: badgeColor }} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-xs font-bold truncate" style={S.textPrimary}>{notif.title}</p>
+                          <span className="text-[9px] shrink-0 font-semibold" style={S.textSecondary}>{notif.time}</span>
+                        </div>
+                        <p className="text-[11px] truncate mt-0.5" style={S.textSecondary}>{notif.body}</p>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <span className="text-[10px] font-mono font-bold" style={S.textSecondary}>{wh.rate}</span>
-                      <span className={`text-[8px] font-bold font-mono px-2 py-0.5 rounded-full`}
-                        style={{
-                          background: wh.active ? "var(--md-success-cont)" : "var(--md-error-cont)",
-                          color: wh.active ? "var(--md-success)" : "var(--md-error)"
-                        }}
-                      >
-                        {wh.active ? "active" : "failing"}
-                      </span>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>
