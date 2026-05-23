@@ -12,6 +12,8 @@ import { Input } from '@/components/ui/Input';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '@/lib/api';
 import { useRouter } from 'next/navigation';
+import { db } from "@/lib/firebase";
+import { collection, addDoc, serverTimestamp, query, where, getDocs, deleteDoc, doc } from "firebase/firestore";
 
 const BASE_MODELS = [
   'bert-base-uncased','gpt2','gpt2-medium','distilbert-base-uncased',
@@ -25,7 +27,7 @@ const TASK_TYPES = [
 ];
 
 interface AIModel {
-  id: number; name: string; version: string; base_model: string;
+  id: string | number; name: string; version: string; base_model: string;
   task_type: string; description: string; status: string; created_at: string; local?: boolean;
 }
 
@@ -61,10 +63,46 @@ export default function ModelsPage() {
   const loadModels = async () => {
     setLoading(true);
     try {
-      const response = await api.get('/models/');
-      setModels([...response.data, ...loadLocalModels()]);
-    } catch {
-      setModels(loadLocalModels());
+      // 1. Fetch from Firestore
+      const q = query(
+        collection(db, "UserModels"),
+        where("userId", "==", "test-user-123")
+      );
+      const querySnapshot = await getDocs(q);
+      const fetched: AIModel[] = [];
+      querySnapshot.forEach((docSnap) => {
+        const data = docSnap.data();
+        fetched.push({
+          id: docSnap.id,
+          name: data.name || "Unnamed Model",
+          description: data.description || "",
+          base_model: data.base_model || "",
+          task_type: data.task_type || "",
+          version: data.version || "v1.0.0",
+          status: data.status || "ready",
+          created_at: data.created_at?.toDate ? data.created_at.toDate().toISOString() : new Date().toISOString(),
+          local: false
+        });
+      });
+      // Sort in-memory to safely bypass missing composite index limitations
+      fetched.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+      // 2. Fetch from fallback REST
+      let restData: AIModel[] = [];
+      try {
+        const response = await api.get('/models/');
+        restData = response.data;
+      } catch {}
+
+      setModels([...fetched, ...restData, ...loadLocalModels()]);
+    } catch (err) {
+      console.error("Firestore models query failed, falling back to REST/LocalStorage:", err);
+      try {
+        const response = await api.get('/models/');
+        setModels([...response.data, ...loadLocalModels()]);
+      } catch {
+        setModels(loadLocalModels());
+      }
     } finally { setLoading(false); }
   };
 
@@ -77,25 +115,62 @@ export default function ModelsPage() {
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     setCreating(true);
-    const newModel: AIModel = {
-      id: Date.now(), name: name.trim(), description: description.trim(),
-      base_model: baseModel, task_type: taskType, version: 'v1.0.0',
-      status: 'ready', created_at: new Date().toISOString(), local: true,
+    const newModel = {
+      name: name.trim(),
+      description: description.trim(),
+      base_model: baseModel,
+      task_type: taskType,
+      version: 'v1.0.0',
+      status: 'ready',
+      created_at: new Date().toISOString(),
+      local: false,
     };
     try {
-      await api.post('/models/', { name: newModel.name, base_model: baseModel, description, task_type: taskType });
-    } catch {
-      const existing = loadLocalModels();
-      saveLocalModels([newModel, ...existing]);
+      // 1. Commit Document directly to Firestore
+      const docRef = await addDoc(collection(db, "UserModels"), {
+        userId: "test-user-123",
+        name: newModel.name,
+        description: newModel.description,
+        base_model: newModel.base_model,
+        task_type: newModel.task_type,
+        version: newModel.version,
+        status: newModel.status,
+        created_at: serverTimestamp()
+      });
+      setModels(prev => [{ ...newModel, id: docRef.id }, ...prev]);
+    } catch (err: any) {
+      console.error("Firestore model publish failed, falling back to REST/LocalStorage:", err);
+      // Fallback: save to REST / LocalStorage
+      const localModel: AIModel = {
+        ...newModel,
+        id: Date.now(),
+        local: true
+      };
+      try {
+        await api.post('/models/', { name: localModel.name, base_model: baseModel, description, task_type: taskType });
+      } catch {
+        const existing = loadLocalModels();
+        saveLocalModels([localModel, ...existing]);
+      }
+      setModels(prev => [localModel, ...prev]);
     }
-    setModels(prev => [newModel, ...prev]);
     closeModal();
     setName(''); setDescription(''); setBaseModel(BASE_MODELS[0]); setTaskType(TASK_TYPES[0]);
     setCreating(false);
   };
 
-  const handleDelete = (id: number) => {
+  const handleDelete = async (id: string | number) => {
     if (!confirm('Delete this model?')) return;
+    const modelToDelete = models.find(m => m.id === id);
+    
+    if (modelToDelete && !modelToDelete.local && typeof id === 'string') {
+      try {
+        await deleteDoc(doc(db, "UserModels", id));
+      } catch (err) {
+        console.error("Failed to delete document from Firestore:", err);
+      }
+    }
+    
     const updated = models.filter(m => m.id !== id);
     setModels(updated);
     saveLocalModels(updated.filter(m => m.local));
