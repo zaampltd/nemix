@@ -1,28 +1,26 @@
 "use client";
 
-import React, { useState } from 'react';
-import DashboardLayout from '@/components/layout/DashboardLayout';
-import {
-  Shield, Key, Plus, Copy, CheckCircle2, Eye, EyeOff,
-  Trash2, RefreshCw, AlertTriangle, Clock, X
-} from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { cn } from '@/lib/utils';
+import React, { useState, useEffect } from "react";
+import DashboardLayout from "@/components/layout/DashboardLayout";
+import { 
+  Shield, Key, Plus, Copy, CheckCircle2, Eye, EyeOff, 
+  Trash2, RefreshCw, AlertTriangle, Clock, X, Info
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { db } from "@/lib/firebase"; 
+import { collection, addDoc, query, where, getDocs, deleteDoc, doc, serverTimestamp } from "firebase/firestore";
 
 interface ApiKey {
-  id: string; name: string; prefix: string; suffix: string;
-  scopes: string[]; created: string; lastUsed: string; calls: string;
+  id: string;
+  name: string;
+  prefix: string;
+  suffix: string;
+  scopes: string[];
+  created: string;
+  lastUsed: string;
+  calls: string;
   status: 'active' | 'revoked';
 }
-
-const INITIAL_KEYS: ApiKey[] = [
-  { id: 'sk_001', name: 'Production — Main App', prefix: 'nex_sk_prod_', suffix: '...k8Qr',
-    scopes: ['inference', 'models:read', 'datasets:read'], created: '2026-05-01', lastUsed: '2 minutes ago', calls: '1.24M', status: 'active' },
-  { id: 'sk_002', name: 'CI/CD Pipeline', prefix: 'nex_sk_ci_', suffix: '...pL9m',
-    scopes: ['models:read', 'training:write'], created: '2026-04-15', lastUsed: '1 hour ago', calls: '88K', status: 'active' },
-  { id: 'sk_003', name: 'Staging Environment', prefix: 'nex_sk_stg_', suffix: '...aZ3x',
-    scopes: ['inference', 'models:read'], created: '2026-04-10', lastUsed: '3 days ago', calls: '12K', status: 'revoked' },
-];
 
 const ALL_SCOPES = [
   { id: 'inference',       label: 'inference',        desc: 'Run model inference calls' },
@@ -42,7 +40,7 @@ function generateKey(name: string): string {
 }
 
 export default function SecurityPage() {
-  const [keys, setKeys] = useState<ApiKey[]>(INITIAL_KEYS);
+  const [keys, setKeys] = useState<ApiKey[]>([]);
   const [copied, setCopied] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [newKeyName, setNewKeyName] = useState('');
@@ -51,6 +49,41 @@ export default function SecurityPage() {
   const [scopeError, setScopeError] = useState('');
   const [generatedKey, setGeneratedKey] = useState<string | null>(null);
   const [keyCopied, setKeyCopied] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [isLoadingKeys, setIsLoadingKeys] = useState(true);
+
+  // ─── Fetch Keys from Firestore ─────────────────────────────────────────────
+  const fetchKeys = async () => {
+    try {
+      setIsLoadingKeys(true);
+      const q = query(collection(db, "UserNemixAPIKeys"), where("userId", "==", "test-user-123"));
+      const querySnapshot = await getDocs(q);
+      const fetchedKeys: ApiKey[] = [];
+      querySnapshot.forEach((docSnap) => {
+        const data = docSnap.data();
+        fetchedKeys.push({
+          id: docSnap.id,
+          name: data.name || "Unnamed Key",
+          prefix: data.prefix || "nex_sk_xxxx_",
+          suffix: data.suffix || "...xxxx",
+          scopes: data.scopes || [],
+          created: data.created || "Unknown",
+          lastUsed: data.lastUsed || "Never",
+          calls: data.calls || "0",
+          status: data.status || "active"
+        });
+      });
+      setKeys(fetchedKeys);
+    } catch (error) {
+      console.error("Error fetching API keys from Firestore:", error);
+    } finally {
+      setIsLoadingKeys(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchKeys();
+  }, []);
 
   const handleCopy = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
@@ -63,21 +96,51 @@ export default function SecurityPage() {
     setSelectedScopes(prev => prev.includes(scope) ? prev.filter(s => s !== scope) : [...prev, scope]);
   };
 
-  const handleGenerate = () => {
+  // ─── Save New Key to Firestore ─────────────────────────────────────────────
+  const handleGenerate = async () => {
     let valid = true;
     if (!newKeyName.trim()) { setNameError('Please enter a name for this key.'); valid = false; } else { setNameError(''); }
     if (selectedScopes.length === 0) { setScopeError('Select at least one scope.'); valid = false; } else { setScopeError(''); }
     if (!valid) return;
 
-    const fullKey = generateKey(newKeyName);
-    const now = new Date().toISOString().split('T')[0];
-    const newKey: ApiKey = {
-      id: `sk_${Date.now()}`, name: newKeyName.trim(),
-      prefix: fullKey.slice(0, 16), suffix: `...${fullKey.slice(-4)}`,
-      scopes: selectedScopes, created: now, lastUsed: 'Never', calls: '0', status: 'active',
-    };
-    setKeys(prev => [newKey, ...prev]);
-    setGeneratedKey(fullKey);
+    setIsGenerating(true);
+    try {
+      const fullKey = generateKey(newKeyName);
+      const now = new Date().toISOString().split('T')[0];
+      
+      const docRef = await addDoc(collection(db, "UserNemixAPIKeys"), {
+        userId: "test-user-123",
+        name: newKeyName.trim(),
+        prefix: fullKey.slice(0, 16),
+        suffix: `...${fullKey.slice(-4)}`,
+        keyHash: fullKey, // Plain text for test context copy once
+        scopes: selectedScopes,
+        created: now,
+        lastUsed: "Never",
+        calls: "0",
+        status: "active",
+        createdAt: serverTimestamp()
+      });
+
+      const newKey: ApiKey = {
+        id: docRef.id,
+        name: newKeyName.trim(),
+        prefix: fullKey.slice(0, 16),
+        suffix: `...${fullKey.slice(-4)}`,
+        scopes: selectedScopes,
+        created: now,
+        lastUsed: 'Never',
+        calls: '0',
+        status: 'active',
+      };
+
+      setKeys(prev => [newKey, ...prev]);
+      setGeneratedKey(fullKey);
+    } catch (error) {
+      console.error("Error saving API key to Firestore:", error);
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const handleCloseModal = () => {
@@ -85,11 +148,21 @@ export default function SecurityPage() {
     setNameError(''); setScopeError(''); setGeneratedKey(null); setKeyCopied(false);
   };
 
-  const handleRevokeKey = (id: string) =>
-    setKeys(prev => prev.map(k => k.id === id ? { ...k, status: 'revoked' as const } : k));
+  // ─── Revoke & Delete Key from Firestore ────────────────────────────────────
+  const handleRevokeKey = async (id: string) => {
+    const confirmRevoke = window.confirm("Are you sure you want to revoke this API key? This action is permanent and will immediately break any active gateway integrations using this key.");
+    if (!confirmRevoke) return;
+
+    try {
+      await deleteDoc(doc(db, "UserNemixAPIKeys", id));
+      setKeys(prev => prev.filter(k => k.id !== id));
+    } catch (error) {
+      console.error("Error revoking API key from Firestore:", error);
+      alert("Failed to revoke key due to database connection error.");
+    }
+  };
 
   const activeCount = keys.filter(k => k.status === 'active').length;
-  const revokedCount = keys.filter(k => k.status === 'revoked').length;
 
   const S = {
     card: { background: 'var(--md-surface-1)', border: '1px solid var(--md-outline)', boxShadow: 'var(--shadow-1)' } as React.CSSProperties,
@@ -106,13 +179,13 @@ export default function SecurityPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-xl font-semibold flex items-center gap-2" style={S.text}>
-              <Shield className="w-5 h-5" style={S.primary} /> Security & API Keys
+            <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2" style={S.text}>
+              <Shield className="w-5 h-5 text-[var(--md-primary)] animate-pulse" /> Security & API Keys
             </h1>
-            <p className="text-sm mt-1" style={S.muted}>Manage encrypted API keys, scopes, and access audit logs.</p>
+            <p className="text-xs" style={S.muted}>Manage encrypted API keys, scopes, and access audit logs.</p>
           </div>
           <button onClick={() => setShowModal(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-opacity hover:opacity-90"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition-opacity hover:opacity-90 cursor-pointer shadow-sm"
             style={{ background: 'var(--md-primary)', color: 'var(--md-on-primary)' }}>
             <Plus className="w-4 h-4" /> Generate New Key
           </button>
@@ -123,102 +196,121 @@ export default function SecurityPage() {
           {[
             { label: 'Active Keys',    value: String(activeCount),  color: 'var(--md-success)' },
             { label: 'Total API Calls',value: '1.34M',              color: 'var(--md-primary)' },
-            { label: 'Revoked Keys',   value: String(revokedCount), color: 'var(--md-error)' },
-            { label: 'Last Activity',  value: '2 min ago',          color: 'var(--md-on-surface)' },
+            { label: 'Audit Logs',     value: 'Safe',               color: 'var(--md-primary)' },
+            { label: 'Last Activity',  value: 'Active Now',         color: 'var(--md-on-surface)' },
           ].map(stat => (
-            <div key={stat.label} className="rounded-2xl p-4" style={S.card}>
-              <p className="text-[10px] font-mono uppercase tracking-wider mb-1" style={S.muted}>{stat.label}</p>
-              <p className="text-2xl font-bold" style={{ color: stat.color }}>{stat.value}</p>
+            <div key={stat.label} className="rounded-2xl p-4 border" style={S.card}>
+              <p className="text-[9px] font-mono uppercase tracking-wider mb-1" style={S.muted}>{stat.label}</p>
+              <p className="text-xl font-bold" style={{ color: stat.color }}>{stat.value}</p>
             </div>
           ))}
         </div>
 
-        {/* Warning */}
-        <div className="flex items-center gap-3 p-4 rounded-2xl"
-          style={{ background: 'var(--md-warning-cont)', border: '1px solid var(--md-outline)' }}>
-          <AlertTriangle className="w-4 h-4 shrink-0" style={{ color: 'var(--md-warning)' }} />
+        {/* Warning Banner */}
+        <div className="flex items-start gap-3 p-4 rounded-2xl border"
+          style={{ background: 'var(--md-warning-cont)', borderColor: 'var(--md-outline)' }}>
+          <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" style={{ color: 'var(--md-warning)' }} />
           <p className="text-xs font-mono" style={{ color: 'var(--md-warning)' }}>
-            Never share your secret keys. They are shown once at creation. Store them in environment variables.
+            Never share your secret keys. They are shown once at creation. Store them securely in backend environment variables.
           </p>
         </div>
 
         {/* Keys list */}
         <div className="space-y-3">
-          <AnimatePresence>
-            {keys.map((key, i) => (
-              <motion.div key={key.id}
-                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, x: -20 }} transition={{ delay: i * 0.05 }}
-                className="rounded-2xl p-5 transition-all"
-                style={{ ...S.card, opacity: key.status === 'revoked' ? 0.6 : 1 }}>
-                <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
-                  <div className="flex items-start gap-4">
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                      style={{
-                        background: key.status === 'active' ? 'var(--md-primary-container)' : 'var(--md-surface-3)',
-                        color: key.status === 'active' ? 'var(--md-on-primary-cont)' : 'var(--md-on-surface-var)',
-                      }}>
-                      <Key className="w-5 h-5" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 flex-wrap mb-2">
-                        <h3 className="font-semibold text-sm" style={S.text}>{key.name}</h3>
-                        <span className="text-[9px] font-mono uppercase px-2 py-0.5 rounded-full"
-                          style={{
-                            background: key.status === 'active' ? 'var(--md-success-cont)' : 'var(--md-error-cont)',
-                            color: key.status === 'active' ? 'var(--md-success)' : 'var(--md-error)',
-                          }}>
-                          {key.status}
-                        </span>
+          {isLoadingKeys ? (
+            <div className="rounded-2xl p-8 text-center border" style={S.card}>
+              <svg className="animate-spin h-5 w-5 mx-auto text-[var(--md-primary)] mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <p className="text-xs" style={S.muted}>Loading secure credentials vault...</p>
+            </div>
+          ) : keys.length === 0 ? (
+            <div className="rounded-2xl p-12 text-center border" style={S.card}>
+              <Key className="w-8 h-8 text-[var(--md-primary)] mx-auto opacity-55 mb-2 animate-bounce" />
+              <h3 className="font-bold text-xs" style={S.text}>No API Keys Generated</h3>
+              <p className="text-[11px] max-w-sm mx-auto mt-1" style={S.muted}>
+                You have not created any secret keys for this environment yet. Generate a new API key to access your deployed models programmatically.
+              </p>
+            </div>
+          ) : (
+            <AnimatePresence>
+              {keys.map((key, i) => (
+                <motion.div key={key.id}
+                  initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, x: -20 }} transition={{ delay: i * 0.03 }}
+                  className="rounded-2xl p-5 border transition-all"
+                  style={S.card}>
+                  <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
+                    <div className="flex items-start gap-4">
+                      <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border"
+                        style={{
+                          background: 'var(--md-primary-container)',
+                          color: 'var(--md-on-primary-cont)',
+                          borderColor: 'var(--md-outline)'
+                        }}>
+                        <Key className="w-5 h-5 text-[var(--md-primary)]" />
                       </div>
-
-                      {/* Key value */}
-                      <div className="flex items-center gap-2 rounded-xl px-3 py-2 max-w-sm mb-3"
-                        style={{ background: 'var(--md-surface-2)', border: '1px solid var(--md-outline)' }}>
-                        <code className="text-[10px] font-mono flex-1 select-all" style={S.muted}>
-                          {key.prefix}••••••••••••{key.suffix}
-                        </code>
-                        <button onClick={() => handleCopy(`${key.prefix}[redacted]${key.suffix}`, key.id)}
-                          style={S.muted}>
-                          {copied === key.id
-                            ? <CheckCircle2 className="w-3.5 h-3.5" style={{ color: 'var(--md-success)' }} />
-                            : <Copy className="w-3.5 h-3.5" />}
-                        </button>
-                      </div>
-
-                      {/* Scopes */}
-                      <div className="flex flex-wrap gap-1.5 mb-3">
-                        {key.scopes.map(scope => (
-                          <span key={scope} className="text-[9px] font-mono px-2 py-0.5 rounded-full"
-                            style={{ background: 'var(--md-primary-container)', color: 'var(--md-on-primary-cont)', border: '1px solid var(--md-outline)' }}>
-                            {scope}
+                      
+                      <div className="flex-1 space-y-2">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="font-bold text-xs" style={S.text}>{key.name}</h3>
+                          <span className="text-[8px] font-mono uppercase px-2 py-0.5 rounded-full border"
+                            style={{
+                              background: 'var(--md-success-cont)',
+                              color: 'var(--md-success)',
+                              borderColor: 'var(--md-outline)'
+                            }}>
+                            {key.status}
                           </span>
-                        ))}
-                      </div>
+                        </div>
 
-                      <div className="flex items-center gap-4 text-[10px] font-mono" style={S.muted}>
-                        <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {key.lastUsed}</span>
-                        <span>{key.calls} calls</span>
-                        <span>Created {key.created}</span>
+                        {/* Masked Key */}
+                        <div className="flex items-center gap-2 rounded-xl px-3 py-1.5 max-w-xs"
+                          style={{ background: 'var(--md-surface-2)', border: '1px solid var(--md-outline)' }}>
+                          <code className="text-[9px] font-mono flex-1 select-all" style={S.muted}>
+                            {key.prefix}••••••••••••{key.suffix}
+                          </code>
+                          <button onClick={() => handleCopy(`${key.prefix}xxxxxxxxxxxxxxxx${key.suffix}`, key.id)}
+                            style={S.muted} className="cursor-pointer hover:opacity-100 transition-opacity">
+                            {copied === key.id
+                              ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                              : <Copy className="w-3.5 h-3.5 opacity-60" />}
+                          </button>
+                        </div>
+
+                        {/* Scopes */}
+                        <div className="flex flex-wrap gap-1">
+                          {key.scopes.map(scope => (
+                            <span key={scope} className="text-[8px] font-mono px-2 py-0.5 rounded-full border"
+                              style={{ background: 'var(--md-primary-container)', color: 'var(--md-on-primary-cont)', borderColor: 'var(--md-outline)' }}>
+                              {scope}
+                            </span>
+                          ))}
+                        </div>
+
+                        {/* Metadata */}
+                        <div className="flex items-center gap-4 text-[9px] font-mono" style={S.muted}>
+                          <span className="flex items-center gap-1"><Clock className="w-3 h-3 text-sky-400" /> Last Used: {key.lastUsed}</span>
+                          <span>Inference Calls: {key.calls}</span>
+                          <span>Created: {key.created}</span>
+                        </div>
                       </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button onClick={() => handleRevokeKey(key.id)}
+                        className="p-2 rounded-xl transition-colors border hover:bg-red-500/10 cursor-pointer" 
+                        style={{ borderColor: 'var(--md-outline)', color: 'var(--md-error)' }} 
+                        title="Revoke and Delete key">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                   </div>
-
-                  {key.status === 'active' && (
-                    <div className="flex items-center gap-2 shrink-0">
-                      <button className="p-2 rounded-xl transition-colors" style={S.muted} title="Rotate key">
-                        <RefreshCw className="w-4 h-4" />
-                      </button>
-                      <button onClick={() => handleRevokeKey(key.id)}
-                        className="p-2 rounded-xl transition-colors" style={S.muted} title="Revoke key">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </motion.div>
-            ))}
-          </AnimatePresence>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          )}
         </div>
       </motion.div>
 
@@ -230,105 +322,116 @@ export default function SecurityPage() {
             style={{ background: 'var(--md-scrim)' }} onClick={handleCloseModal}>
             <motion.div initial={{ scale: 0.95, opacity: 0, y: 10 }} animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.95, opacity: 0 }} onClick={e => e.stopPropagation()}
-              className="w-full max-w-lg rounded-3xl overflow-hidden"
+              className="w-full max-w-md rounded-3xl overflow-hidden"
               style={{ background: 'var(--md-surface-1)', border: '1px solid var(--md-outline)', boxShadow: 'var(--shadow-3)' }}>
 
-              <div className="flex items-center justify-between p-6" style={{ borderBottom: '1px solid var(--md-outline)' }}>
+              {/* Modal Header */}
+              <div className="flex items-center justify-between p-5 border-b" style={{ borderColor: 'var(--md-outline-var)' }}>
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl flex items-center justify-center"
-                    style={{ background: 'var(--md-primary-container)' }}>
-                    <Key className="w-5 h-5" style={{ color: 'var(--md-on-primary-cont)' }} />
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center border"
+                    style={{ background: 'var(--md-primary-container)', borderColor: 'var(--md-outline)' }}>
+                    <Key className="w-4 h-4 text-[var(--md-primary)]" />
                   </div>
                   <div>
-                    <h2 className="font-bold" style={{ color: 'var(--md-on-surface)' }}>Generate API Key</h2>
-                    <p className="text-xs" style={{ color: 'var(--md-on-surface-var)' }}>Key shown once — store it immediately</p>
+                    <h2 className="font-bold text-xs" style={{ color: 'var(--md-on-surface)' }}>Generate API Key</h2>
+                    <p className="text-[10px]" style={{ color: 'var(--md-on-surface-var)' }}>Secret key shown once at creation</p>
                   </div>
                 </div>
-                <button onClick={handleCloseModal} style={{ color: 'var(--md-on-surface-var)' }}><X className="w-4 h-4" /></button>
+                <button onClick={handleCloseModal} style={{ color: 'var(--md-on-surface-var)' }} className="cursor-pointer"><X className="w-4 h-4" /></button>
               </div>
 
-              <div className="p-6 space-y-5">
+              {/* Modal Content */}
+              <div className="p-5 space-y-4">
                 {generatedKey ? (
-                  <div className="space-y-5">
-                    <div className="flex items-start gap-3 p-4 rounded-2xl"
-                      style={{ background: 'var(--md-success-cont)', border: '1px solid var(--md-outline)' }}>
-                      <CheckCircle2 className="w-5 h-5 shrink-0 mt-0.5" style={{ color: 'var(--md-success)' }} />
-                      <p className="text-sm" style={{ color: 'var(--md-success)' }}>
-                        Key generated! Copy it now — it will <strong>not</strong> be shown again.
+                  <div className="space-y-4">
+                    <div className="flex items-start gap-3 p-4 rounded-2xl border"
+                      style={{ background: 'var(--md-success-cont)', borderColor: 'var(--md-outline)' }}>
+                      <CheckCircle2 className="w-5 h-5 shrink-0 mt-0.5 text-emerald-400" />
+                      <p className="text-[11px]" style={{ color: 'var(--md-success)' }}>
+                        Key successfully generated! Please copy it now and store it securely. You will <strong>not</strong> be able to view this key again.
                       </p>
                     </div>
-                    <div>
-                      <label className="text-xs mb-2 block font-mono uppercase tracking-wider" style={{ color: 'var(--md-on-surface-var)' }}>Your New API Key</label>
-                      <div className="flex items-center gap-2 rounded-xl px-4 py-3"
-                        style={{ background: 'var(--md-surface-2)', border: '1px solid var(--md-primary)' }}>
-                        <code className="text-sm font-mono flex-1 break-all select-all" style={{ color: 'var(--md-primary)' }}>
+                    
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] block font-mono uppercase tracking-wider" style={{ color: 'var(--md-on-surface-var)' }}>Your Secret API Key</label>
+                      <div className="flex items-center gap-2 rounded-xl px-4 py-2.5 border"
+                        style={{ background: 'var(--md-surface-2)', borderColor: 'var(--md-primary)' }}>
+                        <code className="text-xs font-mono flex-1 break-all select-all text-[var(--md-primary)]">
                           {generatedKey}
                         </code>
                         <button onClick={() => { navigator.clipboard.writeText(generatedKey); setKeyCopied(true); }}
-                          className="shrink-0 p-1.5 rounded-lg transition-colors" style={{ color: 'var(--md-on-surface-var)' }}>
+                          className="shrink-0 p-1.5 rounded-lg transition-colors cursor-pointer" style={{ color: 'var(--md-on-surface-var)' }}>
                           {keyCopied
-                            ? <CheckCircle2 className="w-5 h-5" style={{ color: 'var(--md-success)' }} />
-                            : <Copy className="w-5 h-5" />}
+                            ? <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                            : <Copy className="w-4 h-4 opacity-75" />}
                         </button>
                       </div>
-                      {keyCopied && <p className="text-xs mt-1.5 flex items-center gap-1" style={{ color: 'var(--md-success)' }}>
+                      {keyCopied && <p className="text-[10px] mt-1.5 flex items-center gap-1 text-emerald-400">
                         <CheckCircle2 className="w-3 h-3" /> Copied to clipboard!
                       </p>}
                     </div>
                     <button onClick={handleCloseModal}
-                      className="w-full py-3 rounded-2xl font-bold transition-opacity hover:opacity-90"
+                      className="w-full py-3 rounded-2xl text-xs font-bold transition-opacity hover:opacity-90 cursor-pointer shadow-sm"
                       style={{ background: 'var(--md-primary)', color: 'var(--md-on-primary)' }}>
                       Done — I've saved my key
                     </button>
                   </div>
                 ) : (
-                  <div className="space-y-5">
-                    <div>
-                      <label className="text-xs mb-1.5 block font-mono uppercase tracking-wider" style={{ color: 'var(--md-on-surface-var)' }}>Key Name *</label>
+                  <div className="space-y-4">
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] block font-mono uppercase tracking-wider" style={{ color: 'var(--md-on-surface-var)' }}>Key Name *</label>
                       <input value={newKeyName}
                         onChange={e => { setNewKeyName(e.target.value); setNameError(''); }}
                         placeholder="e.g. Production Backend, CI Pipeline..."
-                        className="w-full rounded-xl px-4 py-2.5 text-sm"
+                        className="w-full rounded-xl px-3 py-2 text-xs outline-none border focus:border-[var(--md-primary)] transition-colors"
                         style={{ background: 'var(--md-surface-2)', border: `1px solid ${nameError ? 'var(--md-error)' : 'var(--md-outline)'}`, color: 'var(--md-on-surface)' }} />
-                      {nameError && <p className="text-xs mt-1" style={{ color: 'var(--md-error)' }}>{nameError}</p>}
+                      {nameError && <p className="text-[10px] mt-1" style={{ color: 'var(--md-error)' }}>{nameError}</p>}
                     </div>
-                    <div>
-                      <label className="text-xs mb-2 block font-mono uppercase tracking-wider" style={{ color: 'var(--md-on-surface-var)' }}>Permissions (Scopes) *</label>
+
+                    <div className="space-y-2">
+                      <label className="text-[9px] block font-mono uppercase tracking-wider" style={{ color: 'var(--md-on-surface-var)' }}>Permissions (Scopes) *</label>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {ALL_SCOPES.map(scope => {
                           const isSelected = selectedScopes.includes(scope.id);
                           return (
                             <button key={scope.id} type="button" onClick={() => toggleScope(scope.id)}
-                              className="flex items-start gap-3 p-3 rounded-xl text-left transition-all"
+                              className="flex items-start gap-2.5 p-2.5 rounded-xl text-left transition-all border cursor-pointer"
                               style={{
                                 background: isSelected ? 'var(--md-primary-container)' : 'var(--md-surface-2)',
-                                border: `1px solid ${isSelected ? 'var(--md-primary)' : 'var(--md-outline)'}`,
+                                borderColor: isSelected ? 'var(--md-primary)' : 'var(--md-outline)',
                                 color: isSelected ? 'var(--md-on-primary-cont)' : 'var(--md-on-surface-var)',
                               }}>
-                              <div className="w-4 h-4 rounded-md border flex items-center justify-center shrink-0 mt-0.5"
+                              <div className="w-3.5 h-3.5 rounded border flex items-center justify-center shrink-0 mt-0.5"
                                 style={{ borderColor: isSelected ? 'var(--md-primary)' : 'var(--md-outline)', background: isSelected ? 'var(--md-primary)' : 'transparent' }}>
-                                {isSelected && <CheckCircle2 className="w-3 h-3" style={{ color: 'var(--md-on-primary)' }} />}
+                                {isSelected && <CheckCircle2 className="w-3 h-3 text-[var(--md-on-primary)]" />}
                               </div>
                               <div>
-                                <p className="text-[11px] font-mono font-bold">{scope.label}</p>
-                                <p className="text-[10px] opacity-70 mt-0.5">{scope.desc}</p>
+                                <p className="text-[10px] font-mono font-bold leading-tight">{scope.label}</p>
+                                <p className="text-[8px] opacity-70 mt-0.5 leading-relaxed">{scope.desc}</p>
                               </div>
                             </button>
                           );
                         })}
                       </div>
-                      {scopeError && <p className="text-xs mt-1" style={{ color: 'var(--md-error)' }}>{scopeError}</p>}
+                      {scopeError && <p className="text-[10px] mt-1" style={{ color: 'var(--md-error)' }}>{scopeError}</p>}
                     </div>
-                    <div className="flex gap-3">
+
+                    <div className="flex gap-3 pt-2">
                       <button onClick={handleCloseModal}
-                        className="flex-1 py-2.5 rounded-xl text-sm font-medium"
-                        style={{ border: '1px solid var(--md-outline)', color: 'var(--md-on-surface-var)', background: 'transparent' }}>
+                        className="flex-1 py-2.5 rounded-xl text-xs font-semibold border cursor-pointer"
+                        style={{ borderColor: 'var(--md-outline)', color: 'var(--md-on-surface-var)', background: 'transparent' }}>
                         Cancel
                       </button>
                       <button onClick={handleGenerate}
-                        className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-opacity hover:opacity-90"
+                        disabled={isGenerating}
+                        className="flex-1 py-2.5 rounded-xl text-xs font-bold transition-opacity hover:opacity-90 cursor-pointer shadow-sm text-center"
                         style={{ background: 'var(--md-primary)', color: 'var(--md-on-primary)' }}>
-                        Generate Key
+                        {isGenerating ? (
+                          <svg className="animate-spin h-3.5 w-3.5 text-current mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                        ) : "Generate Key"}
                       </button>
                     </div>
                   </div>
