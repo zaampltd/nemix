@@ -4,10 +4,12 @@ import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Users, Mail, Crown, Code2, Eye, UserPlus, X, Send,
-  CheckCircle2, Clock, MoreHorizontal, Activity, Shield,
-  Trash2, RefreshCw, ChevronDown,
+  Users, Crown, Code2, Eye, UserPlus, X, Send,
+  CheckCircle2, Clock, Activity, Shield,
+  Trash2, RefreshCw, ChevronDown, Loader2
 } from 'lucide-react';
+import { db } from "@/lib/firebase";
+import { collection, addDoc, query, where, getDocs, deleteDoc, doc, serverTimestamp, updateDoc } from "firebase/firestore";
 
 type Role = 'Admin' | 'Developer' | 'Viewer';
 
@@ -61,13 +63,64 @@ function roleContColor(role: Role) {
 }
 
 export default function TeamPage() {
-  const [members, setMembers] = useState<Member[]>(INITIAL_MEMBERS);
+  const [members, setMembers] = useState<Member[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [showInvite, setShowInvite] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState<Role>('Developer');
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [openRoleMenu, setOpenRoleMenu] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadTeamMembers = async () => {
+      try {
+        setIsLoading(true);
+        const q = query(collection(db, "TeamMembers"), where("userId", "==", "test-user-123"));
+        const snapshot = await getDocs(q);
+        const fetched: Member[] = [];
+        snapshot.forEach(docSnap => {
+          const data = docSnap.data();
+          fetched.push({
+            id: docSnap.id,
+            name: data.name || "",
+            email: data.email || "",
+            role: data.role || "Developer",
+            status: data.status || "active",
+            lastSeen: data.lastSeen || undefined,
+            initials: data.initials || "TM",
+            color: data.color || "#8b8b99"
+          });
+        });
+
+        if (fetched.length > 0) {
+          setMembers(fetched);
+          localStorage.setItem('local_members', JSON.stringify(fetched));
+        } else {
+          // Fallback to localStorage
+          const local = localStorage.getItem('local_members');
+          if (local) {
+            setMembers(JSON.parse(local));
+          } else {
+            setMembers(INITIAL_MEMBERS);
+            localStorage.setItem('local_members', JSON.stringify(INITIAL_MEMBERS));
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load team members from firestore:", err);
+        const local = localStorage.getItem('local_members');
+        if (local) {
+          setMembers(JSON.parse(local));
+        } else {
+          setMembers(INITIAL_MEMBERS);
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadTeamMembers();
+  }, []);
 
   const activeCount  = members.filter(m => m.status === 'active').length;
   const adminCount   = members.filter(m => m.role === 'Admin').length;
@@ -76,22 +129,111 @@ export default function TeamPage() {
   const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();
     setSending(true);
-    await new Promise(r => setTimeout(r, 1200));
-    const initials = inviteEmail.slice(0, 2).toUpperCase();
-    setMembers(p => [...p, {
-      id: `m${Date.now()}`, name: inviteEmail, email: inviteEmail,
-      role: inviteRole, status: 'invited', initials, color: '#8b8b99',
-    }]);
-    setSending(false); setSent(true);
-    setTimeout(() => { setSent(false); setShowInvite(false); setInviteEmail(''); }, 2000);
+    try {
+      const initials = inviteEmail.slice(0, 2).toUpperCase();
+      const colors = ['#5b5bd6', '#3dd68c', '#f5a623', '#e5534b', '#8b8b99', '#7c6af7'];
+      const randomColor = colors[Math.floor(Math.random() * colors.length)];
+      
+      const memberData = {
+        userId: "test-user-123",
+        name: inviteEmail.split('@')[0],
+        email: inviteEmail,
+        role: inviteRole,
+        status: 'invited' as const,
+        initials: initials,
+        color: randomColor,
+        createdAt: serverTimestamp()
+      };
+
+      const docRef = await addDoc(collection(db, "TeamMembers"), memberData);
+
+      const newMember: Member = {
+        id: docRef.id,
+        name: memberData.name,
+        email: inviteEmail,
+        role: inviteRole,
+        status: 'invited',
+        initials: initials,
+        color: randomColor
+      };
+
+      setMembers(prev => {
+        const next = [...prev, newMember];
+        localStorage.setItem('local_members', JSON.stringify(next));
+        return next;
+      });
+
+      setSending(false);
+      setSent(true);
+      setTimeout(() => { setSent(false); setShowInvite(false); setInviteEmail(''); }, 2000);
+    } catch (err) {
+      console.error("Error creating team member invite in firestore:", err);
+      // fallback
+      const initials = inviteEmail.slice(0, 2).toUpperCase();
+      const newMember: Member = {
+        id: `m_${Date.now()}`,
+        name: inviteEmail.split('@')[0],
+        email: inviteEmail,
+        role: inviteRole,
+        status: 'invited',
+        initials: initials,
+        color: '#8b8b99'
+      };
+      setMembers(prev => {
+        const next = [...prev, newMember];
+        localStorage.setItem('local_members', JSON.stringify(next));
+        return next;
+      });
+      setSending(false);
+      setSent(true);
+      setTimeout(() => { setSent(false); setShowInvite(false); setInviteEmail(''); }, 2000);
+    }
   };
 
-  const changeRole = (id: string, role: Role) => {
-    setMembers(p => p.map(m => m.id === id ? { ...m, role } : m));
-    setOpenRoleMenu(null);
+  const changeRole = async (id: string, role: Role) => {
+    try {
+      if (!id.startsWith("m1") && !id.startsWith("m2") && !id.startsWith("m3") && !id.startsWith("m4") && !id.startsWith("m5") && !id.startsWith("m_")) {
+        await updateDoc(doc(db, "TeamMembers", id), { role });
+      }
+      setMembers(prev => {
+        const next = prev.map(m => m.id === id ? { ...m, role } : m);
+        localStorage.setItem('local_members', JSON.stringify(next));
+        return next;
+      });
+    } catch (err) {
+      console.error("Failed to update team role in firestore:", err);
+      setMembers(prev => {
+        const next = prev.map(m => m.id === id ? { ...m, role } : m);
+        localStorage.setItem('local_members', JSON.stringify(next));
+        return next;
+      });
+    } finally {
+      setOpenRoleMenu(null);
+    }
   };
 
-  const removeMember = (id: string) => setMembers(p => p.filter(m => m.id !== id));
+  const removeMember = async (id: string) => {
+    const confirmed = window.confirm("Are you sure you want to remove this team member?");
+    if (!confirmed) return;
+
+    try {
+      if (!id.startsWith("m1") && !id.startsWith("m2") && !id.startsWith("m3") && !id.startsWith("m4") && !id.startsWith("m5") && !id.startsWith("m_")) {
+        await deleteDoc(doc(db, "TeamMembers", id));
+      }
+      setMembers(prev => {
+        const next = prev.filter(m => m.id !== id);
+        localStorage.setItem('local_members', JSON.stringify(next));
+        return next;
+      });
+    } catch (err) {
+      console.error("Failed to delete team member from firestore:", err);
+      setMembers(prev => {
+        const next = prev.filter(m => m.id !== id);
+        localStorage.setItem('local_members', JSON.stringify(next));
+        return next;
+      });
+    }
+  };
 
   const S = {
     card:  { background: 'var(--md-surface-1)', border: '1px solid var(--md-outline)', boxShadow: 'var(--shadow-1)' } as React.CSSProperties,
@@ -129,7 +271,7 @@ export default function TeamPage() {
                 <s.icon className="w-4 h-4" style={{ color: s.color }} />
                 <p className="text-[11px] font-mono uppercase tracking-wider" style={S.muted}>{s.label}</p>
               </div>
-              <p className="text-2xl font-bold" style={{ color: s.color }}>{s.value}</p>
+              <p className="text-2xl font-bold" style={{ color: s.color }}>{isLoading ? "..." : s.value}</p>
             </div>
           ))}
         </div>
@@ -139,82 +281,89 @@ export default function TeamPage() {
           <div className="lg:col-span-2 space-y-4">
             <h2 className="font-semibold" style={S.text}>Members</h2>
             <div className="space-y-2">
-              {members.map((m, i) => {
-                const RIcon = roleIcon(m.role);
-                return (
-                  <motion.div key={m.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.05 }}
-                    className="flex items-center gap-4 p-4 rounded-2xl group relative" style={S.card}>
-                    {/* Avatar */}
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 font-bold text-sm"
-                      style={{ background: m.color + '22', color: m.color }}>
-                      {m.initials}
-                    </div>
-                    {/* Info */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="font-semibold text-sm truncate" style={S.text}>
-                          {m.status === 'invited' ? m.email : m.name}
-                        </p>
-                        {/* Status dot */}
-                        <span className="w-2 h-2 rounded-full shrink-0" style={{
-                          background: m.status === 'active' ? 'var(--md-success)' : m.status === 'offline' ? 'var(--md-outline)' : 'var(--md-warning)',
-                        }} />
-                        {m.status === 'invited' && (
-                          <span className="text-[10px] px-1.5 py-0.5 rounded font-medium"
-                            style={{ background: 'var(--md-warning-cont)', color: 'var(--md-warning)' }}>PENDING</span>
-                        )}
+              {isLoading ? (
+                <div className="flex flex-col items-center justify-center p-12 rounded-2xl" style={S.card}>
+                  <Loader2 className="w-8 h-8 text-[var(--md-primary)] animate-spin mb-2" />
+                  <p className="text-xs" style={S.muted}>Loading secure member database...</p>
+                </div>
+              ) : members.length === 0 ? (
+                <div className="text-center p-12 rounded-2xl" style={S.card}>
+                  <Users className="w-8 h-8 mx-auto text-[var(--md-outline)] mb-2" />
+                  <p className="text-xs" style={S.muted}>No members in this workspace yet.</p>
+                </div>
+              ) : (
+                members.map((m, i) => {
+                  const RIcon = roleIcon(m.role);
+                  return (
+                    <motion.div key={m.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.05 }}
+                      className="flex items-center gap-4 p-4 rounded-2xl group relative" style={S.card}>
+                      {/* Avatar */}
+                      <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 font-bold text-sm"
+                        style={{ background: m.color + '22', color: m.color }}>
+                        {m.initials}
                       </div>
-                      <p className="text-xs" style={S.muted}>
-                        {m.status === 'invited' ? 'Invite sent' : m.status === 'offline' ? `Last seen ${m.lastSeen}` : m.email}
-                      </p>
-                    </div>
+                      {/* Info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold text-sm truncate" style={S.text}>
+                            {m.status === 'invited' ? m.email : m.name}
+                          </p>
+                          {/* Status dot */}
+                          <span className="w-2 h-2 rounded-full shrink-0" style={{
+                            background: m.status === 'active' ? 'var(--md-success)' : m.status === 'offline' ? 'var(--md-outline)' : 'var(--md-warning)',
+                          }} />
+                          {m.status === 'invited' && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded font-medium"
+                              style={{ background: 'var(--md-warning-cont)', color: 'var(--md-warning)' }}>PENDING</span>
+                          )}
+                        </div>
+                        <p className="text-xs" style={S.muted}>
+                          {m.status === 'invited' ? 'Invite sent' : m.status === 'offline' ? `Last seen ${m.lastSeen}` : m.email}
+                        </p>
+                      </div>
 
-                    {/* Role pill + dropdown */}
-                    <div className="relative">
-                      <button onClick={() => setOpenRoleMenu(openRoleMenu === m.id ? null : m.id)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold"
-                        style={{ background: roleContColor(m.role), color: roleColor(m.role) }}>
-                        <RIcon className="w-3.5 h-3.5" />
-                        {m.role}
-                        <ChevronDown className="w-3 h-3 opacity-60" />
-                      </button>
-                      <AnimatePresence>
-                        {openRoleMenu === m.id && (
-                          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.95 }}
-                            className="absolute right-0 top-full mt-1 w-36 rounded-xl p-1 z-10"
-                            style={{ background: 'var(--md-surface-1)', border: '1px solid var(--md-outline)', boxShadow: 'var(--shadow-2)' }}>
-                            {(['Admin', 'Developer', 'Viewer'] as Role[]).map(r => {
-                              const RI = roleIcon(r);
-                              return (
-                                <button key={r} onClick={() => changeRole(m.id, r)}
-                                  className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all"
-                                  style={{ color: m.role === r ? roleColor(r) : 'var(--md-on-surface-var)', background: m.role === r ? roleContColor(r) : 'transparent' }}>
-                                  <RI className="w-3.5 h-3.5" /> {r}
-                                </button>
-                              );
-                            })}
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      {m.status === 'invited' && (
-                        <button title="Resend invite" className="p-1.5 rounded-lg" style={S.muted}>
-                          <RefreshCw className="w-3.5 h-3.5" />
+                      {/* Role pill + dropdown */}
+                      <div className="relative">
+                        <button onClick={() => setOpenRoleMenu(openRoleMenu === m.id ? null : m.id)}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold"
+                          style={{ background: roleContColor(m.role), color: roleColor(m.role) }}>
+                          <RIcon className="w-3.5 h-3.5" />
+                          {m.role}
+                          <ChevronDown className="w-3 h-3 opacity-60" />
                         </button>
-                      )}
-                      <button onClick={() => removeMember(m.id)} title="Remove"
-                        className="p-1.5 rounded-lg" style={{ color: 'var(--md-error)' }}>
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </motion.div>
-                );
-              })}
+                        <AnimatePresence>
+                          {openRoleMenu === m.id && (
+                            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+                              exit={{ opacity: 0, scale: 0.95 }}
+                              className="absolute right-0 top-full mt-1 w-36 rounded-xl p-1 z-10"
+                              style={{ background: 'var(--md-surface-1)', border: '1px solid var(--md-outline)', boxShadow: 'var(--shadow-2)' }}>
+                              {(['Admin', 'Developer', 'Viewer'] as Role[]).map(r => {
+                                const RI = roleIcon(r);
+                                return (
+                                  <button key={r} onClick={() => changeRole(m.id, r)}
+                                    className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all"
+                                    style={{ color: m.role === r ? roleColor(r) : 'var(--md-on-surface-var)', background: m.role === r ? roleContColor(r) : 'transparent' }}>
+                                    <RI className="w-3.5 h-3.5" /> {r}
+                                  </button>
+                                );
+                              })}
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onClick={() => removeMember(m.id)} title="Remove"
+                          className="p-1.5 rounded-lg" style={{ color: 'var(--md-error)' }}>
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </motion.div>
+                  );
+                })
+              )}
             </div>
 
             {/* Permissions matrix */}
@@ -340,7 +489,7 @@ export default function TeamPage() {
                     className="w-full h-11 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-opacity hover:opacity-90 disabled:opacity-50"
                     style={{ background: 'var(--md-primary)', color: 'var(--md-on-primary)' }}>
                     {sending
-                      ? <><div className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: 'var(--md-on-primary)', borderTopColor: 'transparent' }} />Sending...</>
+                      ? <><Loader2 className="w-4 h-4 animate-spin" />Sending...</>
                       : <><Send className="w-4 h-4" />Send Invitation</>}
                   </button>
                 </form>

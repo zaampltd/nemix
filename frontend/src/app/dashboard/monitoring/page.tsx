@@ -1,14 +1,14 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { motion } from 'framer-motion';
 import {
-  Activity, Globe, Zap, AlertCircle, CheckCircle2,
+  Activity, Zap, AlertCircle, CheckCircle2,
   Clock, TrendingUp, TrendingDown, Server, ToggleLeft, ToggleRight,
 } from 'lucide-react';
 
-const MODELS = [
+const STATIC_MODELS = [
   { name: 'llama3-sentiment-v2', endpoint: 'ep_001', region: 'us-east-1', status: 'healthy', rps: 38, p50: 142, p95: 380, p99: 620, errors: 0.3 },
   { name: 'gpt2-code-assistant', endpoint: 'ep_002', region: 'eu-west-1', status: 'healthy', rps: 12, p50: 88, p95: 210, p99: 410, errors: 0.1 },
   { name: 'bert-ner-pipeline',   endpoint: 'ep_003', region: 'ap-southeast-1', status: 'sleeping', rps: 0, p50: 0, p95: 0, p99: 0, errors: 0 },
@@ -43,17 +43,56 @@ const LATENCY_BUCKETS = [
 
 export default function MonitoringPage() {
   const [alerts, setAlerts] = useState(ALERT_RULES);
+  const [deployedModels, setDeployedModels] = useState<any[]>([]);
   const [liveRPS, setLiveRPS] = useState<number[]>([28,35,42,38,51,44,48,40,38,52,47,55]);
   const [totalReq, setTotalReq] = useState(1_284_392);
 
+  // Load custom deployments dynamically
+  useEffect(() => {
+    const loadDeployments = () => {
+      let localDeps: any[] = [];
+      try {
+        const cached = localStorage.getItem('local_deployments');
+        if (cached) {
+          localDeps = JSON.parse(cached);
+        }
+      } catch {}
+
+      const customTelemetry = localDeps.map(d => ({
+        name: d.name,
+        endpoint: d.id,
+        region: d.region || 'us-east-1',
+        status: d.status === 'active' ? 'healthy' : d.status === 'provisioning' ? 'provisioning' : 'sleeping',
+        rps: d.status === 'active' ? (d.rps || Math.round(5 + Math.random() * 20)) : 0,
+        p50: d.latency || 0,
+        p95: d.latency ? Math.round(d.latency * 1.8) : 0,
+        p99: d.latency ? Math.round(d.latency * 2.5) : 0,
+        errors: d.status === 'active' ? parseFloat((Math.random() * 0.3).toFixed(2)) : 0
+      }));
+
+      // Filter duplicates to make sure names don't overlap with mock defaults
+      const defaults = STATIC_MODELS.filter(m => !customTelemetry.some(c => c.name === m.name));
+      setDeployedModels([...customTelemetry, ...defaults]);
+    };
+
+    loadDeployments();
+
+    // Listen for deployment updates
+    window.addEventListener('storage', loadDeployments);
+    return () => window.removeEventListener('storage', loadDeployments);
+  }, []);
+
+  // Update live RPS ticks
   useEffect(() => {
     const t = setInterval(() => {
-      const next = Math.floor(Math.random() * 30 + 30);
-      setLiveRPS(p => [...p.slice(-11), next]);
-      setTotalReq(p => p + next);
+      const activeEndpoints = deployedModels.filter(m => m.status === 'healthy');
+      const baseRPS = activeEndpoints.reduce((a, c) => a + c.rps, 0) || 45;
+      const next = Math.floor(baseRPS + (Math.random() * 12 - 6));
+      setLiveRPS(p => [...p.slice(-11), Math.max(next, 0)]);
+      setTotalReq(p => p + Math.max(next, 0));
     }, 2000);
     return () => clearInterval(t);
-  }, []);
+  }, [deployedModels]);
 
   const toggleAlert = (id: string) => setAlerts(p => p.map(a => a.id === id ? { ...a, enabled: !a.enabled } : a));
 
@@ -64,6 +103,8 @@ export default function MonitoringPage() {
     text:  { color: 'var(--md-on-surface)' } as React.CSSProperties,
     muted: { color: 'var(--md-on-surface-var)' } as React.CSSProperties,
   };
+
+  const activeCount = deployedModels.filter(m => m.status === 'healthy').length;
 
   return (
     <DashboardLayout>
@@ -88,7 +129,7 @@ export default function MonitoringPage() {
             { label: 'Total Requests (24h)', value: totalReq.toLocaleString(), icon: Activity, color: 'var(--md-primary)', trend: '+12%' },
             { label: 'Avg Latency',          value: '115ms',                   icon: Clock,    color: 'var(--md-on-surface)', trend: '-8ms' },
             { label: 'Error Rate',           value: '0.24%',                   icon: AlertCircle, color: 'var(--md-success)', trend: '-0.1%' },
-            { label: 'Active Models',        value: '2 / 3',                   icon: Server,   color: 'var(--md-primary)', trend: null },
+            { label: 'Active Models',        value: `${activeCount} / ${deployedModels.length}`, icon: Server,   color: 'var(--md-primary)', trend: null },
           ].map(stat => (
             <div key={stat.label} className="rounded-2xl p-4" style={S.card}>
               <div className="flex items-center gap-2 mb-2">
@@ -122,7 +163,7 @@ export default function MonitoringPage() {
           <div className="flex items-end gap-1.5 h-28">
             {liveRPS.map((v, i) => (
               <motion.div key={i} className="flex-1 rounded-t-md"
-                animate={{ height: `${Math.max((v / maxRPS) * 100, 4)}%` }}
+                animate={{ height: `${Math.max((v / (maxRPS || 1)) * 100, 4)}%` }}
                 transition={{ duration: 0.3 }}
                 style={{ background: i === liveRPS.length - 1 ? 'var(--md-primary)' : 'var(--md-primary-container)' }} />
             ))}
@@ -148,8 +189,8 @@ export default function MonitoringPage() {
                 </tr>
               </thead>
               <tbody>
-                {MODELS.map((m, i) => (
-                  <tr key={m.name} style={{ borderTop: i > 0 ? '1px solid var(--md-outline-var)' : 'none' }}>
+                {deployedModels.map((m, i) => (
+                  <tr key={m.endpoint} style={{ borderTop: i > 0 ? '1px solid var(--md-outline-var)' : 'none' }}>
                     <td className="px-5 py-3">
                       <p className="font-mono text-xs font-semibold" style={S.text}>{m.name}</p>
                       <p className="text-[10px]" style={S.muted}>{m.endpoint}</p>
@@ -163,8 +204,8 @@ export default function MonitoringPage() {
                     <td className="px-5 py-3">
                       <span className="text-[10px] font-semibold px-2 py-1 rounded-full"
                         style={{
-                          background: m.status === 'healthy' ? 'var(--md-success-cont)' : 'var(--md-surface-2)',
-                          color: m.status === 'healthy' ? 'var(--md-success)' : 'var(--md-on-surface-var)',
+                          background: m.status === 'healthy' ? 'var(--md-success-cont)' : m.status === 'provisioning' ? 'var(--md-warning-cont)' : 'var(--md-surface-2)',
+                          color: m.status === 'healthy' ? 'var(--md-success)' : m.status === 'provisioning' ? 'var(--md-warning)' : 'var(--md-on-surface-var)',
                         }}>{m.status}</span>
                     </td>
                   </tr>

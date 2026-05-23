@@ -1,10 +1,12 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import {
   Webhook, Plus, Copy, Check, Trash2, Play, ChevronDown, ChevronUp,
-  ExternalLink, AlertCircle, CheckCircle2, Clock, Zap, RefreshCw,
+  AlertCircle, CheckCircle2, Clock, RefreshCw, Loader2
 } from "lucide-react";
+import { db } from "@/lib/firebase";
+import { collection, addDoc, query, where, getDocs, deleteDoc, doc, serverTimestamp } from "firebase/firestore";
 
 // ── Types ─────────────────────────────────────────────────────────────────
 interface WebhookItem {
@@ -126,7 +128,8 @@ function CopyBtn({ text }: { text: string }) {
 
 // ── Page ──────────────────────────────────────────────────────────────────
 export default function WebhooksPage() {
-  const [webhooks, setWebhooks] = useState<WebhookItem[]>(INITIAL_WEBHOOKS);
+  const [webhooks, setWebhooks] = useState<WebhookItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [expandedDelivery, setExpandedDelivery] = useState<string | null>(null);
   const [testing, setTesting] = useState<string | null>(null);
@@ -137,25 +140,140 @@ export default function WebhooksPage() {
   const [newEvents, setNewEvents] = useState<string[]>(["training.completed"]);
   const [secret, setSecret] = useState(generateSecret());
 
-  const handleCreate = () => {
-    if (!newUrl) return;
-    const wh: WebhookItem = {
-      id: `wh_${Date.now()}`,
-      url: newUrl,
-      events: newEvents,
-      status: "active",
-      lastTriggered: "Never",
-      successRate: 100,
-      totalDeliveries: 0,
+  useEffect(() => {
+    const loadWebhooks = async () => {
+      try {
+        setIsLoading(true);
+        const q = query(collection(db, "UserWebhooks"), where("userId", "==", "test-user-123"));
+        const snapshot = await getDocs(q);
+        const fetched: WebhookItem[] = [];
+        snapshot.forEach(docSnap => {
+          const data = docSnap.data();
+          fetched.push({
+            id: docSnap.id,
+            url: data.url || "",
+            events: data.events || [],
+            status: data.status || "active",
+            lastTriggered: data.lastTriggered || "Never",
+            successRate: data.successRate ?? 100,
+            totalDeliveries: data.totalDeliveries ?? 0
+          });
+        });
+
+        if (fetched.length > 0) {
+          setWebhooks(fetched);
+          localStorage.setItem('local_webhooks', JSON.stringify(fetched));
+        } else {
+          // Load from localStorage cache
+          const local = localStorage.getItem('local_webhooks');
+          if (local) {
+            setWebhooks(JSON.parse(local));
+          } else {
+            setWebhooks(INITIAL_WEBHOOKS);
+            localStorage.setItem('local_webhooks', JSON.stringify(INITIAL_WEBHOOKS));
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load webhooks from firestore:", err);
+        const local = localStorage.getItem('local_webhooks');
+        if (local) {
+          setWebhooks(JSON.parse(local));
+        } else {
+          setWebhooks(INITIAL_WEBHOOKS);
+        }
+      } finally {
+        setIsLoading(false);
+      }
     };
-    setWebhooks(prev => [wh, ...prev]);
-    setShowModal(false);
-    setNewUrl("");
-    setNewEvents(["training.completed"]);
-    setSecret(generateSecret());
+
+    loadWebhooks();
+  }, []);
+
+  const handleCreate = async () => {
+    if (!newUrl) return;
+    try {
+      const whData = {
+        userId: "test-user-123",
+        url: newUrl,
+        events: newEvents,
+        status: "active" as const,
+        lastTriggered: "Never",
+        successRate: 100,
+        totalDeliveries: 0,
+        secret: secret,
+        createdAt: serverTimestamp()
+      };
+
+      const docRef = await addDoc(collection(db, "UserWebhooks"), whData);
+      
+      const wh: WebhookItem = {
+        id: docRef.id,
+        url: newUrl,
+        events: newEvents,
+        status: "active",
+        lastTriggered: "Never",
+        successRate: 100,
+        totalDeliveries: 0
+      };
+
+      setWebhooks(prev => {
+        const next = [wh, ...prev];
+        localStorage.setItem('local_webhooks', JSON.stringify(next));
+        return next;
+      });
+
+      setShowModal(false);
+      setNewUrl("");
+      setNewEvents(["training.completed"]);
+      setSecret(generateSecret());
+    } catch (err) {
+      console.error("Error creating webhook in Firestore:", err);
+      // Local fallback
+      const wh: WebhookItem = {
+        id: `wh_${Date.now()}`,
+        url: newUrl,
+        events: newEvents,
+        status: "active",
+        lastTriggered: "Never",
+        successRate: 100,
+        totalDeliveries: 0
+      };
+
+      setWebhooks(prev => {
+        const next = [wh, ...prev];
+        localStorage.setItem('local_webhooks', JSON.stringify(next));
+        return next;
+      });
+
+      setShowModal(false);
+      setNewUrl("");
+      setNewEvents(["training.completed"]);
+      setSecret(generateSecret());
+    }
   };
 
-  const handleDelete = (id: string) => setWebhooks(prev => prev.filter(w => w.id !== id));
+  const handleDelete = async (id: string) => {
+    const confirmed = window.confirm("Are you sure you want to delete this webhook? This action cannot be undone.");
+    if (!confirmed) return;
+
+    try {
+      if (!id.startsWith("wh_")) {
+        await deleteDoc(doc(db, "UserWebhooks", id));
+      }
+      setWebhooks(prev => {
+        const next = prev.filter(w => w.id !== id);
+        localStorage.setItem('local_webhooks', JSON.stringify(next));
+        return next;
+      });
+    } catch (err) {
+      console.error("Failed to delete webhook from firestore:", err);
+      setWebhooks(prev => {
+        const next = prev.filter(w => w.id !== id);
+        localStorage.setItem('local_webhooks', JSON.stringify(next));
+        return next;
+      });
+    }
+  };
 
   const handleTest = async (id: string) => {
     setTesting(id);
@@ -217,7 +335,9 @@ export default function WebhooksPage() {
                 </div>
                 <span style={{ fontSize: 12, color: "var(--md-on-surface-var)", fontWeight: 600 }}>{label}</span>
               </div>
-              <p style={{ fontSize: 24, fontWeight: 800, color: "var(--md-on-surface)", margin: 0, letterSpacing: "-0.02em" }}>{value}</p>
+              <p style={{ fontSize: 24, fontWeight: 800, color: "var(--md-on-surface)", margin: 0, letterSpacing: "-0.02em" }}>
+                {isLoading ? "..." : value}
+              </p>
             </div>
           ))}
         </div>
@@ -227,55 +347,61 @@ export default function WebhooksPage() {
           <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--md-on-surface)", margin: 0 }}>
             Active Webhooks ({webhooks.length})
           </h2>
-          {webhooks.length === 0 && (
+          {isLoading ? (
+            <div style={{ ...card, textAlign: "center", padding: 48 }}>
+              <Loader2 className="animate-spin" style={{ width: 24, height: 24, color: "var(--md-primary)", margin: "0 auto 12px" }} />
+              <p style={{ color: "var(--md-on-surface-var)", margin: 0 }}>Loading webhooks environment vault...</p>
+            </div>
+          ) : webhooks.length === 0 ? (
             <div style={{ ...card, textAlign: "center", padding: 48 }}>
               <Webhook style={{ width: 32, height: 32, color: "var(--md-outline)", margin: "0 auto 12px" }} />
               <p style={{ color: "var(--md-on-surface-var)", margin: 0 }}>No webhooks yet. Add one to get started.</p>
             </div>
-          )}
-          {webhooks.map(wh => (
-            <div key={wh.id} style={card}>
-              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                    <code style={{ fontSize: 13, color: "var(--md-primary)", background: "var(--md-surface-2)", padding: "2px 8px", borderRadius: 6, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 380, display: "block" }}>
-                      {wh.url}
-                    </code>
-                    <CopyBtn text={wh.url} />
-                    <StatusBadge status={wh.status} />
-                  </div>
-                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
-                    {wh.events.map(ev => (
-                      <span key={ev} style={{ fontSize: 11, padding: "2px 8px", borderRadius: 100, background: "var(--md-primary-container)", color: "var(--md-on-primary-cont)", fontWeight: 600 }}>{ev}</span>
-                    ))}
-                  </div>
-                  {/* Success rate bar */}
-                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <div style={{ flex: 1, height: 4, borderRadius: 100, background: "var(--md-surface-3)", overflow: "hidden" }}>
-                      <div style={{ height: "100%", width: `${wh.successRate}%`, borderRadius: 100, background: wh.successRate > 90 ? "var(--md-success)" : "var(--md-error)" }} />
+          ) : (
+            webhooks.map(wh => (
+              <div key={wh.id} style={card}>
+                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                      <code style={{ fontSize: 13, color: "var(--md-primary)", background: "var(--md-surface-2)", padding: "2px 8px", borderRadius: 6, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 380, display: "block" }}>
+                        {wh.url}
+                      </code>
+                      <CopyBtn text={wh.url} />
+                      <StatusBadge status={wh.status} />
                     </div>
-                    <span style={{ fontSize: 11, color: "var(--md-on-surface-var)", whiteSpace: "nowrap" }}>
-                      {wh.successRate}% · {wh.totalDeliveries} deliveries · last triggered {wh.lastTriggered}
-                    </span>
+                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
+                      {wh.events.map(ev => (
+                        <span key={ev} style={{ fontSize: 11, padding: "2px 8px", borderRadius: 100, background: "var(--md-primary-container)", color: "var(--md-on-primary-cont)", fontWeight: 600 }}>{ev}</span>
+                      ))}
+                    </div>
+                    {/* Success rate bar */}
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <div style={{ flex: 1, height: 4, borderRadius: 100, background: "var(--md-surface-3)", overflow: "hidden" }}>
+                        <div style={{ height: "100%", width: `${wh.successRate}%`, borderRadius: 100, background: wh.successRate > 90 ? "var(--md-success)" : "var(--md-error)" }} />
+                      </div>
+                      <span style={{ fontSize: 11, color: "var(--md-on-surface-var)", whiteSpace: "nowrap" }}>
+                        {wh.successRate}% · {wh.totalDeliveries} deliveries · last triggered {wh.lastTriggered}
+                      </span>
+                    </div>
+                    {testResult[wh.id] && (
+                      <p style={{ fontSize: 12, color: "var(--md-success)", marginTop: 8, fontWeight: 600 }}>{testResult[wh.id]}</p>
+                    )}
                   </div>
-                  {testResult[wh.id] && (
-                    <p style={{ fontSize: 12, color: "var(--md-success)", marginTop: 8, fontWeight: 600 }}>{testResult[wh.id]}</p>
-                  )}
-                </div>
-                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                  <button onClick={() => handleTest(wh.id)} disabled={testing === wh.id}
-                    style={{ display: "flex", alignItems: "center", gap: 5, height: 32, padding: "0 12px", borderRadius: 8, border: "1px solid var(--md-outline)", background: "var(--md-surface-2)", color: "var(--md-on-surface)", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
-                    {testing === wh.id ? <RefreshCw style={{ width: 13, height: 13, animation: "spin 1s linear infinite" }} /> : <Play style={{ width: 13, height: 13 }} />}
-                    Test
-                  </button>
-                  <button onClick={() => handleDelete(wh.id)}
-                    style={{ height: 32, width: 32, borderRadius: 8, border: "1px solid var(--md-outline)", background: "var(--md-surface-2)", color: "var(--md-error)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <Trash2 style={{ width: 14, height: 14 }} />
-                  </button>
+                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                    <button onClick={() => handleTest(wh.id)} disabled={testing === wh.id}
+                      style={{ display: "flex", alignItems: "center", gap: 5, height: 32, padding: "0 12px", borderRadius: 8, border: "1px solid var(--md-outline)", background: "var(--md-surface-2)", color: "var(--md-on-surface)", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+                      {testing === wh.id ? <Loader2 className="animate-spin" style={{ width: 13, height: 13 }} /> : <Play style={{ width: 13, height: 13 }} />}
+                      Test
+                    </button>
+                    <button onClick={() => handleDelete(wh.id)}
+                      style={{ height: 32, width: 32, borderRadius: 8, border: "1px solid var(--md-outline)", background: "var(--md-surface-2)", color: "var(--md-error)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <Trash2 style={{ width: 14, height: 14 }} />
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
 
         {/* Recent deliveries */}
