@@ -43,8 +43,8 @@ export default function SecurityPage() {
   const [keys, setKeys] = useState<ApiKey[]>([]);
   const [copied, setCopied] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
-  const [newKeyName, setNewKeyName] = useState('');
-  const [selectedScopes, setSelectedScopes] = useState<string[]>(['inference', 'models:read']);
+  const [keyName, setKeyName] = useState('');
+  const [selectedScopes, setSelectedScopes] = useState<string[]>(['inference']);
   const [nameError, setNameError] = useState('');
   const [scopeError, setScopeError] = useState('');
   const [generatedKey, setGeneratedKey] = useState<string | null>(null);
@@ -99,18 +99,18 @@ export default function SecurityPage() {
   // ─── Save New Key to Firestore ─────────────────────────────────────────────
   const handleGenerate = async () => {
     let valid = true;
-    if (!newKeyName.trim()) { setNameError('Please enter a name for this key.'); valid = false; } else { setNameError(''); }
+    if (!keyName.trim()) { setNameError('Please enter a name for this key.'); valid = false; } else { setNameError(''); }
     if (selectedScopes.length === 0) { setScopeError('Select at least one scope.'); valid = false; } else { setScopeError(''); }
     if (!valid) return;
 
     setIsGenerating(true);
     try {
-      const fullKey = generateKey(newKeyName);
+      const fullKey = generateKey(keyName);
       const now = new Date().toISOString().split('T')[0];
       
       const docRef = await addDoc(collection(db, "UserNemixAPIKeys"), {
         userId: "test-user-123",
-        name: newKeyName.trim(),
+        name: keyName.trim(),
         prefix: fullKey.slice(0, 16),
         suffix: `...${fullKey.slice(-4)}`,
         keyHash: fullKey, // Plain text for test context copy once
@@ -124,7 +124,7 @@ export default function SecurityPage() {
 
       const newKey: ApiKey = {
         id: docRef.id,
-        name: newKeyName.trim(),
+        name: keyName.trim(),
         prefix: fullKey.slice(0, 16),
         suffix: `...${fullKey.slice(-4)}`,
         scopes: selectedScopes,
@@ -144,7 +144,7 @@ export default function SecurityPage() {
   };
 
   const handleCloseModal = () => {
-    setShowModal(false); setNewKeyName(''); setSelectedScopes(['inference', 'models:read']);
+    setShowModal(false); setKeyName(''); setSelectedScopes(['inference']);
     setNameError(''); setScopeError(''); setGeneratedKey(null); setKeyCopied(false);
   };
 
@@ -380,8 +380,8 @@ export default function SecurityPage() {
                   <div className="space-y-4">
                     <div className="space-y-1.5">
                       <label className="text-[9px] block font-mono uppercase tracking-wider" style={{ color: 'var(--md-on-surface-var)' }}>Key Name *</label>
-                      <input value={newKeyName}
-                        onChange={e => { setNewKeyName(e.target.value); setNameError(''); }}
+                      <input value={keyName}
+                        onChange={e => { setKeyName(e.target.value); setNameError(''); }}
                         placeholder="e.g. Production Backend, CI Pipeline..."
                         className="w-full rounded-xl px-3 py-2 text-xs outline-none border focus:border-[var(--md-primary)] transition-colors"
                         style={{ background: 'var(--md-surface-2)', border: `1px solid ${nameError ? 'var(--md-error)' : 'var(--md-outline)'}`, color: 'var(--md-on-surface)' }} />
