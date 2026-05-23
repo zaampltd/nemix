@@ -44,9 +44,8 @@ export default function SecurityPage() {
   const [copied, setCopied] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [keyName, setKeyName] = useState('');
-  const [selectedScopes, setSelectedScopes] = useState<string[]>(['inference']);
+  const [keyType, setKeyType] = useState<'standard' | 'master'>('standard');
   const [nameError, setNameError] = useState('');
-  const [scopeError, setScopeError] = useState('');
   const [generatedKey, setGeneratedKey] = useState<string | null>(null);
   const [keyCopied, setKeyCopied] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -91,22 +90,19 @@ export default function SecurityPage() {
     setTimeout(() => setCopied(null), 2000);
   };
 
-  const toggleScope = (scope: string) => {
-    setScopeError('');
-    setSelectedScopes(prev => prev.includes(scope) ? prev.filter(s => s !== scope) : [...prev, scope]);
-  };
-
   // ─── Save New Key to Firestore ─────────────────────────────────────────────
   const handleGenerate = async () => {
     let valid = true;
     if (!keyName.trim()) { setNameError('Please enter a name for this key.'); valid = false; } else { setNameError(''); }
-    if (selectedScopes.length === 0) { setScopeError('Select at least one scope.'); valid = false; } else { setScopeError(''); }
     if (!valid) return;
 
     setIsGenerating(true);
     try {
       const fullKey = generateKey(keyName);
       const now = new Date().toISOString().split('T')[0];
+      const scopes = keyType === "standard"
+        ? ["inference", "models:read", "datasets:read"]
+        : ["inference", "models:read", "datasets:read", "training:write", "deployments:read", "admin"];
       
       const docRef = await addDoc(collection(db, "UserNemixAPIKeys"), {
         userId: "test-user-123",
@@ -114,7 +110,7 @@ export default function SecurityPage() {
         prefix: fullKey.slice(0, 16),
         suffix: `...${fullKey.slice(-4)}`,
         keyHash: fullKey, // Plain text for test context copy once
-        scopes: selectedScopes,
+        scopes: scopes,
         created: now,
         lastUsed: "Never",
         calls: "0",
@@ -127,7 +123,7 @@ export default function SecurityPage() {
         name: keyName.trim(),
         prefix: fullKey.slice(0, 16),
         suffix: `...${fullKey.slice(-4)}`,
-        scopes: selectedScopes,
+        scopes: scopes,
         created: now,
         lastUsed: 'Never',
         calls: '0',
@@ -144,8 +140,8 @@ export default function SecurityPage() {
   };
 
   const handleCloseModal = () => {
-    setShowModal(false); setKeyName(''); setSelectedScopes(['inference']);
-    setNameError(''); setScopeError(''); setGeneratedKey(null); setKeyCopied(false);
+    setShowModal(false); setKeyName(''); setKeyType('standard');
+    setNameError(''); setGeneratedKey(null); setKeyCopied(false);
   };
 
   // ─── Revoke & Delete Key from Firestore ────────────────────────────────────
@@ -389,31 +385,52 @@ export default function SecurityPage() {
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-[9px] block font-mono uppercase tracking-wider" style={{ color: 'var(--md-on-surface-var)' }}>Permissions (Scopes) *</label>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        {ALL_SCOPES.map(scope => {
-                          const isSelected = selectedScopes.includes(scope.id);
-                          return (
-                            <button key={scope.id} type="button" onClick={() => toggleScope(scope.id)}
-                              className="flex items-start gap-2.5 p-2.5 rounded-xl text-left transition-all border cursor-pointer"
-                              style={{
-                                background: isSelected ? 'var(--md-primary-container)' : 'var(--md-surface-2)',
-                                borderColor: isSelected ? 'var(--md-primary)' : 'var(--md-outline)',
-                                color: isSelected ? 'var(--md-on-primary-cont)' : 'var(--md-on-surface-var)',
-                              }}>
-                              <div className="w-3.5 h-3.5 rounded border flex items-center justify-center shrink-0 mt-0.5"
-                                style={{ borderColor: isSelected ? 'var(--md-primary)' : 'var(--md-outline)', background: isSelected ? 'var(--md-primary)' : 'transparent' }}>
-                                {isSelected && <CheckCircle2 className="w-3 h-3 text-[var(--md-on-primary)]" />}
-                              </div>
-                              <div>
-                                <p className="text-[10px] font-mono font-bold leading-tight">{scope.label}</p>
-                                <p className="text-[8px] opacity-70 mt-0.5 leading-relaxed">{scope.desc}</p>
-                              </div>
-                            </button>
-                          );
-                        })}
+                      <label className="text-[9px] block font-mono uppercase tracking-wider" style={{ color: 'var(--md-on-surface-var)' }}>Key Type *</label>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <button 
+                          type="button" 
+                          onClick={() => setKeyType('standard')}
+                          className="flex flex-col p-3 rounded-2xl text-left transition-all border cursor-pointer"
+                          style={{
+                            background: keyType === 'standard' ? 'var(--md-primary-container)' : 'var(--md-surface-2)',
+                            borderColor: keyType === 'standard' ? 'var(--md-primary)' : 'var(--md-outline)',
+                            color: keyType === 'standard' ? 'var(--md-on-primary-cont)' : 'var(--md-on-surface-var)',
+                          }}
+                        >
+                          <div className="flex items-center justify-between w-full mb-1">
+                            <span className="text-[10px] font-bold font-mono">Standard Key</span>
+                            <div className="w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0"
+                              style={{ borderColor: keyType === 'standard' ? 'var(--md-primary)' : 'var(--md-outline)', background: keyType === 'standard' ? 'var(--md-primary)' : 'transparent' }}>
+                              {keyType === 'standard' && <CheckCircle2 className="w-2.5 h-2.5 text-[var(--md-on-primary)]" />}
+                            </div>
+                          </div>
+                          <p className="text-[8px] opacity-75 leading-relaxed">
+                            Perfect for general model inference, list reading, and metadata checks. Safe for client apps.
+                          </p>
+                        </button>
+
+                        <button 
+                          type="button" 
+                          onClick={() => setKeyType('master')}
+                          className="flex flex-col p-3 rounded-2xl text-left transition-all border cursor-pointer"
+                          style={{
+                            background: keyType === 'master' ? 'var(--md-primary-container)' : 'var(--md-surface-2)',
+                            borderColor: keyType === 'master' ? 'var(--md-primary)' : 'var(--md-outline)',
+                            color: keyType === 'master' ? 'var(--md-on-primary-cont)' : 'var(--md-on-surface-var)',
+                          }}
+                        >
+                          <div className="flex items-center justify-between w-full mb-1">
+                            <span className="text-[10px] font-bold font-mono">Master Key</span>
+                            <div className="w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0"
+                              style={{ borderColor: keyType === 'master' ? 'var(--md-primary)' : 'var(--md-outline)', background: keyType === 'master' ? 'var(--md-primary)' : 'transparent' }}>
+                              {keyType === 'master' && <CheckCircle2 className="w-2.5 h-2.5 text-[var(--md-on-primary)]" />}
+                            </div>
+                          </div>
+                          <p className="text-[8px] opacity-75 leading-relaxed">
+                            Unrestricted root-level access including pipeline training, endpoint revoking, and full admin permissions.
+                          </p>
+                        </button>
                       </div>
-                      {scopeError && <p className="text-[10px] mt-1" style={{ color: 'var(--md-error)' }}>{scopeError}</p>}
                     </div>
 
                     <div className="flex gap-3 pt-2">
