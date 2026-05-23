@@ -15,10 +15,15 @@ class User(UserBase):
     is_active: bool
     is_admin: bool
     created_at: datetime
+    settings: Optional[dict] = None
 
     model_config = {
         'from_attributes': True
     }
+
+class PasswordChangeRequest(BaseModel):
+    current_password: str
+    new_password: str
 
 class Token(BaseModel):
     access_token: str

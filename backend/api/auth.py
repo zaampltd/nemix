@@ -110,3 +110,50 @@ def login_for_access_token(db: Session = Depends(database.get_db), form_data: OA
 @router.get("/me", response_model=schemas.User)
 def read_users_me(current_user: models.User = Depends(get_current_user)):
     return current_user
+
+@router.put("/profile", response_model=schemas.User)
+def update_user_profile(
+    profile_data: schemas.UserBase,
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    if profile_data.email != current_user.email:
+        existing = db.query(models.User).filter(models.User.email == profile_data.email).first()
+        if existing:
+            raise HTTPException(status_code=400, detail="Email already registered")
+        current_user.email = profile_data.email
+        
+    current_user.full_name = profile_data.full_name
+    db.commit()
+    db.refresh(current_user)
+    return current_user
+
+@router.get("/settings", response_model=dict)
+def get_user_settings(current_user: models.User = Depends(get_current_user)):
+    return current_user.settings or {}
+
+@router.put("/settings", response_model=dict)
+def update_user_settings(
+    settings_data: dict,
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    current_user.settings = settings_data
+    db.commit()
+    db.refresh(current_user)
+    return current_user.settings
+
+@router.post("/change-password")
+def change_user_password(
+    req: schemas.PasswordChangeRequest,
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    is_sso = current_user.hashed_password == "firebase-sso-provisioned"
+    if not is_sso and current_user.hashed_password:
+        if not utils.verify_password(req.current_password, current_user.hashed_password):
+            raise HTTPException(status_code=400, detail="Incorrect current password")
+            
+    current_user.hashed_password = utils.get_password_hash(req.new_password)
+    db.commit()
+    return {"message": "Password updated successfully"}
