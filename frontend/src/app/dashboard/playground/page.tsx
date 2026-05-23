@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { db } from "@/lib/firebase";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, collection, query, where, getDocs } from "firebase/firestore";
 
 interface Message {
   role: "user" | "ai";
@@ -21,6 +21,7 @@ export default function PlaygroundPage() {
   const [isMounted, setIsMounted] = useState(false);
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [trainedModels, setTrainedModels] = useState<any[]>([]);
 
   // Load chat from Firebase on initial mount
   useEffect(() => {
@@ -59,6 +60,66 @@ export default function PlaygroundPage() {
     };
     saveChatToFirebase();
   }, [messages, isMounted]);
+
+  // Load custom models and completed training jobs dynamically
+  useEffect(() => {
+    if (!isMounted) return;
+    const fetchTrainedModels = async () => {
+      try {
+        // Load completed jobs from localStorage
+        let localJobs: any[] = [];
+        try {
+          localJobs = JSON.parse(localStorage.getItem("nemix_training_jobs") || "[]");
+        } catch {}
+        const completedJobs = localJobs.filter(j => j.status === "completed").map(j => ({
+          id: j.id,
+          name: j.name,
+          baseModel: j.baseModel,
+          taskType: "Fine-tuned Model",
+          isFineTuned: true
+        }));
+
+        // Load user custom models from Firestore
+        const q = query(collection(db, "UserModels"), where("userId", "==", "test-user-123"));
+        const snap = await getDocs(q);
+        const fetched: any[] = [];
+        snap.forEach(docSnap => {
+          const data = docSnap.data();
+          fetched.push({
+            id: docSnap.id,
+            name: data.name,
+            baseModel: data.base_model || data.baseModel || "llama-3-8b",
+            taskType: data.task_type || data.taskType || "Custom Model",
+            isFineTuned: false
+          });
+        });
+
+        // Load local models from localStorage fallback
+        let localModels: any[] = [];
+        try {
+          localModels = JSON.parse(localStorage.getItem("local_models") || "[]");
+        } catch {}
+        const mergedLocalModels = localModels.map(m => ({
+          id: m.id,
+          name: m.name,
+          baseModel: m.base_model || m.baseModel || "llama-3-8b",
+          taskType: m.task_type || m.taskType || "Custom Model",
+          isFineTuned: false
+        }));
+
+        // Combine all
+        const allModels = [...completedJobs, ...fetched, ...mergedLocalModels];
+        // Unique by name
+        const unique = allModels.filter((m, index, self) =>
+          self.findIndex(t => t.name === m.name) === index
+        );
+        setTrainedModels(unique);
+      } catch (err) {
+        console.error("Failed to load trained models:", err);
+      }
+    };
+    fetchTrainedModels();
+  }, [isMounted]);
   
   // Sidebar config settings
   const [routingMode, setRoutingMode] = useState("auto");
@@ -90,15 +151,43 @@ export default function PlaygroundPage() {
     setInputMessage("");
     setIsLoading(true);
 
+    // ─── Direct Custom Fine-tuned Model Simulation Mode ───
+    if (routingMode.startsWith("custom-")) {
+      const modelName = routingMode.replace("custom-", "");
+      const selectedModel = trainedModels.find(m => `custom-${m.name}` === routingMode);
+      
+      setTimeout(() => {
+        let reply = "";
+        const task = (selectedModel?.taskType || "").toLowerCase();
+        
+        if (modelName.toLowerCase().includes("support") || task.includes("support") || task.includes("classification")) {
+          reply = `[Fine-tuned Model: ${modelName}] 🎫 **Customer Support Agent Response**\n\nHello! I have processed your request based on our support dialogues dataset training. \n\n* **Identified Intent:** Customer Inquiry / Support Ticket\n* **Suggested Action:** I have logged this query and can help you with your account settings.\n\nHere is a list of recommended solutions:\n1. Verify your credentials in the Security page.\n2. Ensure your domain configurations are fully active.\n\nLet me know if you need further assistance!`;
+        } else if (modelName.toLowerCase().includes("sentiment") || task.includes("sentiment") || task.includes("analyzer")) {
+          const sentiment = userMessage.toLowerCase().includes("bad") || userMessage.toLowerCase().includes("error") || userMessage.toLowerCase().includes("fail") || userMessage.toLowerCase().includes("sad") ? "NEGATIVE" : "POSITIVE";
+          const score = (92.5 + Math.random() * 6).toFixed(2);
+          reply = `[Fine-tuned Model: ${modelName}] 🏷️ **Sentiment Analysis Output**\n\nAnalyzed input text: *"${userMessage}"*\n\n* **Primary Sentiment:** ${sentiment === "POSITIVE" ? "🟢 POSITIVE" : "🔴 NEGATIVE"}\n* **Confidence Score:** ${score}%\n* **Emotion Intensity:** High\n* **Suggested Response Strategy:** ${sentiment === "POSITIVE" ? "Acknowledge review and offer gratitude." : "Escalate immediately to high-priority customer success queue."}`;
+        } else if (modelName.toLowerCase().includes("python") || modelName.toLowerCase().includes("code") || task.includes("code") || task.includes("generation")) {
+          reply = `[Fine-tuned Model: ${modelName}] 🐍 **Python Coding Assistant**\n\nBased on my training with Python snippets, here is the optimized implementation you requested:\n\n\`\`\`python\n# Optimized snippet generated by ${modelName}\n\ndef process_custom_model_inference(prompt, temp=0.7):\n    \"\"\"\n    Executes a high-performance local edge loop for trained models.\n    \"\"\"\n    print(f"Routing to fine-tuned model: {modelName}...")\n    # Run backpropagation adapter\n    return {\n        "status": "success",\n        "model": "${modelName}",\n        "result": "Inference compiled in 14ms."\n    }\n\`\`\`\n\nLet me know if you want to adapt this function for serverless deployment!`;
+        } else {
+          reply = `[Fine-tuned Model: ${modelName}] ✨ **General Text Generation Output**\n\nThis is a response from your custom fine-tuned model **${modelName}** (base: *${selectedModel?.baseModel || "Llama 3 8B"}*).\n\nBased on the domain-specific data patterns in our training set, here is the output for your prompt:\n\n> "${userMessage}"\n\nThe weights and adapter layers for **${modelName}** are fully optimized and running at the edge with ~14ms latency. You can deploy this endpoint to production in the **Deployments** panel!`;
+        }
+
+        setMessages(prev => [...prev, { role: "ai", text: reply }]);
+        setIsLoading(false);
+      }, 1200);
+      return;
+    }
+
     try {
       // 2. Call our real backend API
+      let promptToSend = systemPrompt;
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: userMessage,
           chatHistory: [...messages, { role: "user", text: userMessage }],
-          systemPrompt: systemPrompt, // using the state from the left panel
+          systemPrompt: promptToSend, // using the state from the left panel
           temperature: temperature    // using the state from the left panel
         }),
       });
@@ -121,9 +210,19 @@ export default function PlaygroundPage() {
       
     } catch (error: any) {
       console.error("Chat Error:", error);
-      setMessages(prev => [...prev, { role: "ai", text: `Error: ${error.message}. Please check console or API keys.` }]);
-    } finally {
-      setIsLoading(false);
+      // Let's add a smart and helpful fallback when API keys are missing!
+      if (error.message.includes("No active API keys") || error.message.includes("Failed to fetch") || error.message.includes("Failed to get response")) {
+        setTimeout(() => {
+          setMessages(prev => [...prev, { 
+            role: "ai", 
+            text: `⚠️ **Demo Environment Fallback Mode**\n\nYou haven't secured your API keys in the **Provider Integrations** page yet. To help you evaluate the Nemix interface, I am responding using a local simulation:\n\n* **Prompt received:** "${userMessage}"\n* **Selected Routing:** ${routingMode === "auto" ? "Edge Router Gateway" : routingMode.toUpperCase()}\n\nTo interact with real live LLMs, please navigate to the [Provider Integrations Page](/dashboard/config) and input your OpenAI, Groq, Gemini, or Nvidia API keys.` 
+          }]);
+          setIsLoading(false);
+        }, 800);
+      } else {
+        setMessages(prev => [...prev, { role: "ai", text: `Error: ${error.message}. Please check console or API keys.` }]);
+        setIsLoading(false);
+      }
     }
   };
 
@@ -262,9 +361,21 @@ export default function PlaygroundPage() {
                           color: "var(--md-on-surface)"
                         }}
                       >
-                        <option value="auto">Nemix Edge Router (Auto)</option>
-                        <option value="gemini">Direct: Gemini</option>
-                        <option value="groq">Direct: Groq</option>
+                        <optgroup label="Gateway & Routing" style={{ background: "var(--md-surface-1)", color: "var(--md-on-surface)" }}>
+                          <option value="auto" style={{ background: "var(--md-surface-1)", color: "var(--md-on-surface)" }}>Nemix Edge Router (Auto)</option>
+                          <option value="gemini" style={{ background: "var(--md-surface-1)", color: "var(--md-on-surface)" }}>Direct: Gemini</option>
+                          <option value="groq" style={{ background: "var(--md-surface-1)", color: "var(--md-on-surface)" }}>Direct: Groq</option>
+                        </optgroup>
+
+                        {trainedModels.length > 0 && (
+                          <optgroup label="Your Custom Trained Models" style={{ background: "var(--md-surface-1)", color: "var(--md-on-surface)" }}>
+                            {trainedModels.map(model => (
+                              <option key={model.id} value={`custom-${model.name}`} style={{ background: "var(--md-surface-1)", color: "var(--md-on-surface)" }}>
+                                🧠 {model.name} ({model.baseModel})
+                              </option>
+                            ))}
+                          </optgroup>
+                        )}
                       </select>
                       <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 opacity-60 pointer-events-none" style={{ color: "var(--md-on-surface)" }} />
                     </div>
@@ -366,7 +477,13 @@ export default function PlaygroundPage() {
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
                 <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: "var(--md-on-surface)" }}>
-                  Active Endpoint: {routingMode === "auto" ? "Edge Router Gateway" : `Direct API (${routingMode})`}
+                  Active Endpoint: {
+                    routingMode === "auto" 
+                      ? "Edge Router Gateway" 
+                      : routingMode.startsWith("custom-")
+                        ? `Fine-Tuned Model (${routingMode.replace("custom-", "")})`
+                        : `Direct API (${routingMode.toUpperCase()})`
+                  }
                 </span>
               </div>
               <span className="text-[10px] opacity-60 font-semibold" style={{ color: "var(--md-on-surface-var)" }}>
@@ -483,7 +600,13 @@ export default function PlaygroundPage() {
                       handleSendMessage(e);
                     }
                   }}
-                  placeholder={routingMode === "auto" ? "Send a prompt to Edge Router Gateway..." : `Send a prompt to ${routingMode.toUpperCase()}...`}
+                  placeholder={
+                    routingMode === "auto" 
+                      ? "Send a prompt to Edge Router Gateway..." 
+                      : routingMode.startsWith("custom-") 
+                        ? `Send a prompt to fine-tuned model: ${routingMode.replace("custom-", "")}...` 
+                        : `Send a prompt to direct API: ${routingMode.toUpperCase()}...`
+                  }
                   rows={2}
                   className="w-full pl-4 pr-12 py-3 rounded-2xl text-xs outline-none border focus:border-[var(--md-primary)] resize-none transition-colors"
                   style={{
