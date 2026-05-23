@@ -16,8 +16,33 @@ import { db } from "@/lib/firebase";
 import { collection, addDoc, serverTimestamp, query, where, getDocs, deleteDoc, doc } from "firebase/firestore";
 
 const BASE_MODELS = [
-  'bert-base-uncased','gpt2','gpt2-medium','distilbert-base-uncased',
-  'roberta-base','llama-2-7b','mistral-7b','t5-base','clip-vit-base-patch32','whisper-small',
+  // --- Large Language Models (LLMs) ---
+  "meta-llama/Meta-Llama-3-8B-Instruct",
+  "meta-llama/Meta-Llama-3-70B-Instruct",
+  "mistralai/Mistral-7B-Instruct-v0.3",
+  "mistralai/Mixtral-8x7B-Instruct-v0.1",
+  "google/gemma-2-9b-it",
+  "google/gemma-2-27b-it",
+  "microsoft/Phi-3-medium-128k-instruct",
+  "Qwen/Qwen2.5-7B-Instruct",
+  "Qwen/Qwen2.5-14B-Instruct",
+  
+  // --- OpenAI Fine-Tuning Models ---
+  "openai/gpt-4o-mini-2024-07-18",
+  "openai/gpt-3.5-turbo-0125",
+  
+  // --- Encoder / Classification Models ---
+  "sentence-transformers/all-MiniLM-L6-v2",
+  "bert-base-uncased",
+  "roberta-large",
+  
+  // --- Audio & Speech Models ---
+  "openai/whisper-large-v3",
+  "facebook/seamless-m4t-v2",
+  
+  // --- Vision & Multi-Modal Models ---
+  "stabilityai/stable-diffusion-xl-base-1.0",
+  "llava-hf/llava-1.5-7b-hf"
 ];
 
 const TASK_TYPES = [
