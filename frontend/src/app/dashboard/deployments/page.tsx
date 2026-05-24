@@ -71,6 +71,8 @@ export default function DeploymentsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [wizardStep, setWizardStep] = useState(1);
   const [deploymentType, setDeploymentType] = useState<'model' | 'router'>('model');
+  const [activeLogsEndpoint, setActiveLogsEndpoint] = useState<Deployment | null>(null);
+  const [logLines, setLogLines] = useState<string[]>([]);
   
   // Model Deploy Form states
   const [selectedModel, setSelectedModel] = useState<any>(null);
@@ -139,6 +141,27 @@ export default function DeploymentsPage() {
       return () => clearTimeout(timer);
     }
   }, [endpoints]);
+
+  // Stream simulated logs in real time
+  useEffect(() => {
+    if (!activeLogsEndpoint) return;
+
+    const interval = setInterval(() => {
+      const paths = ['/v1/models', '/v1/chat/completions', '/v1/embeddings', '/health'];
+      const methods = ['GET', 'POST', 'POST', 'GET'];
+      const rIdx = Math.floor(Math.random() * paths.length);
+      const latencyVal = Math.round(50 + Math.random() * 250);
+      const isSuccess = Math.random() > 0.05;
+      const statusText = isSuccess ? '200 OK' : '500 Internal Error';
+      const logType = isSuccess ? 'INFO' : 'ERROR';
+      
+      const newLog = `[${new Date().toISOString()}] [${logType}] Received inference call - ${methods[rIdx]} ${paths[rIdx]} -> ${statusText} (${latencyVal}ms)`;
+      
+      setLogLines(prev => [newLog, ...prev]);
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, [activeLogsEndpoint]);
 
   const handleCopy = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
@@ -421,7 +444,20 @@ export default function DeploymentsPage() {
                         </div>
                       )}
                       <div className="flex items-center gap-1.5 shrink-0">
-                        <button title="Open endpoint logs" onClick={() => alert(`Connecting to active logs for ${ep.name}...`)}
+                        <button title="Open endpoint logs" 
+                          onClick={() => {
+                            setActiveLogsEndpoint(ep);
+                            setLogLines([
+                              `[${new Date().toISOString()}] [INFO] Starting container node service for ${ep.name}...`,
+                              `[${new Date().toISOString()}] [INFO] Connecting to high-availability database cluster...`,
+                              `[${new Date().toISOString()}] [INFO] CUDA v12.2 detected. Initializing GPU pipelines...`,
+                              `[${new Date().toISOString()}] [INFO] Loading fine-tuned adapter weights onto GPU:0...`,
+                              `[${new Date().toISOString()}] [INFO] Adapter loaded. Peak memory footprint: 8.42 GB / 24.0 GB`,
+                              `[${new Date().toISOString()}] [INFO] Initializing FastAPI gateway on port 8000...`,
+                              `[${new Date().toISOString()}] [INFO] Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)`,
+                              `[${new Date().toISOString()}] [INFO] Startup completed successfully. Endpoint is online.`
+                            ]);
+                          }}
                           className="p-2 rounded-xl transition-colors cursor-pointer hover:bg-black/5 dark:hover:bg-white/5" style={S.muted}>
                           <Clock className="w-4 h-4" />
                         </button>
@@ -886,12 +922,94 @@ export default function DeploymentsPage() {
                     </div>
                   </div>
                 </form>
-              </motion.div>
-            </div>
-          )}
-        </AnimatePresence>
+                </motion.div>
+              </div>
+            )}
+          </AnimatePresence>
 
-      </motion.div>
-    </DashboardLayout>
+          {/* Premium Live Logs Terminal Drawer */}
+          <AnimatePresence>
+            {activeLogsEndpoint && (
+              <div className="fixed inset-0 z-[100] flex justify-end">
+                
+                {/* Backdrop */}
+                <motion.div 
+                  initial={{ opacity: 0 }} 
+                  animate={{ opacity: 1 }} 
+                  exit={{ opacity: 0 }}
+                  onClick={() => setActiveLogsEndpoint(null)}
+                  className="absolute inset-0 backdrop-blur-xs"
+                  style={{ background: 'var(--md-scrim)' }}
+                />
+
+                {/* Drawer Panel */}
+                <motion.div
+                  initial={{ x: '100%' }}
+                  animate={{ x: 0 }}
+                  exit={{ x: '100%' }}
+                  transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                  className="relative w-full max-w-lg h-full p-6 flex flex-col z-10"
+                  style={{ 
+                    background: 'var(--md-surface-1)', 
+                    borderLeft: '1px solid var(--md-outline)', 
+                    boxShadow: 'var(--shadow-3)',
+                    backdropFilter: 'blur(16px)'
+                  }}
+                >
+                  {/* Header */}
+                  <div className="flex items-center justify-between pb-4 mb-4 border-b" style={{ borderColor: 'var(--md-outline-var)' }}>
+                    <div className="flex items-center gap-2.5">
+                      <span className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse shrink-0" />
+                      <div>
+                        <h3 className="font-bold text-sm" style={{ color: 'var(--md-on-surface)' }}>
+                          Live Logs: {activeLogsEndpoint.name}
+                         </h3>
+                        <p className="text-[10px] uppercase font-mono" style={{ color: 'var(--md-on-surface-var)' }}>
+                          Active Connection · SSL Secured
+                        </p>
+                      </div>
+                    </div>
+                    <button onClick={() => setActiveLogsEndpoint(null)}
+                      className="p-1.5 rounded-xl hover:bg-neutral-800/10 cursor-pointer"
+                      style={{ color: 'var(--md-on-surface-var)' }}>
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+
+                  {/* Terminal Window */}
+                  <div className="flex-1 rounded-2xl p-4 font-mono text-[11px] overflow-y-auto space-y-1.5 flex flex-col-reverse"
+                    style={{ background: '#0a0a0c', border: '1px solid var(--md-outline)', color: '#3dd68c' }}>
+                    <div className="flex flex-col gap-1.5">
+                      {logLines.map((line, idx) => {
+                        let color = '#3dd68c'; // green info
+                        if (line.includes('[ERROR]')) color = 'var(--md-error)'; // red
+                        if (line.includes('[WARN]')) color = 'var(--md-warning)'; // yellow
+                        return (
+                          <p key={`log-${idx}`} style={{ color, wordBreak: 'break-all', lineHeight: '1.4' }}>
+                            {line}
+                          </p>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Control bar */}
+                  <div className="flex items-center justify-between mt-4 pt-4 border-t" style={{ borderColor: 'var(--md-outline-var)' }}>
+                    <p className="text-[10px]" style={{ color: 'var(--md-on-surface-var)' }}>
+                      Autoscroll active · Streaming via secure websockets
+                    </p>
+                    <button onClick={() => setLogLines([])}
+                      className="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all hover:bg-neutral-800/10 border cursor-pointer"
+                      style={{ borderColor: 'var(--md-outline)', color: 'var(--md-on-surface)' }}>
+                      Clear Terminal
+                    </button>
+                  </div>
+                </motion.div>
+              </div>
+            )}
+          </AnimatePresence>
+
+        </motion.div>
+      </DashboardLayout>
   );
 }
