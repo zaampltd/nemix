@@ -398,10 +398,10 @@ print(data["text"])`;
       console.log("4. Writing to Firestore...");
       await addDoc(collection(db, "RouterConfigs"), payload);
       console.log("5. Write successful!");
-      alert("Gateway Published Successfully!"); // Using native alert just to test if it reaches here
+      showToast("Gateway published successfully to the edge cluster!", "success");
     } catch (error) {
       console.error("CRITICAL FIREBASE ERROR:", error);
-      alert("Error saving: Check browser console!");
+      showToast("Failed to publish gateway. Please check the console.", "error");
     } finally {
       console.log("6. Resetting button state...");
       setIsPublishing(false); // THIS IS CRUCIAL TO STOP THE SAVING SPINNER
