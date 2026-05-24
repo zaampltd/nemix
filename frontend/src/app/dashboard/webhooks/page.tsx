@@ -3,8 +3,9 @@ import React, { useState, useEffect } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import {
   Webhook, Plus, Copy, Check, Trash2, Play, ChevronDown, ChevronUp,
-  AlertCircle, CheckCircle2, Clock, RefreshCw, Loader2
+  AlertCircle, CheckCircle2, Clock, RefreshCw, Loader2, X
 } from "lucide-react";
+import { motion, AnimatePresence } from 'framer-motion';
 import { db } from "@/lib/firebase";
 import { collection, addDoc, query, where, getDocs, deleteDoc, doc, serverTimestamp } from "firebase/firestore";
 
@@ -296,6 +297,10 @@ export default function WebhooksPage() {
     border: "1px solid var(--md-outline)", color: "var(--md-on-surface)", outline: "none",
   };
 
+  const labelStyle: React.CSSProperties = {
+    display: "block", fontSize: 12, fontWeight: 600, marginBottom: 6, color: "var(--md-on-surface-var)"
+  };
+
   // Stats
   const totalSuccess = webhooks.reduce((a, w) => a + Math.round(w.totalDeliveries * w.successRate / 100), 0);
   const totalFailed  = webhooks.reduce((a, w) => a + Math.round(w.totalDeliveries * (1 - w.successRate / 100)), 0);
@@ -438,58 +443,96 @@ export default function WebhooksPage() {
       </div>
 
       {/* Create webhook modal */}
-      {showModal && (
-        <div style={{ position: "fixed", inset: 0, background: "var(--md-scrim)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
-          onClick={e => e.target === e.currentTarget && setShowModal(false)}>
-          <div style={{ width: "100%", maxWidth: 520, background: "var(--md-surface-1)", border: "1px solid var(--md-outline)", borderRadius: 20, padding: 28 }}>
-            <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--md-on-surface)", margin: "0 0 20px" }}>Create Webhook</h2>
-
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              <div>
-                <label style={{ display: "block", fontSize: 12, fontWeight: 600, marginBottom: 6, color: "var(--md-on-surface-var)" }}>Endpoint URL</label>
-                <input value={newUrl} onChange={e => setNewUrl(e.target.value)}
-                  placeholder="https://your-app.com/webhook" style={inp} />
+      <AnimatePresence>
+        {showModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            
+            {/* Backdrop blur overlay */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 backdrop-blur-sm"
+              style={{ background: 'var(--md-scrim)' }}
+              onClick={() => setShowModal(false)}
+            />
+            
+            {/* Modal Body Container */}
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 10 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 10 }}
+              className="relative w-full max-w-lg rounded-3xl p-8 z-10"
+              style={{ background: 'var(--md-surface-1)', border: '1px solid var(--md-outline)', boxShadow: 'var(--shadow-3)' }}
+              onClick={e => e.stopPropagation()}
+            >
+              
+              {/* Header */}
+              <div className="flex items-center justify-between mb-6 pb-4 border-b" style={{ borderColor: 'var(--md-outline-var)' }}>
+                <div>
+                  <h2 className="text-xl font-black" style={{ color: 'var(--md-on-surface)', margin: 0 }}>Create Webhook</h2>
+                  <p className="text-[11px] mt-0.5" style={{ color: 'var(--md-on-surface-var)', margin: 0 }}>Define custom endpoints for real-time telemetry dispatches</p>
+                </div>
+                <button 
+                  onClick={() => setShowModal(false)}
+                  className="p-2 rounded-xl transition hover:bg-neutral-800/10 cursor-pointer" 
+                  style={{ color: 'var(--md-on-surface-var)' }}
+                >
+                  <X className="w-5 h-5" />
+                </button>
               </div>
 
-              <div>
-                <label style={{ display: "block", fontSize: 12, fontWeight: 600, marginBottom: 8, color: "var(--md-on-surface-var)" }}>Events</label>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                  {ALL_EVENTS.map(ev => (
-                    <label key={ev} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: 13, color: "var(--md-on-surface)" }}>
-                      <input type="checkbox" checked={newEvents.includes(ev)}
-                        onChange={e => setNewEvents(prev => e.target.checked ? [...prev, ev] : prev.filter(x => x !== ev))}
-                        style={{ accentColor: "var(--md-primary)", width: 15, height: 15 }} />
-                      {ev}
-                    </label>
-                  ))}
+              <div className="flex flex-col gap-4">
+                <div>
+                  <label style={labelStyle as React.CSSProperties}>Endpoint URL</label>
+                  <input value={newUrl} onChange={e => setNewUrl(e.target.value)}
+                    placeholder="https://your-app.com/webhook" style={inp} />
+                </div>
+
+                <div>
+                  <label style={labelStyle as React.CSSProperties}>Events Subscriptions</label>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px 12px" }}>
+                    {ALL_EVENTS.map(ev => (
+                      <label key={ev} className="flex items-center gap-2.5 cursor-pointer text-xs font-semibold select-none py-1" style={{ color: "var(--md-on-surface)" }}>
+                        <input type="checkbox" checked={newEvents.includes(ev)}
+                          onChange={e => setNewEvents(prev => e.target.checked ? [...prev, ev] : prev.filter(x => x !== ev))}
+                          style={{ accentColor: "var(--md-primary)", width: 16, height: 16 }} className="rounded cursor-pointer" />
+                        {ev}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label style={labelStyle as React.CSSProperties}>Signing Secret</label>
+                  <div className="flex gap-2 items-center">
+                    <code style={{ flex: 1, ...inp, display: "flex", alignItems: "center", fontSize: 11, color: "var(--md-on-surface-var)", overflow: "hidden", textOverflow: "ellipsis" }}>{secret}</code>
+                    <CopyBtn text={secret} />
+                    <button onClick={() => setSecret(generateSecret())} 
+                      className="h-10 px-4 rounded-xl border cursor-pointer text-xs font-bold transition-all hover:bg-neutral-800/10"
+                      style={{ borderColor: "var(--md-outline)", background: "var(--md-surface-2)", color: "var(--md-on-surface)" }}>
+                      Regenerate
+                    </button>
+                  </div>
                 </div>
               </div>
 
-              <div>
-                <label style={{ display: "block", fontSize: 12, fontWeight: 600, marginBottom: 6, color: "var(--md-on-surface-var)" }}>Signing Secret</label>
-                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                  <code style={{ flex: 1, ...inp, display: "flex", alignItems: "center", fontSize: 11, color: "var(--md-on-surface-var)" }}>{secret}</code>
-                  <CopyBtn text={secret} />
-                  <button onClick={() => setSecret(generateSecret())} style={{ height: 42, padding: "0 12px", borderRadius: 10, border: "1px solid var(--md-outline)", background: "var(--md-surface-2)", color: "var(--md-on-surface-var)", cursor: "pointer", fontSize: 12 }}>
-                    Regenerate
-                  </button>
-                </div>
+              <div className="flex gap-3 mt-6 pt-5 justify-end" style={{ borderTop: "1px solid var(--md-outline-var)" }}>
+                <button onClick={() => setShowModal(false)}
+                  className="h-10 px-5 rounded-xl border cursor-pointer text-xs font-bold transition-all hover:bg-neutral-800/10"
+                  style={{ borderColor: "var(--md-outline)", background: "transparent", color: "var(--md-on-surface-var)" }}>
+                  Cancel
+                </button>
+                <button onClick={handleCreate} disabled={!newUrl || newEvents.length === 0}
+                  className="h-10 px-5 rounded-xl cursor-pointer text-xs font-black transition-all hover:opacity-90 disabled:opacity-50"
+                  style={{ background: "var(--md-primary)", color: "var(--md-on-primary)", border: "none" }}>
+                  Create Webhook
+                </button>
               </div>
-            </div>
-
-            <div style={{ display: "flex", gap: 10, marginTop: 24, justifyContent: "flex-end" }}>
-              <button onClick={() => setShowModal(false)}
-                style={{ height: 38, padding: "0 16px", borderRadius: 10, border: "1px solid var(--md-outline)", background: "var(--md-surface-2)", color: "var(--md-on-surface-var)", cursor: "pointer", fontSize: 13 }}>
-                Cancel
-              </button>
-              <button onClick={handleCreate} disabled={!newUrl || newEvents.length === 0}
-                style={{ height: 38, padding: "0 16px", borderRadius: 10, background: "var(--md-primary)", color: "var(--md-on-primary)", border: "none", cursor: (!newUrl || newEvents.length === 0) ? "not-allowed" : "pointer", fontSize: 13, fontWeight: 700, opacity: (!newUrl || newEvents.length === 0) ? 0.6 : 1 }}>
-                Create Webhook
-              </button>
-            </div>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
 
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </DashboardLayout>
