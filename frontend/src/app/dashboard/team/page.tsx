@@ -79,6 +79,20 @@ export default function TeamPage() {
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [openRoleMenu, setOpenRoleMenu] = useState<string | null>(null);
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    confirmText?: string;
+    cancelText?: string;
+    onConfirm: () => void;
+    type?: 'danger' | 'info' | 'warning';
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+  });
 
   useEffect(() => {
     const loadTeamMembers = async () => {
@@ -220,26 +234,33 @@ export default function TeamPage() {
   };
 
   const removeMember = async (id: string) => {
-    const confirmed = window.confirm("Are you sure you want to remove this team member?");
-    if (!confirmed) return;
-
-    try {
-      if (!id.startsWith("m1") && !id.startsWith("m2") && !id.startsWith("m3") && !id.startsWith("m4") && !id.startsWith("m5") && !id.startsWith("m_")) {
-        await deleteDoc(doc(db, "TeamMembers", id));
+    setConfirmModal({
+      isOpen: true,
+      title: "Remove Team Member",
+      message: "Are you sure you want to revoke this team member's workspace access? They will no longer be able to access the MLOps portal, datasets, or training clusters.",
+      confirmText: "Revoke Access",
+      cancelText: "Keep Member",
+      type: "danger",
+      onConfirm: async () => {
+        try {
+          if (!id.startsWith("m1") && !id.startsWith("m2") && !id.startsWith("m3") && !id.startsWith("m4") && !id.startsWith("m5") && !id.startsWith("m_")) {
+            await deleteDoc(doc(db, "TeamMembers", id));
+          }
+          setMembers(prev => {
+            const next = prev.filter(m => m.id !== id);
+            localStorage.setItem('local_members', JSON.stringify(next));
+            return next;
+          });
+        } catch (err) {
+          console.error("Failed to delete team member from firestore:", err);
+          setMembers(prev => {
+            const next = prev.filter(m => m.id !== id);
+            localStorage.setItem('local_members', JSON.stringify(next));
+            return next;
+          });
+        }
       }
-      setMembers(prev => {
-        const next = prev.filter(m => m.id !== id);
-        localStorage.setItem('local_members', JSON.stringify(next));
-        return next;
-      });
-    } catch (err) {
-      console.error("Failed to delete team member from firestore:", err);
-      setMembers(prev => {
-        const next = prev.filter(m => m.id !== id);
-        localStorage.setItem('local_members', JSON.stringify(next));
-        return next;
-      });
-    }
+    });
   };
 
   const S = {
@@ -563,6 +584,62 @@ export default function TeamPage() {
                   </button>
                 </form>
               )}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+      
+      <AnimatePresence>
+        {confirmModal.isOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="absolute inset-0 backdrop-blur-sm" style={{ background: 'var(--md-scrim)' }}
+              onClick={() => setConfirmModal(p => ({ ...p, isOpen: false }))} />
+            
+            <motion.div initial={{ scale: 0.95, opacity: 0, y: 10 }} animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="relative w-full max-w-md rounded-3xl p-6 overflow-hidden"
+              style={{ background: 'var(--md-surface-1)', border: '1px solid var(--md-outline)', boxShadow: 'var(--shadow-3)', backdropFilter: 'blur(20px)' }}>
+              
+              <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+              
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0"
+                  style={{
+                    background: confirmModal.type === 'danger' ? 'var(--md-error-cont)' : 'var(--md-primary-container)',
+                    color: confirmModal.type === 'danger' ? 'var(--md-error)' : 'var(--md-primary)'
+                  }}>
+                  <AlertCircle className="w-5 h-5" />
+                </div>
+                <div className="space-y-1.5 flex-1 min-w-0">
+                  <h3 className="text-base font-extrabold tracking-tight" style={S.text}>
+                    {confirmModal.title}
+                  </h3>
+                  <p className="text-xs leading-relaxed" style={S.muted}>
+                    {confirmModal.message}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-3 mt-6 pt-4 border-t" style={{ borderColor: 'var(--md-outline-var)' }}>
+                <button type="button" onClick={() => setConfirmModal(p => ({ ...p, isOpen: false }))}
+                  className="flex-1 py-2.5 rounded-xl text-xs font-bold transition hover:bg-neutral-800/10 border"
+                  style={{ borderColor: 'var(--md-outline)', color: 'var(--md-on-surface-var)', background: 'transparent' }}>
+                  {confirmModal.cancelText || 'Cancel'}
+                </button>
+                <button type="button"
+                  onClick={() => {
+                    confirmModal.onConfirm();
+                    setConfirmModal(p => ({ ...p, isOpen: false }));
+                  }}
+                  className="flex-1 py-2.5 rounded-xl text-xs font-bold transition hover:opacity-90"
+                  style={{
+                    background: confirmModal.type === 'danger' ? 'var(--md-error)' : 'var(--md-primary)',
+                    color: 'var(--md-on-primary)'
+                  }}>
+                  {confirmModal.confirmText || 'Confirm'}
+                </button>
+              </div>
             </motion.div>
           </div>
         )}

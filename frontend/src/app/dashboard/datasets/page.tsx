@@ -116,6 +116,20 @@ export default function DatasetsPage() {
   const [uploadError, setUploadError] = useState('');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    confirmText?: string;
+    cancelText?: string;
+    onConfirm: () => void;
+    type?: 'danger' | 'info' | 'warning';
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+  });
 
   useEffect(() => { loadDatasets(); }, []);
 
@@ -215,25 +229,42 @@ export default function DatasetsPage() {
   };
 
   const handleDelete = async (dataset: Dataset) => {
-    if (!confirm(`Delete "${dataset.name}"?`)) return;
-    
-    if (dataset.local || dataset.id.startsWith("local-") || dataset.id.startsWith("ds-")) {
-      const updated = loadLocal().filter(d => d.id !== dataset.id);
-      saveLocal(updated);
-      setDatasets(prev => prev.filter(d => d.id !== dataset.id));
-    } else {
-      try {
-        await deleteDoc(doc(db, "UserDatasets", dataset.id));
-        setDatasets(prev => prev.filter(d => d.id !== dataset.id));
-      } catch (err: any) {
-        console.error('Failed to delete document from Firestore:', err);
-        alert('Failed to delete dataset from server.');
+    setConfirmModal({
+      isOpen: true,
+      title: "Delete Dataset",
+      message: `Are you sure you want to delete the dataset "${dataset.name}"? This action will permanently remove it from the workspace vector repository and cannot be undone.`,
+      confirmText: "Delete",
+      cancelText: "Cancel",
+      type: "danger",
+      onConfirm: async () => {
+        if (dataset.local || dataset.id.startsWith("local-") || dataset.id.startsWith("ds-") || dataset.id.startsWith("clone-")) {
+          const updated = loadLocal().filter(d => d.id !== dataset.id);
+          saveLocal(updated);
+          setDatasets(prev => prev.filter(d => d.id !== dataset.id));
+        } else {
+          try {
+            await deleteDoc(doc(db, "UserDatasets", dataset.id));
+            setDatasets(prev => prev.filter(d => d.id !== dataset.id));
+          } catch (err: any) {
+            console.error('Failed to delete document from Firestore:', err);
+            setConfirmModal({
+              isOpen: true,
+              title: "Deletion Failed",
+              message: `Could not remove the dataset from the cluster: ${err.message || 'Server connection error'}.`,
+              confirmText: "Ok",
+              cancelText: "",
+              type: "warning",
+              onConfirm: () => {}
+            });
+            return;
+          }
+        }
+        
+        if (previewDataset?.id === dataset.id) {
+          setPreviewDataset(null);
+        }
       }
-    }
-    
-    if (previewDataset?.id === dataset.id) {
-      setPreviewDataset(null);
-    }
+    });
   };
 
   const uploadFileToStorage = (file: File) => {
@@ -977,6 +1008,64 @@ export default function DatasetsPage() {
                 </div>
               )}
 
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+      
+      <AnimatePresence>
+        {confirmModal.isOpen && (
+          <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="absolute inset-0 backdrop-blur-sm" style={{ background: 'var(--md-scrim)' }}
+              onClick={() => setConfirmModal(p => ({ ...p, isOpen: false }))} />
+            
+            <motion.div initial={{ scale: 0.95, opacity: 0, y: 10 }} animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="relative w-full max-w-md rounded-3xl p-6 overflow-hidden"
+              style={{ background: 'var(--md-surface-1)', border: '1px solid var(--md-outline)', boxShadow: 'var(--shadow-3)', backdropFilter: 'blur(20px)' }}>
+              
+              <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+              
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0"
+                  style={{
+                    background: confirmModal.type === 'danger' ? 'var(--md-error-cont)' : confirmModal.type === 'warning' ? 'var(--md-warning-cont)' : 'var(--md-primary-container)',
+                    color: confirmModal.type === 'danger' ? 'var(--md-error)' : confirmModal.type === 'warning' ? 'var(--md-warning)' : 'var(--md-primary)'
+                  }}>
+                  <AlertCircle className="w-5 h-5" />
+                </div>
+                <div className="space-y-1.5 flex-1 min-w-0">
+                  <h3 className="text-base font-extrabold tracking-tight" style={{ color: 'var(--md-on-surface)' }}>
+                    {confirmModal.title}
+                  </h3>
+                  <p className="text-xs leading-relaxed" style={{ color: 'var(--md-on-surface-var)' }}>
+                    {confirmModal.message}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-3 mt-6 pt-4 border-t" style={{ borderColor: 'var(--md-outline-var)' }}>
+                {confirmModal.cancelText && (
+                  <button type="button" onClick={() => setConfirmModal(p => ({ ...p, isOpen: false }))}
+                    className="flex-1 py-2.5 rounded-xl text-xs font-bold transition hover:bg-neutral-800/10 border"
+                    style={{ borderColor: 'var(--md-outline)', color: 'var(--md-on-surface-var)', background: 'transparent' }}>
+                    {confirmModal.cancelText}
+                  </button>
+                )}
+                <button type="button"
+                  onClick={() => {
+                    confirmModal.onConfirm();
+                    setConfirmModal(p => ({ ...p, isOpen: false }));
+                  }}
+                  className="flex-1 py-2.5 rounded-xl text-xs font-bold transition hover:opacity-90"
+                  style={{
+                    background: confirmModal.type === 'danger' ? 'var(--md-error)' : confirmModal.type === 'warning' ? 'var(--md-warning)' : 'var(--md-primary)',
+                    color: 'var(--md-on-primary)'
+                  }}>
+                  {confirmModal.confirmText || 'Confirm'}
+                </button>
+              </div>
             </motion.div>
           </div>
         )}

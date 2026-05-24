@@ -555,6 +555,20 @@ function APIKeysTab({ currentUser }: APIKeysTabProps) {
   const [newName, setNewName] = useState('');
   const [creating, setCreating] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    confirmText?: string;
+    cancelText?: string;
+    onConfirm: () => void;
+    type?: 'danger' | 'info' | 'warning';
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+  });
 
   const userIdentifier = currentUser?.email || currentUser?.id || "test-user-123";
 
@@ -626,15 +640,22 @@ function APIKeysTab({ currentUser }: APIKeysTabProps) {
   };
 
   const deleteKey = async (id: string) => {
-    const confirmed = window.confirm("Are you sure you want to revoke this API Key permanently?");
-    if (!confirmed) return;
-
-    try {
-      await deleteDoc(doc(db, "UserNemixAPIKeys", id));
-      setKeys(p => p.filter(k => k.id !== id));
-    } catch (err) {
-      console.error(err);
-    }
+    setConfirmModal({
+      isOpen: true,
+      title: "Revoke API Key",
+      message: "Are you sure you want to permanently revoke this API Key? Any external systems or scripts leveraging this key will immediately fail to authenticate.",
+      confirmText: "Revoke Key",
+      cancelText: "Keep Active",
+      type: "danger",
+      onConfirm: async () => {
+        try {
+          await deleteDoc(doc(db, "UserNemixAPIKeys", id));
+          setKeys(p => p.filter(k => k.id !== id));
+        } catch (err) {
+          console.error(err);
+        }
+      }
+    });
   };
 
   return (
@@ -726,6 +747,62 @@ function APIKeysTab({ currentUser }: APIKeysTabProps) {
   -d '{"model": "ep_001", "input": "Hello world"}'`}
         </pre>
       </div>
+      
+      <AnimatePresence>
+        {confirmModal.isOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="absolute inset-0 backdrop-blur-sm" style={{ background: 'var(--md-scrim)' }}
+              onClick={() => setConfirmModal(p => ({ ...p, isOpen: false }))} />
+            
+            <motion.div initial={{ scale: 0.95, opacity: 0, y: 10 }} animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="relative w-full max-w-md rounded-3xl p-6 overflow-hidden"
+              style={{ background: 'var(--md-surface-1)', border: '1px solid var(--md-outline)', boxShadow: 'var(--shadow-3)', backdropFilter: 'blur(20px)' }}>
+              
+              <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+              
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0"
+                  style={{
+                    background: confirmModal.type === 'danger' ? 'var(--md-error-cont)' : 'var(--md-primary-container)',
+                    color: confirmModal.type === 'danger' ? 'var(--md-error)' : 'var(--md-primary)'
+                  }}>
+                  <AlertCircle className="w-5 h-5" />
+                </div>
+                <div className="space-y-1.5 flex-1 min-w-0">
+                  <h3 className="text-base font-extrabold tracking-tight" style={{ color: 'var(--md-on-surface)' }}>
+                    {confirmModal.title}
+                  </h3>
+                  <p className="text-xs leading-relaxed" style={{ color: 'var(--md-on-surface-var)' }}>
+                    {confirmModal.message}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-3 mt-6 pt-4 border-t" style={{ borderColor: 'var(--md-outline-var)' }}>
+                <button type="button" onClick={() => setConfirmModal(p => ({ ...p, isOpen: false }))}
+                  className="flex-1 py-2.5 rounded-xl text-xs font-bold transition hover:bg-neutral-800/10 border"
+                  style={{ borderColor: 'var(--md-outline)', color: 'var(--md-on-surface-var)', background: 'transparent' }}>
+                  {confirmModal.cancelText || 'Cancel'}
+                </button>
+                <button type="button"
+                  onClick={() => {
+                    confirmModal.onConfirm();
+                    setConfirmModal(p => ({ ...p, isOpen: false }));
+                  }}
+                  className="flex-1 py-2.5 rounded-xl text-xs font-bold transition hover:opacity-90"
+                  style={{
+                    background: confirmModal.type === 'danger' ? 'var(--md-error)' : 'var(--md-primary)',
+                    color: 'var(--md-on-primary)'
+                  }}>
+                  {confirmModal.confirmText || 'Confirm'}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

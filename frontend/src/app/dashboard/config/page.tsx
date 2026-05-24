@@ -7,7 +7,7 @@ import { db } from "@/lib/firebase";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { 
   Shield, Key, Eye, EyeOff, Save, Database, 
-  Lock, CheckCircle2, Activity, ExternalLink
+  Lock, CheckCircle2, Activity, ExternalLink, AlertCircle
 } from "lucide-react";
 import { 
   SiOpenai, SiAnthropic, SiGoogle, SiVectorworks, 
@@ -66,6 +66,25 @@ export default function ProviderIntegrationsPage() {
     huggingface: "idle",
     cohere: "idle"
   });
+
+  const [toast, setToast] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    type: "success" | "warning" | "error" | "info";
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+    type: "info"
+  });
+
+  const triggerToast = (title: string, message: string, type: "success" | "warning" | "error" | "info") => {
+    setToast({ isOpen: true, title, message, type });
+    setTimeout(() => {
+      setToast(p => ({ ...p, isOpen: false }));
+    }, 4000);
+  };
 
   // ─── Providers Setup with react-icons ──────────────────────────────────────
   const providers: Provider[] = [
@@ -249,7 +268,11 @@ export default function ProviderIntegrationsPage() {
   // ─── Save / Connect Handler ────────────────────────────────────────────────
   const handleConnect = async (providerId: string, providerName: string, keyValue: string) => {
     if (!keyValue.trim()) {
-      alert(`Please input a valid API Key for ${providerName}`);
+      triggerToast(
+        "Validation Warning",
+        `Please input a valid API Key for ${providerName} before saving.`,
+        "warning"
+      );
       return;
     }
 
@@ -264,11 +287,19 @@ export default function ProviderIntegrationsPage() {
         key: keyValue.trim()
       });
       setConnectionStates(prev => ({ ...prev, [providerId]: "connected" }));
-      alert(`${providerName} key encrypted and saved securely!`);
+      triggerToast(
+        "Key Saved Successfully",
+        `Your ${providerName} key has been encrypted and stored securely in the credentials vault.`,
+        "success"
+      );
     } catch (error: any) {
       console.error(`Error saving ${providerName} key:`, error);
       setConnectionStates(prev => ({ ...prev, [providerId]: "idle" }));
-      alert(`Failed to save ${providerName} key: ${error.message}`);
+      triggerToast(
+        "Save Failure",
+        `Failed to save ${providerName} key: ${error.message}`,
+        "error"
+      );
     }
   };
 
@@ -466,6 +497,43 @@ export default function ProviderIntegrationsPage() {
         </div>
 
       </div>
+      
+      <AnimatePresence>
+        {toast.isOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, scale: 0.95 }}
+            className="fixed top-6 right-6 z-[999] w-full max-w-sm rounded-2xl p-4 overflow-hidden border text-left"
+            style={{
+              background: 'var(--md-surface-1)',
+              borderColor: 'var(--md-outline)',
+              boxShadow: 'var(--shadow-3)',
+              backdropFilter: 'blur(20px)'
+            }}
+          >
+            <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+            
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
+                style={{
+                  background: toast.type === 'success' ? 'var(--md-success-cont)' : toast.type === 'warning' ? 'var(--md-warning-cont)' : toast.type === 'error' ? 'var(--md-error-cont)' : 'var(--md-primary-container)',
+                  color: toast.type === 'success' ? 'var(--md-success)' : toast.type === 'warning' ? 'var(--md-warning)' : toast.type === 'error' ? 'var(--md-error)' : 'var(--md-primary)'
+                }}>
+                <AlertCircle className="w-4.5 h-4.5" />
+              </div>
+              <div className="space-y-1 flex-1 min-w-0">
+                <h4 className="text-xs font-extrabold tracking-tight" style={{ color: 'var(--md-on-surface)' }}>
+                  {toast.title}
+                </h4>
+                <p className="text-[11px] leading-relaxed" style={{ color: 'var(--md-on-surface-var)' }}>
+                  {toast.message}
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </DashboardLayout>
   );
 }
