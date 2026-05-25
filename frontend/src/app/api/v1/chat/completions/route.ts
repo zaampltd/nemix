@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+import { db } from '@/lib/firebase';
+import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -52,7 +54,41 @@ export async function POST(request: Request) {
       );
     }
 
-    // 3. Concurrent Multi-Model Master Engine Aggregator (NVIDIA NIM & DeepSeek)
+    // 3. Resolve the user associated with this API key to load their custom provider credentials
+    let userId = "test-user-123"; // fallback
+    try {
+      const q = query(collection(db, "UserNvmixAPIKeys"), where("key", "==", nvmixApiKey));
+      const snap = await getDocs(q);
+      if (!snap.empty) {
+        userId = snap.docs[0].data().userId || "test-user-123";
+      }
+    } catch (err) {
+      console.warn("Could not lookup user owner for Nvmix API Key:", err);
+    }
+
+    // Fetch user-configured LLM keys dynamically from Firestore credentials vault
+    const checkKey = async (providerName: string) => {
+      try {
+        const snap = await getDoc(doc(db, "UserAPIKeys", `${userId}_${providerName}`));
+        return snap.exists() ? snap.data().key : null;
+      } catch (err) {
+        console.warn(`Error loading key for ${providerName}:`, err);
+        return null;
+      }
+    };
+
+    const userNvidiaKey = await checkKey("Nvidia");
+    const userGroqKey = await checkKey("Groq");
+    const userGeminiKey = await checkKey("Gemini");
+
+    // Dynamic resolution prioritizing User Keys over server environment defaults
+    const activeNvidiaKey = userNvidiaKey || process.env.NVIDIA_API_KEY;
+    const activeGroqKey = userGroqKey || process.env.GROQ_API_KEY;
+    const activeGeminiKey = userGeminiKey || process.env.GEMINI_API_KEY;
+    const activeOpenRouterKey = process.env.OPENROUTER_API_KEY;
+    const activeMistralKey = process.env.MISTRAL_API_KEY;
+
+    // 4. Concurrent Multi-Model Master Engine Aggregator (NVIDIA NIM & DeepSeek)
     const promises: Promise<{ provider: string; data: any }>[] = [];
 
     // Helper for fetch calls with timeout
@@ -78,15 +114,15 @@ export async function POST(request: Request) {
       }
     };
 
-    // ─── NVIDIA NIM (meta/llama-3.1-70b-instruct or nvidia/llama-3.1-nemotron-70b-instruct) ───
-    if (process.env.NVIDIA_API_KEY && process.env.NVIDIA_API_KEY.trim().length > 0) {
+    // ─── NVIDIA NIM ───
+    if (activeNvidiaKey && activeNvidiaKey.trim().length > 0) {
       promises.push(
         fetchWithTimeout(
-          'NVIDIA NIM',
+          'Nvidia NIM',
           'https://integrate.api.nvidia.com/v1/chat/completions',
           {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${process.env.NVIDIA_API_KEY}`
+            'Authorization': `Bearer ${activeNvidiaKey}`
           },
           {
             model: 'meta/llama-3.1-70b-instruct',
@@ -98,15 +134,15 @@ export async function POST(request: Request) {
       );
     }
 
-    // ─── DeepSeek via OpenRouter (deepseek/deepseek-chat or llama-3.1-70b-instruct:free) ───
-    if (process.env.OPENROUTER_API_KEY && process.env.OPENROUTER_API_KEY.trim().length > 0) {
+    // ─── DeepSeek via OpenRouter ───
+    if (activeOpenRouterKey && activeOpenRouterKey.trim().length > 0) {
       promises.push(
         fetchWithTimeout(
           'DeepSeek (OpenRouter)',
           'https://openrouter.ai/api/v1/chat/completions',
           {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
+            'Authorization': `Bearer ${activeOpenRouterKey}`,
             'HTTP-Referer': 'https://nvmix.com',
             'X-Title': 'Nvmix AI Swarm'
           },
@@ -120,18 +156,18 @@ export async function POST(request: Request) {
       );
     }
 
-    // ─── Groq Backup ───
-    if (process.env.GROQ_API_KEY && process.env.GROQ_API_KEY.trim().length > 0) {
+    // ─── Groq ───
+    if (activeGroqKey && activeGroqKey.trim().length > 0) {
       promises.push(
         fetchWithTimeout(
           'Groq',
           'https://api.groq.com/openai/v1/chat/completions',
           {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${process.env.GROQ_API_KEY}`
+            'Authorization': `Bearer ${activeGroqKey}`
           },
           {
-            model: 'llama-3.1-70b-versatile',
+            model: 'llama3-70b-8192',
             messages,
             temperature: temperature ?? 0.7,
             max_tokens: max_tokens ?? 1024,
@@ -140,15 +176,15 @@ export async function POST(request: Request) {
       );
     }
 
-    // ─── Mistral Backup ───
-    if (process.env.MISTRAL_API_KEY && process.env.MISTRAL_API_KEY.trim().length > 0) {
+    // ─── Mistral ───
+    if (activeMistralKey && activeMistralKey.trim().length > 0) {
       promises.push(
         fetchWithTimeout(
           'Mistral',
           'https://api.mistral.ai/v1/chat/completions',
           {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${process.env.MISTRAL_API_KEY}`
+            'Authorization': `Bearer ${activeMistralKey}`
           },
           {
             model: 'mistral-large-latest',
@@ -157,6 +193,39 @@ export async function POST(request: Request) {
             max_tokens: max_tokens ?? 1024,
           }
         )
+      );
+    }
+
+    // ─── Google Gemini 2.5 ───
+    if (activeGeminiKey && activeGeminiKey.trim().length > 0) {
+      promises.push(
+        (async () => {
+          const res = await fetchWithTimeout(
+            'Google Gemini',
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${activeGeminiKey}`,
+            { 'Content-Type': 'application/json' },
+            {
+              contents: messages.map((msg: any) => ({
+                role: msg.role === 'user' ? 'user' : 'model',
+                parts: [{ text: msg.content }]
+              })),
+              generationConfig: { temperature: temperature ?? 0.7 }
+            }
+          );
+          
+          if (!res.data.candidates || !res.data.candidates[0]) {
+            throw new Error("Gemini returned invalid response candidates");
+          }
+          const text = res.data.candidates[0].content.parts[0].text;
+          return {
+            provider: 'Google Gemini',
+            data: {
+              id: `nvmix-gemini-${Date.now()}`,
+              choices: [{ message: { role: 'assistant', content: text }, finish_reason: 'stop' }],
+              created: Math.floor(Date.now() / 1000)
+            }
+          };
+        })()
       );
     }
 
@@ -181,13 +250,13 @@ export async function POST(request: Request) {
         object: 'chat.completion',
         created: responseData.created || Math.floor(Date.now() / 1000),
         model: 'nvmix-inference-v1',
-        provider: successfulProvider,
+        provider: 'Nvmix', // Always present Nvmix as the provider!
         choices: [
           {
             index: 0,
             message: {
               role: 'assistant',
-              content: reply,
+              content: `[Routed via Nvmix] ${reply}`, // Present it unified as Nvmix!
             },
             finish_reason: responseData.choices[0].finish_reason || 'stop',
           },
