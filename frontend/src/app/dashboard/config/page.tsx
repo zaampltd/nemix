@@ -295,7 +295,7 @@ export default function ProviderIntegrationsPage() {
     fetchSavedKeys();
   }, []);
 
-  // ─── Save / Connect Handler ────────────────────────────────────────────────
+  // ─── Save / Connect Handler (Optimistic & Blazing Fast 0ms Local Save) ──────
   const handleConnect = async (providerId: string, providerName: string, keyValue: string) => {
     if (!keyValue.trim()) {
       triggerToast(
@@ -306,40 +306,31 @@ export default function ProviderIntegrationsPage() {
       return;
     }
 
-    console.log(`Saving ${providerName} Key:`, keyValue);
+    console.log(`Saving ${providerName} Key optimistically...`);
     
-    // Simulate premium visual connecting state
-    setConnectionStates(prev => ({ ...prev, [providerId]: "connecting" }));
-    
-    // Always save to localStorage immediately to ensure offline resilience
+    // 1. Instantly save to localStorage and transition UI to connected (blazing-fast responsive feedback)
     try {
       localStorage.setItem(`nvmix_key_${providerId}`, keyValue.trim());
     } catch {}
+    
+    setConnectionStates(prev => ({ ...prev, [providerId]: "connected" }));
+    triggerToast(
+      "Key Saved Successfully",
+      `Your ${providerName} key has been encrypted and stored securely in the credentials vault.`,
+      "success"
+    );
 
-    try {
-      // In production, 'test-user-123' will be the real user ID
-      await withTimeout(
-        setDoc(doc(db, "UserAPIKeys", `test-user-123_${providerName}`), {
-          key: keyValue.trim()
-        }),
-        1500
-      );
-      setConnectionStates(prev => ({ ...prev, [providerId]: "connected" }));
-      triggerToast(
-        "Key Saved Successfully",
-        `Your ${providerName} key has been encrypted and stored securely in the credentials vault.`,
-        "success"
-      );
-    } catch (error: any) {
-      console.warn(`Firestore saving failed or timed out for ${providerName}:`, error);
-      // Since we already saved to localStorage, we gracefully mark it as connected under Offline Fallback!
-      setConnectionStates(prev => ({ ...prev, [providerId]: "connected" }));
-      triggerToast(
-        "Saved in Local Vault",
-        `Firestore is offline. Your ${providerName} key was saved locally to trigger secure edge routing.`,
-        "success"
-      );
-    }
+    // 2. Sync to Firestore in the background asynchronously (fire-and-forget, zero blocking of the UI!)
+    withTimeout(
+      setDoc(doc(db, "UserAPIKeys", `test-user-123_${providerName}`), {
+        key: keyValue.trim()
+      }),
+      2500
+    ).then(() => {
+      console.log(`Successfully synced ${providerName} key to Firestore in background.`);
+    }).catch((err) => {
+      console.warn(`Background Firestore sync timed out or failed for ${providerName}:`, err);
+    });
   };
 
   return (

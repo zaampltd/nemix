@@ -239,6 +239,7 @@ export default function PlaygroundPage() {
 
       // 3. Add AI response to UI
       setMessages(prev => [...prev, { role: "ai", text: data.reply }]);
+      setIsLoading(false);
       
     } catch (error: any) {
       console.error("Chat Error:", error);
