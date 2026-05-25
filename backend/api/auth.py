@@ -157,3 +157,18 @@ def change_user_password(
     current_user.hashed_password = utils.get_password_hash(req.new_password)
     db.commit()
     return {"message": "Password updated successfully"}
+
+@router.post("/verify-recaptcha")
+def verify_recaptcha(
+    req: schemas.RecaptchaVerificationRequest,
+    db: Session = Depends(database.get_db)
+):
+    from auth.recaptcha import verify_recaptcha_token
+    score = verify_recaptcha_token(req.token, req.action)
+    if score < 0.3:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Security check failed. High-risk or bot-like traffic detected. Please try again."
+        )
+    return {"success": True, "score": score}
+

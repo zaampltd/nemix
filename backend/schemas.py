@@ -32,6 +32,10 @@ class Token(BaseModel):
 class TokenData(BaseModel):
     email: Optional[str] = None
 
+class RecaptchaVerificationRequest(BaseModel):
+    token: str
+    action: str = "LOGIN"
+
 # Dataset Schemas
 class DatasetBase(BaseModel):
     name: str

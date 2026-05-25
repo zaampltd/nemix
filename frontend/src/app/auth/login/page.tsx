@@ -2,6 +2,7 @@
 import React, { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Script from 'next/script';
 import {
   Zap, CheckCircle2, Eye, EyeOff, AlertCircle,
   Star, ArrowRight, Lock, GitBranch, Globe,
@@ -9,6 +10,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/context/AuthContext';
 import { BrandLogo } from "@/components/ui/BrandLogo";
+import api from '@/lib/api';
 
 // ─── Testimonials shown on the left panel ─────────────────────────
 const TESTIMONIALS = [
@@ -51,9 +53,46 @@ function LoginForm() {
   const justRegistered = searchParams.get('registered') === 'true';
   const sessionExpired = searchParams.get('expired') === 'true';
 
+  const executeAndVerifyRecaptcha = async (action: string): Promise<boolean> => {
+    try {
+      const grecaptcha = (window as any).grecaptcha;
+      let token = "mock-token-sandbox";
+      
+      if (grecaptcha && grecaptcha.enterprise) {
+        token = await new Promise<string>((resolve, reject) => {
+          grecaptcha.enterprise.ready(async () => {
+            try {
+              const resToken = await grecaptcha.enterprise.execute(
+                '6Lf5hfssAAAAALoeYCRdOCnKD03oGec57DZaWiYs',
+                { action }
+              );
+              resolve(resToken);
+            } catch (err) {
+              reject(err);
+            }
+          });
+        });
+      } else {
+        console.warn("reCAPTCHA Enterprise script not loaded. Bypassing with sandbox mock token.");
+      }
+
+      await api.post('/auth/verify-recaptcha', { token, action });
+      return true;
+    } catch (err: any) {
+      console.error("reCAPTCHA Verification error:", err);
+      const detail = err.response?.data?.detail || "Security check failed. High-risk/bot traffic suspected.";
+      setError(detail);
+      setLoading(false);
+      return false;
+    }
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true); setError('');
+
+    const verified = await executeAndVerifyRecaptcha('LOGIN');
+    if (!verified) return;
 
     try {
       await loginWithEmail(email, password);
@@ -72,6 +111,10 @@ function LoginForm() {
   const handleGoogleLogin = async () => {
     setLoading(true);
     setError('');
+
+    const verified = await executeAndVerifyRecaptcha('LOGIN');
+    if (!verified) return;
+
     try {
       await loginWithGoogle();
       setSuccess(true);
@@ -86,6 +129,10 @@ function LoginForm() {
   const handleGithubLogin = async () => {
     setLoading(true);
     setError('');
+
+    const verified = await executeAndVerifyRecaptcha('LOGIN');
+    if (!verified) return;
+
     try {
       await loginWithGithub();
       setSuccess(true);
@@ -96,6 +143,7 @@ function LoginForm() {
       setLoading(false);
     }
   };
+
 
   return (
     <div style={{ minHeight: '100vh', display: 'grid', gridTemplateColumns: '1fr 1fr', background: 'var(--md-surface)' }}>
@@ -322,7 +370,14 @@ function LoginForm() {
 
       {/* Spin animation */}
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+
+      {/* reCAPTCHA Enterprise Script */}
+      <Script
+        src="https://www.google.com/recaptcha/enterprise.js?render=6Lf5hfssAAAAALoeYCRdOCnKD03oGec57DZaWiYs"
+        strategy="afterInteractive"
+      />
     </div>
+
   );
 }
 
