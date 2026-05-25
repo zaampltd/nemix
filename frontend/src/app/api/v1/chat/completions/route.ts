@@ -219,7 +219,7 @@ export async function POST(request: Request) {
     } else if (lowerMessage.includes('write python') || lowerMessage.includes('code for') || lowerMessage.includes('bootstrap')) {
       // Mock Code Generation response
       simulatedResponseContent = `# Proprietary Nvmix AI Engine output\n# Task: ${lastUserMessage}\n\ndef run():\n    print("Nvmix local task execution: success")\n    return True\n`;
-    } else if (/hello|hi|hey|greetings|howdy/i.test(lowerMessage)) {
+    } else if (/\b(hello|hi|hey|greetings|howdy)\b/i.test(lowerMessage)) {
       simulatedResponseContent = 'Hello, Board Member! I am Orchestrator-Alpha, your Nvmix Swarm CEO. All agents and systems are fully operational and standing by to execute your directives. What shall we build today?';
     } else if (/how are you|how r u|doing/i.test(lowerMessage)) {
       simulatedResponseContent = 'All Nvmix systems are operating at peak efficiency. Heartbeat ticks are scheduled and cognitive queues are fully functional. How can I assist you with our fintech operations today?';
