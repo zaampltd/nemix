@@ -58,7 +58,10 @@ function LoginForm() {
       const grecaptcha = (window as any).grecaptcha;
       let token = "mock-token-sandbox";
       
-      if (grecaptcha && grecaptcha.enterprise) {
+      const isLocalhost = typeof window !== 'undefined' && 
+        (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+
+      if (grecaptcha && grecaptcha.enterprise && !isLocalhost) {
         token = await new Promise<string>((resolve, reject) => {
           grecaptcha.enterprise.ready(async () => {
             try {
@@ -73,7 +76,7 @@ function LoginForm() {
           });
         });
       } else {
-        console.warn("reCAPTCHA Enterprise script not loaded. Bypassing with sandbox mock token.");
+        console.warn("reCAPTCHA Enterprise local development bypass active.");
       }
 
       await api.post('/auth/verify-recaptcha', { token, action });
