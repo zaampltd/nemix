@@ -54,10 +54,12 @@ function RegisterForm() {
       const grecaptcha = (window as any).grecaptcha;
       let token = "mock-token-sandbox";
       
-      const isLocalhost = typeof window !== 'undefined' && 
-        (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+      const isProduction = typeof window !== 'undefined' && 
+        (window.location.hostname === 'nvmix.com' || 
+         window.location.hostname.endsWith('.nvmix.com') ||
+         window.location.hostname.endsWith('vercel.app'));
 
-      if (grecaptcha && grecaptcha.enterprise && !isLocalhost) {
+      if (grecaptcha && grecaptcha.enterprise && isProduction) {
         token = await new Promise<string>((resolve, reject) => {
           grecaptcha.enterprise.ready(async () => {
             try {
@@ -72,7 +74,7 @@ function RegisterForm() {
           });
         });
       } else {
-        console.warn("reCAPTCHA Enterprise local development bypass active.");
+        console.warn("reCAPTCHA Enterprise local/sandbox bypass active.");
       }
 
       await api.post('/auth/verify-recaptcha', { token, action });
