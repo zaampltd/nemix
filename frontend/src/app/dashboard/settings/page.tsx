@@ -555,6 +555,8 @@ function APIKeysTab({ currentUser }: APIKeysTabProps) {
   const [newName, setNewName] = useState('');
   const [creating, setCreating] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
+  const [quickStartTab, setQuickStartTab] = useState<'bash' | 'cmd' | 'powershell' | 'gitbash'>('bash');
+  const [codeCopied, setCodeCopied] = useState(false);
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean;
     title: string;
@@ -779,16 +781,93 @@ function APIKeysTab({ currentUser }: APIKeysTabProps) {
         </div>
       </div>
 
-      <div style={cardStyle}>
-        <p className="text-sm font-bold mb-3" style={{ color: 'var(--md-on-surface)' }}>Programmatic Quick Start</p>
-        <pre className="p-4 rounded-xl text-[11px] font-mono overflow-x-auto select-all"
-          style={{ background: 'var(--md-surface-2)', border: '1px solid var(--md-outline)', color: 'var(--md-on-surface)' }}>
-{`curl -X POST https://api.nvmix.com/v1/inference \\
-  -H "Authorization: Bearer YOUR_API_KEY" \\
+      {(() => {
+        const currentOrigin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
+        const activeKeyVal = keys.length > 0 ? keys[keys.length - 1].key : 'nvx_sk_ep_YOUR_API_KEY';
+        
+        return (
+          <div style={cardStyle} className="space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-bold animate-pulse" style={{ color: 'var(--md-on-surface)' }}>Programmatic Quick Start</p>
+                <p className="text-[11px] mt-0.5" style={{ color: 'var(--md-on-surface-var)' }}>
+                  Quickly test authorization and inference gateways with copy-pasteable terminal commands.
+                </p>
+              </div>
+            </div>
+
+            {/* Interactive Switcher Tabs */}
+            <div className="flex flex-wrap gap-1.5 p-1 rounded-xl" style={{ background: 'var(--md-surface-2)', border: '1px solid var(--md-outline-var)' }}>
+              {[
+                { id: 'bash', label: '🐧 Linux / macOS (Bash)' },
+                { id: 'cmd', label: '🪟 Windows CMD' },
+                { id: 'powershell', label: '⚡ Windows PowerShell' },
+                { id: 'gitbash', label: '🌀 Git Bash / WSL' },
+              ].map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => setQuickStartTab(tab.id as any)}
+                  className="px-3.5 py-1.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer select-none"
+                  style={{
+                    background: quickStartTab === tab.id ? 'var(--md-primary-container)' : 'transparent',
+                    color: quickStartTab === tab.id ? 'var(--md-primary)' : 'var(--md-on-surface-var)',
+                    border: `1px solid ${quickStartTab === tab.id ? 'var(--md-outline)' : 'transparent'}`
+                  }}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Code Block */}
+            <div className="relative group">
+              <pre className="p-4 rounded-xl text-[11px] font-mono overflow-x-auto select-all leading-relaxed"
+                style={{ background: 'var(--md-surface-2)', border: '1px solid var(--md-outline)', color: 'var(--md-on-surface)' }}>
+                {quickStartTab === 'bash' && 
+`curl -X POST "${currentOrigin}/api/v1/chat/completions" \\
+  -H "Authorization: Bearer ${activeKeyVal}" \\
   -H "Content-Type: application/json" \\
-  -d '{"model": "ep_001", "input": "Hello world"}'`}
-        </pre>
-      </div>
+  -d '{"messages": [{"role": "user", "content": "Hello Nvmix"}]}'`}
+
+                {quickStartTab === 'cmd' && 
+`curl -X POST "${currentOrigin}/api/v1/chat/completions" ^
+  -H "Authorization: Bearer ${activeKeyVal}" ^
+  -H "Content-Type: application/json" ^
+  -d "{\\"messages\\": [{\\"role\\": \\"user\\", \\"content\\": \\"Hello Nvmix\\"}]}"`}
+
+                {quickStartTab === 'powershell' && 
+`curl -X POST "${currentOrigin}/api/v1/chat/completions" \`
+  -H "Authorization: Bearer ${activeKeyVal}" \`
+  -H "Content-Type: application/json" \`
+  -d '{"messages": [{"role": "user", "content": "Hello Nvmix"}]}'`}
+
+                {quickStartTab === 'gitbash' && 
+`curl -X POST "${currentOrigin}/api/v1/chat/completions" \\
+  -H "Authorization: Bearer ${activeKeyVal}" \\
+  -H "Content-Type: application/json" \\
+  -d '{"messages": [{"role": "user", "content": "Hello Nvmix"}]}'`}
+              </pre>
+
+              {/* Absolute Copy Button */}
+              <button
+                onClick={() => {
+                  const text = 
+                    quickStartTab === 'bash' || quickStartTab === 'gitbash' ? `curl -X POST "${currentOrigin}/api/v1/chat/completions" \\\n  -H "Authorization: Bearer ${activeKeyVal}" \\\n  -H "Content-Type: application/json" \\\n  -d '{"messages": [{"role": "user", "content": "Hello Nvmix"}]}'` :
+                    quickStartTab === 'cmd' ? `curl -X POST "${currentOrigin}/api/v1/chat/completions" ^\n  -H "Authorization: Bearer ${activeKeyVal}" ^\n  -H "Content-Type: application/json" ^\n  -d "{\\"messages\\": [{\\"role\\": \\"user\\", \\"content\\": \\"Hello Nvmix\\"}]}"` :
+                    `curl -X POST "${currentOrigin}/api/v1/chat/completions" \`\n  -H "Authorization: Bearer ${activeKeyVal}" \`\n  -H "Content-Type: application/json" \`\n  -d '{"messages": [{"role": "user", "content": "Hello Nvmix"}]}'`;
+                  navigator.clipboard.writeText(text);
+                  setCodeCopied(true);
+                  setTimeout(() => setCodeCopied(false), 2000);
+                }}
+                className="absolute top-3 right-3 p-2 rounded-lg bg-black/10 dark:bg-white/10 hover:bg-black/20 dark:hover:bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer border"
+                style={{ borderColor: 'var(--md-outline-var)', color: 'var(--md-on-surface)' }}
+              >
+                {codeCopied ? <CheckCircle2 className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
+              </button>
+            </div>
+          </div>
+        );
+      })()}
       
       <AnimatePresence>
         {confirmModal.isOpen && (
