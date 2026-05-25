@@ -43,7 +43,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const { messages, model, stream, temperature, max_tokens } = body;
+    const { messages, temperature, max_tokens } = body;
 
     if (!messages || !Array.isArray(messages)) {
       return NextResponse.json(
@@ -52,39 +52,158 @@ export async function POST(request: Request) {
       );
     }
 
-    // 3. Real Upstream AI Provider (OpenAI) Forwarding
-    const openAiKey = process.env.OPENAI_API_KEY;
-    if (openAiKey && openAiKey.trim().length > 0) {
-      try {
-        const response = await fetch('https://api.openai.com/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${openAiKey}`,
-          },
-          body: JSON.stringify({
-            model: 'gpt-4o-mini',
-            messages: messages,
-            temperature: temperature ?? 0.7,
-            max_tokens: max_tokens ?? 400,
-            stream: stream ?? false,
-          }),
-        });
+    // 3. Concurrent Multi-Model Master Engine Aggregator (NVIDIA NIM & DeepSeek)
+    const promises: Promise<{ provider: string; data: any }>[] = [];
 
-        if (response.ok) {
-          const data = await response.json();
-          return NextResponse.json(data, {
-            status: response.status,
-            headers: corsHeaders,
-          });
+    // Helper for fetch calls with timeout
+    const fetchWithTimeout = async (provider: string, url: string, headers: any, payload: any, timeoutMs = 8000) => {
+      const controller = new AbortController();
+      const id = setTimeout(() => controller.abort(), timeoutMs);
+      try {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(payload),
+          signal: controller.signal
+        });
+        clearTimeout(id);
+        if (!res.ok) {
+          throw new Error(`Status ${res.status}: ${await res.text()}`);
         }
-      } catch (upstreamError: any) {
-        // Fall back to simulated AI processing instead of failing
-        console.warn('Upstream OpenAI fetch failed, falling back to simulated engine:', upstreamError?.message);
+        const data = await res.json();
+        return { provider, data };
+      } catch (err: any) {
+        clearTimeout(id);
+        throw err;
+      }
+    };
+
+    // ─── NVIDIA NIM (meta/llama-3.1-70b-instruct or nvidia/llama-3.1-nemotron-70b-instruct) ───
+    if (process.env.NVIDIA_API_KEY && process.env.NVIDIA_API_KEY.trim().length > 0) {
+      promises.push(
+        fetchWithTimeout(
+          'NVIDIA NIM',
+          'https://integrate.api.nvidia.com/v1/chat/completions',
+          {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${process.env.NVIDIA_API_KEY}`
+          },
+          {
+            model: 'meta/llama-3.1-70b-instruct',
+            messages,
+            temperature: temperature ?? 0.7,
+            max_tokens: max_tokens ?? 1024,
+          }
+        )
+      );
+    }
+
+    // ─── DeepSeek via OpenRouter (deepseek/deepseek-chat or llama-3.1-70b-instruct:free) ───
+    if (process.env.OPENROUTER_API_KEY && process.env.OPENROUTER_API_KEY.trim().length > 0) {
+      promises.push(
+        fetchWithTimeout(
+          'DeepSeek (OpenRouter)',
+          'https://openrouter.ai/api/v1/chat/completions',
+          {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
+            'HTTP-Referer': 'https://nvmix.com',
+            'X-Title': 'Nvmix AI Swarm'
+          },
+          {
+            model: 'deepseek/deepseek-chat',
+            messages,
+            temperature: temperature ?? 0.7,
+            max_tokens: max_tokens ?? 1024,
+          }
+        )
+      );
+    }
+
+    // ─── Groq Backup ───
+    if (process.env.GROQ_API_KEY && process.env.GROQ_API_KEY.trim().length > 0) {
+      promises.push(
+        fetchWithTimeout(
+          'Groq',
+          'https://api.groq.com/openai/v1/chat/completions',
+          {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${process.env.GROQ_API_KEY}`
+          },
+          {
+            model: 'llama-3.1-70b-versatile',
+            messages,
+            temperature: temperature ?? 0.7,
+            max_tokens: max_tokens ?? 1024,
+          }
+        )
+      );
+    }
+
+    // ─── Mistral Backup ───
+    if (process.env.MISTRAL_API_KEY && process.env.MISTRAL_API_KEY.trim().length > 0) {
+      promises.push(
+        fetchWithTimeout(
+          'Mistral',
+          'https://api.mistral.ai/v1/chat/completions',
+          {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${process.env.MISTRAL_API_KEY}`
+          },
+          {
+            model: 'mistral-large-latest',
+            messages,
+            temperature: temperature ?? 0.7,
+            max_tokens: max_tokens ?? 1024,
+          }
+        )
+      );
+    }
+
+    // Race or fallback logic: Wait for the first successful provider to respond.
+    let successfulProvider = 'Simulated Fallback';
+    let responseData: any = null;
+
+    if (promises.length > 0) {
+      try {
+        const result = await Promise.any(promises);
+        successfulProvider = result.provider;
+        responseData = result.data;
+      } catch (aggregateError: any) {
+        console.warn('All master upstream AI providers failed or timed out. Falling back to simulated engine.');
       }
     }
 
-    // 4. Simulated AI Processing Fallback (No Third Parties / Offline Mode)
+    if (responseData && responseData.choices && responseData.choices[0]) {
+      const reply = responseData.choices[0].message.content;
+      return NextResponse.json({
+        id: responseData.id || `nvmix-chat-${Math.random().toString(36).substring(2, 11)}`,
+        object: 'chat.completion',
+        created: responseData.created || Math.floor(Date.now() / 1000),
+        model: 'nvmix-inference-v1',
+        provider: successfulProvider,
+        choices: [
+          {
+            index: 0,
+            message: {
+              role: 'assistant',
+              content: reply,
+            },
+            finish_reason: responseData.choices[0].finish_reason || 'stop',
+          },
+        ],
+        usage: responseData.usage || {
+          prompt_tokens: messages.length * 10,
+          completion_tokens: Math.ceil(reply.length / 4),
+          total_tokens: (messages.length * 10) + Math.ceil(reply.length / 4),
+        },
+      }, {
+        status: 200,
+        headers: corsHeaders,
+      });
+    }
+
+    // 4. Simulated AI Processing Fallback (Offline Mode / Third Party Failure)
     const lastUserMessage = messages[messages.length - 1]?.content || '';
     const lowerMessage = lastUserMessage.toLowerCase();
     let simulatedResponseContent = '';
