@@ -60,33 +60,12 @@ function LoginForm() {
       setSuccess(true);
       setTimeout(() => router.push('/dashboard'), 1000);
     } catch (err: any) {
-      console.warn("Firebase Auth failed, running local sandbox fallback:", err.code || err.message);
-
-      // Check if this matches a local sandbox account in localStorage
-      const localUsers = JSON.parse(localStorage.getItem('local_users') || '[]');
-      const match = localUsers.find((u: any) => u.email === email && u.password === password)
-        || localUsers.find((u: any) => u.email === email);
-
-      if (match || !err.status) {
-        // Offline / sandbox session fallback
-        const mockProfile = {
-          email,
-          full_name: match ? match.full_name : email.split('@')[0],
-          id: 'sandbox-id-' + Math.random().toString(36).substr(2, 9)
-        };
-        localStorage.setItem('token', `local-token-${email}`);
-        localStorage.setItem('current_user', JSON.stringify(mockProfile));
-        localStorage.removeItem('demo_user');
-
-        setSuccess(true);
-        setTimeout(() => router.push('/dashboard'), 1000);
-      } else {
-        const msg = err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password'
-          ? 'Incorrect email or password.'
-          : err.message || 'Authentication failed. Please try again.';
-        setError(msg);
-        setLoading(false);
-      }
+      console.error("Firebase Login failed:", err);
+      const msg = err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password'
+        ? 'Incorrect email or password.'
+        : err.message || 'Authentication failed. Please try again.';
+      setError(msg);
+      setLoading(false);
     }
   };
 
@@ -98,20 +77,9 @@ function LoginForm() {
       setSuccess(true);
       setTimeout(() => router.push('/dashboard'), 1000);
     } catch (err: any) {
-      console.warn("Firebase Google login failed, running sandbox fallback:", err);
-
-      // Sandbox fallback for Google sign-in
-      const mockProfile = {
-        email: 'google.developer@nvmix.com',
-        full_name: 'Google AI Developer',
-        id: 'sandbox-google-id'
-      };
-      localStorage.setItem('token', `local-token-google`);
-      localStorage.setItem('current_user', JSON.stringify(mockProfile));
-      localStorage.removeItem('demo_user');
-
-      setSuccess(true);
-      setTimeout(() => router.push('/dashboard'), 1000);
+      console.error("Firebase Google login failed:", err);
+      setError(err.message || 'Google authentication failed.');
+      setLoading(false);
     }
   };
 
@@ -123,19 +91,9 @@ function LoginForm() {
       setSuccess(true);
       setTimeout(() => router.push('/dashboard'), 1000);
     } catch (err: any) {
-      console.warn("Firebase GitHub login failed, running sandbox fallback:", err);
-
-      const mockProfile = {
-        email: 'github.developer@nvmix.com',
-        full_name: 'GitHub AI Developer',
-        id: 'sandbox-github-id'
-      };
-      localStorage.setItem('token', `local-token-github`);
-      localStorage.setItem('current_user', JSON.stringify(mockProfile));
-      localStorage.removeItem('demo_user');
-
-      setSuccess(true);
-      setTimeout(() => router.push('/dashboard'), 1000);
+      console.error("Firebase GitHub login failed:", err);
+      setError(err.message || 'GitHub authentication failed.');
+      setLoading(false);
     }
   };
 

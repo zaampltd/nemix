@@ -60,31 +60,12 @@ function RegisterForm() {
       setSuccess(true);
       setTimeout(() => router.push('/dashboard'), 1200);
     } catch (err: any) {
-      console.warn("Firebase SignUp failed, running local sandbox fallback:", err.code || err.message);
-
-      // Verify if email is already saved locally
-      const localUsers = JSON.parse(localStorage.getItem('local_users') || '[]');
-      if (localUsers.some((u: any) => u.email === email)) {
-        setError('An account with this email address already exists.');
-        setLoading(false);
-        return;
-      }
-
-      // Add to local sandbox array in localStorage
-      const newSandboxUser = { email, password, full_name: fullName };
-      localStorage.setItem('local_users', JSON.stringify([...localUsers, newSandboxUser]));
-
-      const mockProfile = {
-        email,
-        full_name: fullName,
-        id: 'sandbox-id-' + Math.random().toString(36).substr(2, 9)
-      };
-      localStorage.setItem('token', `local-token-${email}`);
-      localStorage.setItem('current_user', JSON.stringify(mockProfile));
-      localStorage.removeItem('demo_user');
-
-      setSuccess(true);
-      setTimeout(() => router.push('/dashboard'), 1200);
+      console.error("Firebase SignUp failed:", err);
+      const msg = err.code === 'auth/email-already-in-use'
+        ? 'An account with this email address already exists.'
+        : err.message || 'Registration failed. Please try again.';
+      setError(msg);
+      setLoading(false);
     }
   };
 
@@ -96,20 +77,9 @@ function RegisterForm() {
       setSuccess(true);
       setTimeout(() => router.push('/dashboard'), 1000);
     } catch (err: any) {
-      console.warn("Firebase Google signup failed, running sandbox fallback:", err);
-
-      // Sandbox fallback for Google sign-in
-      const mockProfile = {
-        email: 'google.developer@nvmix.com',
-        full_name: 'Google AI Developer',
-        id: 'sandbox-google-id'
-      };
-      localStorage.setItem('token', `local-token-google`);
-      localStorage.setItem('current_user', JSON.stringify(mockProfile));
-      localStorage.removeItem('demo_user');
-
-      setSuccess(true);
-      setTimeout(() => router.push('/dashboard'), 1000);
+      console.error("Firebase Google signup failed:", err);
+      setError(err.message || 'Google signup failed.');
+      setLoading(false);
     }
   };
 
@@ -121,19 +91,9 @@ function RegisterForm() {
       setSuccess(true);
       setTimeout(() => router.push('/dashboard'), 1000);
     } catch (err: any) {
-      console.warn("Firebase GitHub signup failed, running sandbox fallback:", err);
-
-      const mockProfile = {
-        email: 'github.developer@nvmix.com',
-        full_name: 'GitHub AI Developer',
-        id: 'sandbox-github-id'
-      };
-      localStorage.setItem('token', `local-token-github`);
-      localStorage.setItem('current_user', JSON.stringify(mockProfile));
-      localStorage.removeItem('demo_user');
-
-      setSuccess(true);
-      setTimeout(() => router.push('/dashboard'), 1000);
+      console.error("Firebase GitHub signup failed:", err);
+      setError(err.message || 'GitHub signup failed.');
+      setLoading(false);
     }
   };
 
