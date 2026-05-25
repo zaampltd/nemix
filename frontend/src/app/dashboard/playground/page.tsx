@@ -229,8 +229,17 @@ export default function PlaygroundPage() {
       
     } catch (error: any) {
       console.error("Chat Error:", error);
-      // Let's add a smart and helpful fallback when API keys are missing!
-      if (error.message.includes("No active API keys") || error.message.includes("Failed to fetch") || error.message.includes("Failed to get response")) {
+      // Let's add a smart and helpful fallback when API keys are missing or database is offline!
+      const isMissingKeysOrOffline = 
+        error.message.includes("No active API keys") || 
+        error.message.includes("Failed to fetch") || 
+        error.message.includes("Failed to get response") ||
+        error.message.includes("Failed to get document") ||
+        error.message.includes("offline") ||
+        error.message.includes("Internal Server Error") ||
+        error.message.includes("500");
+
+      if (isMissingKeysOrOffline) {
         setTimeout(() => {
           setMessages(prev => [...prev, { 
             role: "ai", 

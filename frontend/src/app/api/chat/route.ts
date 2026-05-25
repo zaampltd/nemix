@@ -8,9 +8,14 @@ export async function POST(req: Request) {
 
     // 1. Fetch saved keys from Firebase using STRICT string matching
     const checkKey = async (providerName: string) => {
-      // In production, 'test-user-123' will be dynamically replaced by authenticated user ID
-      const snap = await getDoc(doc(db, "UserAPIKeys", `test-user-123_${providerName}`));
-      return snap.exists() ? snap.data().key : null;
+      try {
+        // In production, 'test-user-123' will be dynamically replaced by authenticated user ID
+        const snap = await getDoc(doc(db, "UserAPIKeys", `test-user-123_${providerName}`));
+        return snap.exists() ? snap.data().key : null;
+      } catch (err) {
+        console.warn(`Firestore offline or error fetching key for ${providerName}:`, err);
+        return null;
+      }
     };
 
     const nvidiaKey = await checkKey("Nvidia");
