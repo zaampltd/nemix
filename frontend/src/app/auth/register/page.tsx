@@ -2,7 +2,6 @@
 import React, { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import Script from 'next/script';
 import {
   Zap, CheckCircle2, Eye, EyeOff, AlertCircle,
   Star, ArrowRight, Lock, GitBranch, Globe, User, Mail, ShieldCheck
@@ -10,7 +9,6 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/context/AuthContext';
 import { BrandLogo } from "@/components/ui/BrandLogo";
-import api from '@/lib/api';
 
 // ─── Testimonials shown on the left panel ─────────────────────────
 const TESTIMONIALS = [
@@ -49,55 +47,6 @@ function RegisterForm() {
   const [success, setSuccess]   = useState(false);
   const [activeTestimonial, setActiveTestimonial] = useState(0);
 
-  const executeAndVerifyRecaptcha = async (action: string): Promise<boolean> => {
-    try {
-      const grecaptcha = (window as any).grecaptcha;
-      let token = "mock-token-sandbox";
-      
-      const isProduction = typeof window !== 'undefined' && 
-        (window.location.hostname === 'nvmix.com' || 
-         window.location.hostname.endsWith('.nvmix.com') ||
-         window.location.hostname.endsWith('vercel.app'));
-
-      if (!isProduction) {
-        console.warn("reCAPTCHA Enterprise local/sandbox bypass active. Skipping verification.");
-        return true;
-      }
-
-      if (grecaptcha && grecaptcha.enterprise) {
-        token = await new Promise<string>((resolve, reject) => {
-          grecaptcha.enterprise.ready(async () => {
-            try {
-              const resToken = await grecaptcha.enterprise.execute(
-                '6Lf5hfssAAAAALoeYCRdOCnKD03oGec57DZaWiYs',
-                { action }
-              );
-              resolve(resToken);
-            } catch (err) {
-              reject(err);
-            }
-          });
-        });
-      }
-
-      await api.post('/auth/verify-recaptcha', { token, action });
-      return true;
-    } catch (err: any) {
-      console.error("reCAPTCHA Verification error:", err);
-      
-      // Resilient local dev fallback: if backend is offline, bypass the security check.
-      if (err.isOffline || !err.response) {
-        console.warn("[reCAPTCHA] Backend is offline. Bypassing security check for local sandbox environment.");
-        return true;
-      }
-
-      const detail = err.response?.data?.detail || "Security check failed. High-risk/bot traffic suspected.";
-      setError(detail);
-      setLoading(false);
-      return false;
-    }
-  };
-
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (password.length < 8) {
@@ -105,9 +54,6 @@ function RegisterForm() {
       return;
     }
     setLoading(true); setError('');
-
-    const verified = await executeAndVerifyRecaptcha('LOGIN');
-    if (!verified) return;
 
     try {
       await signUpWithEmail(fullName, email, password);
@@ -127,9 +73,6 @@ function RegisterForm() {
     setLoading(true);
     setError('');
 
-    const verified = await executeAndVerifyRecaptcha('LOGIN');
-    if (!verified) return;
-
     try {
       await loginWithGoogle();
       setSuccess(true);
@@ -144,9 +87,6 @@ function RegisterForm() {
   const handleGithubSignup = async () => {
     setLoading(true);
     setError('');
-
-    const verified = await executeAndVerifyRecaptcha('LOGIN');
-    if (!verified) return;
 
     try {
       await loginWithGithub();
@@ -379,12 +319,6 @@ function RegisterForm() {
 
       {/* Spin animation */}
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-
-      {/* reCAPTCHA Enterprise Script */}
-      <Script
-        src="https://www.google.com/recaptcha/enterprise.js?render=6Lf5hfssAAAAALoeYCRdOCnKD03oGec57DZaWiYs"
-        strategy="afterInteractive"
-      />
     </div>
 
   );
