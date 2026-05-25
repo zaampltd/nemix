@@ -34,7 +34,7 @@ export default function DashboardMockup() {
         </div>
         {/* Address Bar */}
         <div className="flex-1 max-w-[280px] mx-auto h-6 rounded bg-gray-200/50 dark:bg-white/[0.04] text-[10px] text-gray-500 dark:text-gray-400 font-medium flex items-center justify-center px-4 tracking-wide font-mono">
-          nemix.ai/dashboard
+          nvmix.com/dashboard
         </div>
         {/* Spacer for alignment */}
         <div className="w-12 shrink-0" />

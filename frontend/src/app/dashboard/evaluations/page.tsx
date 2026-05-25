@@ -72,7 +72,7 @@ export default function EvaluationsPage() {
   // Dynamic models integration load
   useEffect(() => {
     try {
-      const localJobs = JSON.parse(localStorage.getItem("nemix_training_jobs") || "[]");
+      const localJobs = JSON.parse(localStorage.getItem("nvmix_training_jobs") || "[]");
       const completedNames = localJobs.filter((j: any) => j.status === "completed").map((j: any) => `custom-${j.name}`);
       
       const localModels = JSON.parse(localStorage.getItem("local_models") || "[]");

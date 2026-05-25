@@ -42,7 +42,7 @@ const INITIAL_WEBHOOKS: WebhookItem[] = [
   },
   {
     id: "wh_2",
-    url: "https://api.myapp.com/nemix/webhook",
+    url: "https://api.myapp.com/nvmix/webhook",
     events: ["deployment.created", "inference.error"],
     status: "active",
     lastTriggered: "1 hour ago",

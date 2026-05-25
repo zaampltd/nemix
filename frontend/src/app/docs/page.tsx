@@ -89,19 +89,19 @@ const DOCS: Record<string, React.ReactNode> = {
       </div>
 
       <h2>Step 1 — Create an account</h2>
-      <p>Sign up at <a href="/auth/register">nemix.ai/register</a>. You'll be taken straight to your dashboard.</p>
+      <p>Sign up at <a href="/auth/register">nvmix.com/register</a>. You'll be taken straight to your dashboard.</p>
 
       <h2>Step 2 — Upload a dataset</h2>
-      <p>Navigate to <strong>Datasets → Upload</strong> and drop your CSV or JSON file. Nemix auto-detects schema and validates format.</p>
-      <CodeBlock lang="bash" code={`# Or use the CLI:\nnpx nemix-cli datasets upload ./my-dataset.csv --name "My Dataset"`} />
+      <p>Navigate to <strong>Datasets → Upload</strong> and drop your CSV or JSON file. Nvmix auto-detects schema and validates format.</p>
+      <CodeBlock lang="bash" code={`# Or use the CLI:\nnpx nvmix-cli datasets upload ./my-dataset.csv --name "My Dataset"`} />
 
       <h2>Step 3 — Start training</h2>
       <p>Go to <strong>Training → New Job</strong>, select your dataset and base model, then click <strong>Start Training</strong>.</p>
-      <CodeBlock lang="python" code={`import nemix\n\nclient = nemix.Client(api_key="nmx_live_sk_...")\n\njob = client.training.create(\n    base_model="llama3-8b",\n    dataset_id="ds_abc123",\n    method="lora",\n    epochs=3,\n)\nprint(job.id)  # trn_xyz789`} />
+      <CodeBlock lang="python" code={`import nvmix\n\nclient = nvmix.Client(api_key="nvx_live_sk_...")\n\njob = client.training.create(\n    base_model="llama3-8b",\n    dataset_id="ds_abc123",\n    method="lora",\n    epochs=3,\n)\nprint(job.id)  # trn_xyz789`} />
 
       <h2>Step 4 — Deploy your model</h2>
       <p>Once training completes, click <strong>Deploy</strong>. Your endpoint is live in ~60 seconds.</p>
-      <CodeBlock lang="bash" code={`curl -X POST https://api.nemix.ai/v1/ep_001/infer \\\n  -H "Authorization: Bearer nmx_live_sk_..." \\\n  -H "Content-Type: application/json" \\\n  -d '{"input": "Classify this review: Great product!"}'`} />
+      <CodeBlock lang="bash" code={`curl -X POST https://api.nvmix.com/v1/ep_001/infer \\\n  -H "Authorization: Bearer nvx_live_sk_..." \\\n  -H "Content-Type: application/json" \\\n  -d '{"input": "Classify this review: Great product!"}'`} />
 
       <div className="callout success">
         <CheckCircle2 className="callout-icon" style={{ color: "var(--md-success)" }} />
@@ -128,9 +128,9 @@ const DOCS: Record<string, React.ReactNode> = {
 
       <h2>Using your API key</h2>
       <p>Pass your key in the <code>Authorization</code> header:</p>
-      <CodeBlock lang="bash" code={`curl https://api.nemix.ai/v1/models \\\n  -H "Authorization: Bearer nmx_live_sk_YOUR_KEY"`} />
+      <CodeBlock lang="bash" code={`curl https://api.nvmix.com/v1/models \\\n  -H "Authorization: Bearer nvx_live_sk_YOUR_KEY"`} />
 
-      <CodeBlock lang="python" code={`import nemix\nclient = nemix.Client(api_key="nmx_live_sk_...")\nmodels = client.models.list()`} />
+      <CodeBlock lang="python" code={`import nvmix\nclient = nvmix.Client(api_key="nvx_live_sk_...")\nmodels = client.models.list()`} />
 
       <div className="callout warning">
         <AlertCircle className="callout-icon" style={{ color: "var(--md-warning)" }} />
@@ -138,7 +138,7 @@ const DOCS: Record<string, React.ReactNode> = {
       </div>
 
       <h2>Environment variables</h2>
-      <CodeBlock lang="bash" code={`# .env\nNEMIX_API_KEY=nmx_live_sk_YOUR_KEY\n\n# Python\nimport os, nemix\nclient = nemix.Client(api_key=os.environ["NEMIX_API_KEY"])`} />
+      <CodeBlock lang="bash" code={`# .env\nNVMIX_API_KEY=nvx_live_sk_YOUR_KEY\n\n# Python\nimport os, nvmix\nclient = nvmix.Client(api_key=os.environ["NVMIX_API_KEY"])`} />
     </div>
   ),
 
@@ -198,10 +198,10 @@ const DOCS: Record<string, React.ReactNode> = {
       </table>
 
       <h2>Request</h2>
-      <CodeBlock lang="bash" code={`curl -X POST https://api.nemix.ai/v1/ep_001/infer \\\n  -H "Authorization: Bearer nmx_live_sk_..." \\\n  -H "Content-Type: application/json" \\\n  -d '{\n    "input": "Summarize: Nemix is an AI platform...",\n    "max_tokens": 128,\n    "temperature": 0.5\n  }'`} />
+      <CodeBlock lang="bash" code={`curl -X POST https://api.nvmix.com/v1/ep_001/infer \\\n  -H "Authorization: Bearer nvx_live_sk_..." \\\n  -H "Content-Type: application/json" \\\n  -d '{\n    "input": "Summarize: Nvmix is an AI platform...",\n    "max_tokens": 128,\n    "temperature": 0.5\n  }'`} />
 
       <h2>Response</h2>
-      <CodeBlock lang="json" code={`{\n  "id": "inf_a1b2c3",\n  "endpoint_id": "ep_001",\n  "output": "Nemix is a platform for training and deploying AI models.",\n  "usage": {\n    "prompt_tokens": 12,\n    "completion_tokens": 11,\n    "total_tokens": 23\n  },\n  "latency_ms": 142,\n  "created_at": "2026-05-21T08:00:00Z"\n}`} />
+      <CodeBlock lang="json" code={`{\n  "id": "inf_a1b2c3",\n  "endpoint_id": "ep_001",\n  "output": "Nvmix is a platform for training and deploying AI models.",\n  "usage": {\n    "prompt_tokens": 12,\n    "completion_tokens": 11,\n    "total_tokens": 23\n  },\n  "latency_ms": 142,\n  "created_at": "2026-05-21T08:00:00Z"\n}`} />
 
       <h2>Streaming</h2>
       <CodeBlock lang="python" code={`stream = client.inference.stream(\n    endpoint_id="ep_001",\n    input="Tell me about LoRA",\n)\nfor chunk in stream:\n    print(chunk.delta, end="", flush=True)`} />
@@ -218,7 +218,7 @@ const DOCS: Record<string, React.ReactNode> = {
       <ol className="doc-list">
         <li>Select a trained model checkpoint</li>
         <li>Choose a deployment region (us-east-1, eu-west-1, ap-southeast-1)</li>
-        <li>Click Deploy — Nemix containerizes and deploys automatically</li>
+        <li>Click Deploy — Nvmix containerizes and deploys automatically</li>
         <li>Receive an HTTPS endpoint URL immediately</li>
       </ol>
 
@@ -254,13 +254,13 @@ const DOCS: Record<string, React.ReactNode> = {
     <div>
       <div className="doc-badge">Getting Started</div>
       <h1>Installation</h1>
-      <p className="lead">Install the Nemix SDK and CLI for Python, Node.js, or use the REST API directly.</p>
+      <p className="lead">Install the Nvmix SDK and CLI for Python, Node.js, or use the REST API directly.</p>
       <h2>Python SDK</h2>
-      <CodeBlock lang="bash" code={`pip install nemix\n\n# Verify\npython -c "import nemix; print(nemix.__version__)"`} />
+      <CodeBlock lang="bash" code={`pip install nvmix\n\n# Verify\npython -c "import nvmix; print(nvmix.__version__)"`} />
       <h2>Node.js SDK</h2>
-      <CodeBlock lang="bash" code={`npm install @nemix/sdk`} />
+      <CodeBlock lang="bash" code={`npm install @nvmix/sdk`} />
       <h2>CLI</h2>
-      <CodeBlock lang="bash" code={`npm install -g nemix-cli\nnemix login\nnemix whoami`} />
+      <CodeBlock lang="bash" code={`npm install -g nvmix-cli\nnvmix login\nnvmix whoami`} />
       <h2>Requirements</h2>
       <table className="doc-table">
         <thead><tr><th>Language</th><th>Min version</th></tr></thead>
@@ -280,7 +280,7 @@ const DOCS: Record<string, React.ReactNode> = {
       <h2>1. Prepare your dataset</h2>
       <CodeBlock lang="json" code={`{"text": "This is amazing!", "label": "positive"}\n{"text": "Worst purchase ever.", "label": "negative"}`} />
       <h2>2. Upload & train</h2>
-      <CodeBlock lang="python" code={`import nemix\nclient = nemix.Client(api_key="nmx_live_sk_...")\n\ndataset = client.datasets.upload(file="./data.jsonl", name="Sentiment v1")\njob = client.training.create(\n    base_model="distilbert-base-uncased",\n    dataset_id=dataset.id,\n    method="lora",\n    config={"epochs": 3, "learning_rate": 2e-4}\n)\njob.wait()\nprint(f"Accuracy: {job.metrics['accuracy']:.1%}")`} />
+      <CodeBlock lang="python" code={`import nvmix\nclient = nvmix.Client(api_key="nvx_live_sk_...")\n\ndataset = client.datasets.upload(file="./data.jsonl", name="Sentiment v1")\njob = client.training.create(\n    base_model="distilbert-base-uncased",\n    dataset_id=dataset.id,\n    method="lora",\n    config={"epochs": 3, "learning_rate": 2e-4}\n)\njob.wait()\nprint(f"Accuracy: {job.metrics['accuracy']:.1%}")`} />
       <h2>3. Deploy & test</h2>
       <CodeBlock lang="python" code={`endpoint = client.deployments.create(model_id=job.output_model_id)\nresult = endpoint.infer(input="I love this!")\nprint(result.output)  # positive`} />
       <div className="callout success">
@@ -296,11 +296,11 @@ const DOCS: Record<string, React.ReactNode> = {
       <h1>Uploading Datasets</h1>
       <p className="lead">Upload via dashboard, CLI, or API. Max file size: 5 GB.</p>
       <h2>CLI</h2>
-      <CodeBlock lang="bash" code={`nemix datasets upload ./data.csv --name "Customer Reviews"`} />
+      <CodeBlock lang="bash" code={`nvmix datasets upload ./data.csv --name "Customer Reviews"`} />
       <h2>Python SDK</h2>
       <CodeBlock lang="python" code={`dataset = client.datasets.upload(\n    file="./data.jsonl",\n    name="Customer Reviews",\n    task_type="classification",\n)`} />
       <h2>REST API</h2>
-      <CodeBlock lang="bash" code={`curl -X POST https://api.nemix.ai/v1/datasets \\\n  -H "Authorization: Bearer nmx_live_sk_..." \\\n  -F "file=@./data.csv" \\\n  -F "name=Customer Reviews"`} />
+      <CodeBlock lang="bash" code={`curl -X POST https://api.nvmix.com/v1/datasets \\\n  -H "Authorization: Bearer nvx_live_sk_..." \\\n  -F "file=@./data.csv" \\\n  -F "name=Customer Reviews"`} />
     </div>
   ),
 
@@ -337,7 +337,7 @@ const DOCS: Record<string, React.ReactNode> = {
     <div>
       <div className="doc-badge">Datasets</div>
       <h1>Preprocessing & Splits</h1>
-      <p className="lead">Nemix auto-cleans and splits your data before training.</p>
+      <p className="lead">Nvmix auto-cleans and splits your data before training.</p>
       <h2>Auto-preprocessing includes</h2>
       <ul className="doc-list">
         <li>Duplicate row removal</li>
@@ -354,7 +354,7 @@ const DOCS: Record<string, React.ReactNode> = {
     <div>
       <div className="doc-badge">Training</div>
       <h1>Training Overview</h1>
-      <p className="lead">Nemix supports LoRA, QLoRA, and full fine-tuning across 20+ base models.</p>
+      <p className="lead">Nvmix supports LoRA, QLoRA, and full fine-tuning across 20+ base models.</p>
       <table className="doc-table">
         <thead><tr><th>Method</th><th>GPU VRAM</th><th>Speed</th><th>Quality</th></tr></thead>
         <tbody>
@@ -416,10 +416,10 @@ const DOCS: Record<string, React.ReactNode> = {
     <div>
       <div className="doc-badge">Training</div>
       <h1>Checkpoints</h1>
-      <p className="lead">Nemix saves model checkpoints at every epoch and on the best validation score.</p>
+      <p className="lead">Nvmix saves model checkpoints at every epoch and on the best validation score.</p>
       <CodeBlock lang="python" code={`checkpoints = client.training.checkpoints("trn_xyz789")\nfor cp in checkpoints:\n    print(f"Epoch {cp.epoch}: val_loss={cp.val_loss:.4f}")`} />
       <CodeBlock lang="python" code={`# Deploy a specific checkpoint\nendpoint = client.deployments.create(checkpoint_id="ckpt_epoch2_xyz789")`} />
-      <CodeBlock lang="bash" code={`# Download a checkpoint as HuggingFace model\nnemix checkpoints download ckpt_epoch2_xyz789 --output ./my_model`} />
+      <CodeBlock lang="bash" code={`# Download a checkpoint as HuggingFace model\nnvmix checkpoints download ckpt_epoch2_xyz789 --output ./my_model`} />
     </div>
   ),
 
@@ -429,7 +429,7 @@ const DOCS: Record<string, React.ReactNode> = {
       <h1>Endpoints</h1>
       <p className="lead">Each deployment creates a unique HTTPS endpoint. Call it from any language.</p>
       <CodeBlock lang="python" code={`endpoint = client.deployments.create(\n    model_id="mdl_abc123",\n    name="sentiment-prod",\n    region="us-east-1",\n)\nprint(endpoint.url)`} />
-      <CodeBlock lang="bash" code={`curl -X POST https://api.nemix.ai/v1/ep_001/infer \\\n  -H "Authorization: Bearer nmx_live_sk_..." \\\n  -d '{"input": "I love this product!"}'`} />
+      <CodeBlock lang="bash" code={`curl -X POST https://api.nvmix.com/v1/ep_001/infer \\\n  -H "Authorization: Bearer nvx_live_sk_..." \\\n  -d '{"input": "I love this product!"}'`} />
       <CodeBlock lang="json" code={`{"id": "inf_a1b2c3", "output": "positive", "confidence": 0.97, "latency_ms": 45}`} />
     </div>
   ),
@@ -456,7 +456,7 @@ const DOCS: Record<string, React.ReactNode> = {
       <h1>Rollbacks</h1>
       <p className="lead">Instantly roll back to any previous version with zero downtime.</p>
       <CodeBlock lang="python" code={`history = client.deployments.history("ep_001")\nclient.deployments.rollback("ep_001", version=3)`} />
-      <CodeBlock lang="bash" code={`nemix deployments rollback ep_001 --version 3`} />
+      <CodeBlock lang="bash" code={`nvmix deployments rollback ep_001 --version 3`} />
       <div className="callout info">
         <Info className="callout-icon" style={{ color: "var(--md-primary)" }} />
         <p>Rollbacks complete in &lt;10 seconds using blue-green deployment.</p>
@@ -468,14 +468,14 @@ const DOCS: Record<string, React.ReactNode> = {
     <div>
       <div className="doc-badge">API Reference</div>
       <h1>API Authentication</h1>
-      <p className="lead">All requests to <code>api.nemix.ai</code> require a valid Bearer token.</p>
+      <p className="lead">All requests to <code>api.nvmix.com</code> require a valid Bearer token.</p>
       <h2>Base URL</h2>
-      <CodeBlock lang="bash" code={`https://api.nemix.ai/v1`} />
+      <CodeBlock lang="bash" code={`https://api.nvmix.com/v1`} />
       <h2>Request headers</h2>
       <table className="doc-table">
         <thead><tr><th>Header</th><th>Required</th><th>Value</th></tr></thead>
         <tbody>
-          <tr><td><code>Authorization</code></td><td>✅</td><td><code>Bearer nmx_live_sk_...</code></td></tr>
+          <tr><td><code>Authorization</code></td><td>✅</td><td><code>Bearer nvx_live_sk_...</code></td></tr>
           <tr><td><code>Content-Type</code></td><td>POST/PATCH</td><td><code>application/json</code></td></tr>
         </tbody>
       </table>
@@ -496,7 +496,7 @@ const DOCS: Record<string, React.ReactNode> = {
       <div className="doc-badge">API Reference</div>
       <h1>Training Jobs API</h1>
       <h2>POST /v1/training/jobs</h2>
-      <CodeBlock lang="bash" code={`curl -X POST https://api.nemix.ai/v1/training/jobs \\\n  -H "Authorization: Bearer nmx_live_sk_..." \\\n  -d '{"base_model": "llama3-8b", "dataset_id": "ds_abc123", "method": "lora", "config": {"epochs": 3}}'`} />
+      <CodeBlock lang="bash" code={`curl -X POST https://api.nvmix.com/v1/training/jobs \\\n  -H "Authorization: Bearer nvx_live_sk_..." \\\n  -d '{"base_model": "llama3-8b", "dataset_id": "ds_abc123", "method": "lora", "config": {"epochs": 3}}'`} />
       <h2>GET /v1/training/jobs/{`{job_id}`}</h2>
       <CodeBlock lang="json" code={`{\n  "id": "trn_xyz789",\n  "status": "training",\n  "progress": 45.2,\n  "metrics": {"train_loss": 0.83, "val_loss": 0.91, "accuracy": 0.847}\n}`} />
     </div>
@@ -507,9 +507,9 @@ const DOCS: Record<string, React.ReactNode> = {
       <div className="doc-badge">API Reference</div>
       <h1>Datasets API</h1>
       <h2>GET /v1/datasets</h2>
-      <CodeBlock lang="bash" code={`curl https://api.nemix.ai/v1/datasets -H "Authorization: Bearer nmx_live_sk_..."`} />
+      <CodeBlock lang="bash" code={`curl https://api.nvmix.com/v1/datasets -H "Authorization: Bearer nvx_live_sk_..."`} />
       <h2>POST /v1/datasets</h2>
-      <CodeBlock lang="bash" code={`curl -X POST https://api.nemix.ai/v1/datasets \\\n  -H "Authorization: Bearer nmx_live_sk_..." \\\n  -F "file=@./data.jsonl" -F "name=My Dataset"`} />
+      <CodeBlock lang="bash" code={`curl -X POST https://api.nvmix.com/v1/datasets \\\n  -H "Authorization: Bearer nvx_live_sk_..." \\\n  -F "file=@./data.jsonl" -F "name=My Dataset"`} />
       <h2>Response</h2>
       <CodeBlock lang="json" code={`{"id": "ds_abc123", "name": "My Dataset", "num_rows": 12500, "created_at": "2026-05-21T08:00:00Z"}`} />
     </div>
@@ -530,7 +530,7 @@ const DOCS: Record<string, React.ReactNode> = {
           <tr><td><code>inference.error</code></td><td>Error rate threshold</td></tr>
         </tbody>
       </table>
-      <CodeBlock lang="bash" code={`curl -X POST https://api.nemix.ai/v1/webhooks \\\n  -H "Authorization: Bearer nmx_live_sk_..." \\\n  -d '{"url": "https://your.app/webhook", "events": ["training.completed"], "secret": "your_secret"}'`} />
+      <CodeBlock lang="bash" code={`curl -X POST https://api.nvmix.com/v1/webhooks \\\n  -H "Authorization: Bearer nvx_live_sk_..." \\\n  -d '{"url": "https://your.app/webhook", "events": ["training.completed"], "secret": "your_secret"}'`} />
     </div>
   ),
 
@@ -541,9 +541,9 @@ const DOCS: Record<string, React.ReactNode> = {
       <table className="doc-table">
         <thead><tr><th>Prefix</th><th>Scope</th><th>Use</th></tr></thead>
         <tbody>
-          <tr><td><code>nmx_live_sk_</code></td><td>Full access</td><td>Server-side only</td></tr>
-          <tr><td><code>nmx_live_pk_</code></td><td>Read only</td><td>Client-side analytics</td></tr>
-          <tr><td><code>nmx_test_sk_</code></td><td>Test mode</td><td>Development & CI</td></tr>
+          <tr><td><code>nvx_live_sk_</code></td><td>Full access</td><td>Server-side only</td></tr>
+          <tr><td><code>nvx_live_pk_</code></td><td>Read only</td><td>Client-side analytics</td></tr>
+          <tr><td><code>nvx_test_sk_</code></td><td>Test mode</td><td>Development & CI</td></tr>
         </tbody>
       </table>
       <ul className="doc-list">
@@ -682,7 +682,7 @@ export default function DocsPage() {
         <div style={{ maxWidth: "1400px", margin: "0 auto", padding: "0 24px", height: "56px", display: "flex", alignItems: "center", gap: "16px" }}>
           <Link href="/" style={{ display: "flex", alignItems: "center", gap: "7px", textDecoration: "none", flexShrink: 0 }}>
             <BrandLogo size={22} />
-            <span className="brand-logotype-adaptive" style={{ fontSize: "17px" }}>Nemix</span>
+            <span className="brand-logotype-adaptive" style={{ fontSize: "17px" }}>Nvmix</span>
           </Link>
           <span style={{ color: "var(--md-outline)", fontSize: "18px" }}>/</span>
           <span style={{ fontSize: "14px", fontWeight: 600, color: "var(--md-on-surface-var)" }}>Docs</span>
@@ -730,7 +730,7 @@ export default function DocsPage() {
 
           {/* Links */}
           <div style={{ padding: "20px 20px 0", borderTop: "1px solid var(--md-outline-var)", marginTop: "12px" }}>
-            {[["API Reference", "https://api.nemix.ai"], ["GitHub", "https://github.com"], ["Discord", "https://discord.gg"], ["Status", "https://status.nemix.ai"]].map(([l, h]) => (
+            {[["API Reference", "https://api.nvmix.com"], ["GitHub", "https://github.com"], ["Discord", "https://discord.gg"], ["Status", "https://status.nvmix.com"]].map(([l, h]) => (
               <a key={l} href={h} style={{ display: "flex", alignItems: "center", gap: "6px", padding: "6px 0", fontSize: "13px", color: "var(--md-on-surface-var)", textDecoration: "none" }}>
                 <ExternalLink style={{ width: "12px", height: "12px" }} /> {l}
               </a>

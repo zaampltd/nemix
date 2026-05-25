@@ -31,9 +31,9 @@ const INITIAL: Notification[] = [
   { id: 'n5', type: 'info', title: 'New Team Member', body: 'mike@startup.com accepted your invitation and joined as Developer.', time: '5 hr ago', read: true, category: 'Team', icon: Shield },
   { id: 'n6', type: 'success', title: 'Webhook Delivered', body: '238 webhook events delivered to your Slack endpoint with 100% success rate.', time: '6 hr ago', read: true, category: 'Webhooks', icon: Zap },
   { id: 'n7', type: 'error', title: 'Training Failed', body: 'gpt2-text-gen training stopped. OOM error on epoch 3 — try reducing batch size.', time: 'Yesterday', read: true, category: 'Training', icon: Cpu, action: 'View Logs' },
-  { id: 'n8', type: 'info', title: 'Model Deployed', body: 'llama3-sentiment-v2 is live at api.nemix.ai/v1/ep_001/infer.', time: 'Yesterday', read: true, category: 'Deployments', icon: Rocket, action: 'Open Endpoint' },
+  { id: 'n8', type: 'info', title: 'Model Deployed', body: 'llama3-sentiment-v2 is live at api.nvmix.com/v1/ep_001/infer.', time: 'Yesterday', read: true, category: 'Deployments', icon: Rocket, action: 'Open Endpoint' },
   { id: 'n9', type: 'success', title: 'Payment Successful', body: 'Invoice #INV-0042 of $49.00 paid. Your Pro plan renews June 1.', time: '2 days ago', read: true, category: 'Billing', icon: CreditCard },
-  { id: 'n10', type: 'info', title: 'Nemix v2.4 Released', body: 'New: Config Builder improvements, Pipelines v2, and 40% faster inference.', time: '3 days ago', read: true, category: 'System', icon: Info },
+  { id: 'n10', type: 'info', title: 'Nvmix v2.4 Released', body: 'New: Config Builder improvements, Pipelines v2, and 40% faster inference.', time: '3 days ago', read: true, category: 'System', icon: Info },
 ];
 
 const CATEGORIES = ['All', 'Training', 'Deployments', 'Billing', 'Datasets', 'Team', 'Webhooks', 'System'];

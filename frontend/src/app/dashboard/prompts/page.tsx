@@ -39,7 +39,7 @@ const DEFAULT_PROMPTS: Prompt[] = [
     createdAt: "2026-05-15", updatedAt: "2026-05-16" },
 ];
 
-const STORAGE_KEY = "nemix-prompts";
+const STORAGE_KEY = "nvmix-prompts";
 
 function loadPrompts(): Prompt[] {
   if (typeof window === "undefined") return DEFAULT_PROMPTS;
@@ -309,7 +309,7 @@ export default function PromptsPage() {
             }}
           >
             <Sparkles className="w-3.5 h-3.5 text-amber-500 animate-pulse" />
-            Nemix Premium Hub ({PREMIUM_PROMPT_TEMPLATES.length}+)
+            Nvmix Premium Hub ({PREMIUM_PROMPT_TEMPLATES.length}+)
           </button>
         </div>
 
@@ -513,7 +513,7 @@ export default function PromptsPage() {
               <BookOpen className="w-10 h-10 mx-auto mb-3" style={{ color: "var(--md-outline)" }} />
               <p className="text-sm font-semibold mb-1" style={{ color: "var(--md-on-surface)" }}>No saved prompts found</p>
               <p className="text-xs mb-4" style={{ color: "var(--md-on-surface-var)" }}>
-                {search ? "Try a different search" : "Create your first prompt or head over to Nemix Premium Hub to save a template!"}
+                {search ? "Try a different search" : "Create your first prompt or head over to Nvmix Premium Hub to save a template!"}
               </p>
               {!search && (
                 <div className="flex justify-center gap-3">

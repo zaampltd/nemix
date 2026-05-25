@@ -87,8 +87,8 @@ function ProfileTab({ currentUser, profileSettings, onSave }: ProfileTabProps) {
         email: profileSettings?.email || currentUser?.email || '',
         username: profileSettings?.username || currentUser?.email?.split('@')[0] || '',
         bio: profileSettings?.bio || 'MLOps fine-tuning clusters and intelligent edge routing engines coordinator.',
-        company: profileSettings?.company || 'Nemix Corporation',
-        website: profileSettings?.website || 'https://nemix.ai',
+        company: profileSettings?.company || 'Nvmix Corporation',
+        website: profileSettings?.website || 'https://nvmix.com',
         timezone: profileSettings?.timezone || 'UTC+03:00',
         language: profileSettings?.language || 'English (US)'
       });
@@ -114,8 +114,8 @@ function ProfileTab({ currentUser, profileSettings, onSave }: ProfileTabProps) {
       email: profileSettings?.email || currentUser?.email || '',
       username: profileSettings?.username || currentUser?.email?.split('@')[0] || '',
       bio: profileSettings?.bio || 'MLOps fine-tuning clusters and intelligent edge routing engines coordinator.',
-      company: profileSettings?.company || 'Nemix Corporation',
-      website: profileSettings?.website || 'https://nemix.ai',
+      company: profileSettings?.company || 'Nvmix Corporation',
+      website: profileSettings?.website || 'https://nvmix.com',
       timezone: profileSettings?.timezone || 'UTC+03:00',
       language: profileSettings?.language || 'English (US)'
     });
@@ -576,7 +576,7 @@ function APIKeysTab({ currentUser }: APIKeysTabProps) {
     const loadKeys = async () => {
       try {
         setIsLoading(true);
-        const q = query(collection(db, "UserNemixAPIKeys"), where("userId", "==", userIdentifier));
+        const q = query(collection(db, "UserNvmixAPIKeys"), where("userId", "==", userIdentifier));
         const snapshot = await getDocs(q);
         const fetched: any[] = [];
         snapshot.forEach(docSnap => {
@@ -610,7 +610,7 @@ function APIKeysTab({ currentUser }: APIKeysTabProps) {
     setCreating(true);
     try {
       const randomSeed = Array.from({ length: 20 }, () => Math.random().toString(36)[2]).join('');
-      const generatedKey = `nex_sk_ep_${randomSeed}`;
+      const generatedKey = `nvx_sk_ep_${randomSeed}`;
       
       const keyData = {
         userId: userIdentifier,
@@ -621,7 +621,7 @@ function APIKeysTab({ currentUser }: APIKeysTabProps) {
         createdAt: serverTimestamp()
       };
 
-      const docRef = await addDoc(collection(db, "UserNemixAPIKeys"), keyData);
+      const docRef = await addDoc(collection(db, "UserNvmixAPIKeys"), keyData);
 
       setKeys(p => [...p, {
         id: docRef.id,
@@ -649,7 +649,7 @@ function APIKeysTab({ currentUser }: APIKeysTabProps) {
       type: "danger",
       onConfirm: async () => {
         try {
-          await deleteDoc(doc(db, "UserNemixAPIKeys", id));
+          await deleteDoc(doc(db, "UserNvmixAPIKeys", id));
           setKeys(p => p.filter(k => k.id !== id));
         } catch (err) {
           console.error(err);
@@ -741,7 +741,7 @@ function APIKeysTab({ currentUser }: APIKeysTabProps) {
         <p className="text-sm font-bold mb-3" style={{ color: 'var(--md-on-surface)' }}>Programmatic Quick Start</p>
         <pre className="p-4 rounded-xl text-[11px] font-mono overflow-x-auto select-all"
           style={{ background: 'var(--md-surface-2)', border: '1px solid var(--md-outline)', color: 'var(--md-on-surface)' }}>
-{`curl -X POST https://api.nemix.ai/v1/inference \\
+{`curl -X POST https://api.nvmix.com/v1/inference \\
   -H "Authorization: Bearer YOUR_API_KEY" \\
   -H "Content-Type: application/json" \\
   -d '{"model": "ep_001", "input": "Hello world"}'`}
@@ -861,7 +861,7 @@ function AppearanceTab({ appearanceSettings, onSave }: AppearanceTabProps) {
                   // Simulate system theme preference
                   const sysPref = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
                   if (activeTheme !== sysPref) toggleTheme();
-                  localStorage.removeItem("nemix-theme");
+                  localStorage.removeItem("nvmix-theme");
                 }
               }}
                 className="p-4 rounded-2xl text-left transition-all hover:scale-[1.01] cursor-pointer"
@@ -929,9 +929,9 @@ export default function SettingsPage() {
 
   const defaultSettings = {
     profile: {
-      fullName: 'Google AI Developer', email: 'google.developer@nemix.ai', username: 'googledev',
+      fullName: 'Google AI Developer', email: 'google.developer@nvmix.com', username: 'googledev',
       bio: 'MLOps fine-tuning clusters and intelligent edge routing engines coordinator.',
-      company: 'Nemix Corporation', website: 'https://nemix.ai', timezone: 'UTC+03:00', language: 'English (US)'
+      company: 'Nvmix Corporation', website: 'https://nvmix.com', timezone: 'UTC+03:00', language: 'English (US)'
     },
     security: { mfa: false },
     notifications: {

@@ -12,7 +12,7 @@ import { BrandLogo } from "@/components/ui/BrandLogo";
 
 // ─── Testimonials shown on the left panel ─────────────────────────
 const TESTIMONIALS = [
-  { quote: "Nemix cut our deployment time from weeks to hours.", name: "Sarah Chen",    role: "ML Lead @ Vercel",    avatar: "SC", color: "#5b5bd6" },
+  { quote: "Nvmix cut our deployment time from weeks to hours.", name: "Sarah Chen",    role: "ML Lead @ Vercel",    avatar: "SC", color: "#5b5bd6" },
   { quote: "We fine-tuned and shipped in a single afternoon.",  name: "James Wilson",  role: "CTO @ Notion",        avatar: "JW", color: "#3dd68c" },
   { quote: "The evaluation suite is genuinely world-class.",    name: "Amira Patel",   role: "AI Eng @ Stripe",     avatar: "AP", color: "#f59e0b" },
 ];
@@ -102,7 +102,7 @@ function LoginForm() {
 
       // Sandbox fallback for Google sign-in
       const mockProfile = {
-        email: 'google.developer@nemix.ai',
+        email: 'google.developer@nvmix.com',
         full_name: 'Google AI Developer',
         id: 'sandbox-google-id'
       };
@@ -126,7 +126,7 @@ function LoginForm() {
       console.warn("Firebase GitHub login failed, running sandbox fallback:", err);
 
       const mockProfile = {
-        email: 'github.developer@nemix.ai',
+        email: 'github.developer@nvmix.com',
         full_name: 'GitHub AI Developer',
         id: 'sandbox-github-id'
       };
@@ -152,7 +152,7 @@ function LoginForm() {
         {/* Logo */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', position: 'relative' }}>
           <BrandLogo size={30} />
-          <span className="brand-logotype" style={{ fontSize: '24px' }}>Nemix</span>
+          <span className="brand-logotype" style={{ fontSize: '24px' }}>Nvmix</span>
         </div>
 
         {/* Middle: headline + bullets */}
@@ -233,7 +233,7 @@ function LoginForm() {
             <h1 style={{ fontSize: '26px', fontWeight: 800, color: 'var(--md-on-surface)', letterSpacing: '-0.025em', marginBottom: '6px' }}>
               Welcome back 👋
             </h1>
-            <p style={{ fontSize: '14px', color: 'var(--md-on-surface-var)' }}>Sign in to your Nemix workspace</p>
+            <p style={{ fontSize: '14px', color: 'var(--md-on-surface-var)' }}>Sign in to your Nvmix workspace</p>
           </div>
 
           {/* Registration success / session expired banners */}
@@ -349,7 +349,7 @@ function LoginForm() {
               ))}
             </div>
             <p style={{ fontSize: '12px', color: 'var(--md-on-surface-var)' }}>
-              Join <strong style={{ color: 'var(--md-on-surface)' }}>12,000+</strong> developers building with Nemix
+              Join <strong style={{ color: 'var(--md-on-surface)' }}>12,000+</strong> developers building with Nvmix
             </p>
           </div>
 

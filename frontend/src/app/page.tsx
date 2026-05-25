@@ -22,7 +22,7 @@ const STATS = [
 
 const TESTIMONIALS = [
   {
-    quote: "Nemix cut our model fine-tuning time from weeks to just an afternoon. Their auto-scaling endpoints are incredibly fast and low latency.",
+    quote: "Nvmix cut our model fine-tuning time from weeks to just an afternoon. Their auto-scaling endpoints are incredibly fast and low latency.",
     name: "Sarah Chen",    role: "ML Lead @ Vercel",        avatar: "SC", color: "var(--md-primary)"
   },
   {
@@ -30,7 +30,7 @@ const TESTIMONIALS = [
     name: "James Wilson",  role: "CTO @ Notion",            avatar: "JW", color: "var(--md-success)"
   },
   {
-    quote: "The visual training charts and edge router deployments are awesome. Standardizing on Nemix saved us $15k/mo in AWS server costs.",
+    quote: "The visual training charts and edge router deployments are awesome. Standardizing on Nvmix saved us $15k/mo in AWS server costs.",
     name: "Amira Patel",   role: "AI Architect @ Stripe",   avatar: "AP", color: "var(--md-warning)"
   },
   {
@@ -93,7 +93,7 @@ const FEATURES = [
 ];
 
 const FAQS = [
-  { q: "How does Nemix keep training costs so low?", a: "We run on a serverless GPU scheduling matrix. Unlike AWS where you rent an entire idle machine, Nemix spins up high-performance NVIDIA L4 chips only when training begins, billing you to the exact millisecond." },
+  { q: "How does Nvmix keep training costs so low?", a: "We run on a serverless GPU scheduling matrix. Unlike AWS where you rent an entire idle machine, Nvmix spins up high-performance NVIDIA L4 chips only when training begins, billing you to the exact millisecond." },
   { q: "Can I deploy custom open-source models?", a: "Absolutely. We support LLaMA 3, Mistral 7B, GPT-2, BERT, RoBERTa, Whisper, CLIP, and standard Hugging Face model imports right out of the box." },
   { q: "How does the Intelligent Edge Router compare to standard endpoints?", a: "Standard endpoints route traffic directly to a single deployed container. Edge Routers act as a smart gateway, combining multiple models with fallback rules, token limiters, and smart semantic load balancing." },
   { q: "Is my training data secure?", a: "Yes. All uploaded datasets and trained weights are isolated in private, SOC 2 compliant database vaults. We never share your data or use it to train global models." },
@@ -119,7 +119,7 @@ export default function LandingPage() {
     const awsOpsCost = 450; // DevOps overhead hours equivalent
     const totalAws = awsServer + awsStorage + awsOpsCost;
 
-    // Nemix Costs: subscription base + overage calculations
+    // Nvmix Costs: subscription base + overage calculations
     const isAnnual = billingPeriod === 'annual';
     let basePrice = isAnnual ? 39 : 49;
     let includedGpu = 20;
@@ -129,11 +129,11 @@ export default function LandingPage() {
     const overageGpu = Math.max(0, sliderGpuHours - includedGpu) * 0.45;
     const overageApi = Math.max(0, sliderApiCalls - includedApi) * 0.001;
 
-    const totalNemix = basePrice + overageGpu + overageApi;
-    const savings = Math.max(totalAws - totalNemix, 0);
+    const totalNvmix = basePrice + overageGpu + overageApi;
+    const savings = Math.max(totalAws - totalNvmix, 0);
     const savingsPercent = (savings / totalAws) * 100;
 
-    return { totalAws, totalNemix, savings, savingsPercent };
+    return { totalAws, totalNvmix, savings, savingsPercent };
   }, [sliderGpuHours, sliderApiCalls, billingPeriod]);
 
   const W = { maxWidth: "1140px", margin: "0 auto", padding: "0 24px" };
@@ -146,7 +146,7 @@ export default function LandingPage() {
         <div style={{ ...W, height: "64px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <Link href="/" style={{ display: "flex", alignItems: "center", gap: "10px", textDecoration: "none" }}>
             <BrandLogo size={28} />
-            <span className="brand-logotype-adaptive" style={{ fontSize: "21px", fontWeight: 900, letterSpacing: "-0.03em", color: "var(--md-on-surface)" }}>Nemix</span>
+            <span className="brand-logotype-adaptive" style={{ fontSize: "21px", fontWeight: 900, letterSpacing: "-0.03em", color: "var(--md-on-surface)" }}>Nvmix</span>
           </Link>
 
           <nav style={{ display: "flex", alignItems: "center", gap: "6px" }} className="hidden sm:flex">
@@ -220,7 +220,7 @@ export default function LandingPage() {
                 <span className="w-3 h-3 rounded-full bg-green-500" />
                 <span className="ml-auto text-[10px] font-mono px-3 py-1 rounded bg-neutral-900 text-purple-400"
                   style={{ background: "var(--md-surface-2)" }}>
-                  https://nemix.ai/dashboard
+                  https://nvmix.com/dashboard
                 </span>
               </div>
 
@@ -330,7 +330,7 @@ export default function LandingPage() {
               Calculate Your AWS Savings
             </h2>
             <p className="text-xs" style={{ color: "var(--md-on-surface-var)" }}>
-              Traditional cloud nodes cost thousands per month because they sit idle. Slide limits below to check how much you save using Nemix serverless queues.
+              Traditional cloud nodes cost thousands per month because they sit idle. Slide limits below to check how much you save using Nvmix serverless queues.
             </p>
           </div>
 
@@ -375,7 +375,7 @@ export default function LandingPage() {
                   Save ${roiMath.savings.toFixed(0)} every month.
                 </h3>
                 <p className="text-xs mt-1" style={{ color: "var(--md-on-surface-var)" }}>
-                  Renting Nemix allows you to stop managing idle infrastructure pods entirely.
+                  Renting Nvmix allows you to stop managing idle infrastructure pods entirely.
                 </p>
               </div>
 
@@ -385,8 +385,8 @@ export default function LandingPage() {
                   <p className="text-2xl font-black mt-1 text-red-500">${roiMath.totalAws.toFixed(0)}/mo</p>
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: "var(--md-on-surface-var)" }}>Nemix Serverless Cost</p>
-                  <p className="text-2xl font-black mt-1 text-green-500">${roiMath.totalNemix.toFixed(0)}/mo</p>
+                  <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: "var(--md-on-surface-var)" }}>Nvmix Serverless Cost</p>
+                  <p className="text-2xl font-black mt-1 text-green-500">${roiMath.totalNvmix.toFixed(0)}/mo</p>
                 </div>
               </div>
             </div>
@@ -544,7 +544,7 @@ export default function LandingPage() {
             <div>
               <div className="flex items-center gap-2 mb-4">
                 <BrandLogo size={22} />
-                <span style={{ fontSize: "18px", fontWeight: 900, color: "var(--md-on-surface)" }}>Nemix</span>
+                <span style={{ fontSize: "18px", fontWeight: 900, color: "var(--md-on-surface)" }}>Nvmix</span>
               </div>
               <p className="text-xs leading-relaxed max-w-[200px]" style={{ color: "var(--md-on-surface-var)" }}>
                 Automated ML fine-tuning and deployment gateways for startup software teams.
@@ -563,7 +563,7 @@ export default function LandingPage() {
           </div>
 
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4 border-t pt-6" style={{ borderColor: "var(--md-outline-var)" }}>
-            <p className="text-xs" style={{ color: "var(--md-on-surface-var)" }}>© 2026 Nemix Inc. All rights reserved.</p>
+            <p className="text-xs" style={{ color: "var(--md-on-surface-var)" }}>© 2026 Nvmix Inc. All rights reserved.</p>
             <div className="flex gap-2 text-xs" style={{ color: "var(--md-on-surface-var)" }}>
               <Lock className="w-3.5 h-3.5 text-purple-400" />
               <span>SOC 2 Type II · ISO 27001 Certified</span>

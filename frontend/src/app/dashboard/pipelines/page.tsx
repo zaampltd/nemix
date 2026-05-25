@@ -65,7 +65,7 @@ const MOCK_LOGS: Record<string, string[]> = {
     "[02:31:25] → Running evaluation suite",
     "[02:41:18] ✓ Evaluation score: 91.4 (threshold: 85) — PASS",
     "[02:41:20] → Deploying to production endpoint",
-    "[02:42:18] ✓ Deployment complete — nemix.app/api/llama3-sentiment-v2",
+    "[02:42:18] ✓ Deployment complete — nvmix.app/api/llama3-sentiment-v2",
     "[02:42:18] Pipeline finished in 42m 17s ✓",
   ],
   p3: [

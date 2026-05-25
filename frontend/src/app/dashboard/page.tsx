@@ -105,7 +105,7 @@ export default function Dashboard() {
       } catch (e) {}
 
       try {
-        localJobs = JSON.parse(localStorage.getItem("nemix_training_jobs") || localStorage.getItem("local_jobs") || "[]");
+        localJobs = JSON.parse(localStorage.getItem("nvmix_training_jobs") || localStorage.getItem("local_jobs") || "[]");
       } catch (e) {}
 
       // -- Query models from backend API & combine with localStorage
@@ -130,7 +130,7 @@ export default function Dashboard() {
       let totalKeys = 0;
       let dbApiKeysList: any[] = [];
       try {
-        const keysRef = collection(db, "UserNemixAPIKeys");
+        const keysRef = collection(db, "UserNvmixAPIKeys");
         const keysQuery = query(keysRef, where("userId", "==", "test-user-123"));
         const keysSnap = await getDocs(keysQuery);
         totalKeys = keysSnap.size;
@@ -274,7 +274,7 @@ export default function Dashboard() {
               {greeting}{userName ? `, ${userName}` : ""}.
             </h1>
             <p className="text-sm" style={S.textSecondary}>
-              Here is a live summary of your Nemix AI Saas workspace configurations and GPU clusters.
+              Here is a live summary of your Nvmix AI Saas workspace configurations and GPU clusters.
             </p>
           </div>
           <button
@@ -443,7 +443,7 @@ export default function Dashboard() {
           {/* Operational Status Card */}
           <div className="rounded-2xl p-6 border flex flex-col justify-between" style={S.card}>
             <div>
-              <p className="text-sm font-bold mb-4" style={S.textPrimary}>Nemix Cluster Telemetry</p>
+              <p className="text-sm font-bold mb-4" style={S.textPrimary}>Nvmix Cluster Telemetry</p>
               <div className="space-y-1">
                 {[
                   { name: "Serverless Training Nodes", latency: "14ms", status: "operational" },

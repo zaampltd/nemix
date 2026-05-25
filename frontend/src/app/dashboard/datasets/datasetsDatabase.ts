@@ -21,21 +21,21 @@ export const PREMIUM_DATASETS: PremiumDataset[] = [
     mockData: [
       {
         "messages": [
-          { "role": "system", "content": "You are a customer support agent for Nemix AI SaaS." },
+          { "role": "system", "content": "You are a customer support agent for Nvmix AI SaaS." },
           { "role": "user", "content": "Where can I view my active endpoints and webhooks?" },
           { "role": "assistant", "content": "You can view your active edge endpoints in the Deployments panel (/dashboard/deployments) and manage webhook receivers in the Webhooks tab (/dashboard/webhooks)." }
         ]
       },
       {
         "messages": [
-          { "role": "system", "content": "You are a customer support agent for Nemix AI SaaS." },
+          { "role": "system", "content": "You are a customer support agent for Nvmix AI SaaS." },
           { "role": "user", "content": "How do I secure my Gemini API key?" },
           { "role": "assistant", "content": "You can safely input and lock your API keys under the Provider Integrations panel (/dashboard/config). Keys are stored using client-side AES-256 encryption." }
         ]
       },
       {
         "messages": [
-          { "role": "system", "content": "You are a customer support agent for Nemix AI SaaS." },
+          { "role": "system", "content": "You are a customer support agent for Nvmix AI SaaS." },
           { "role": "user", "content": "My model training keeps failing with out-of-memory errors." },
           { "role": "assistant", "content": "OOM errors indicate your dataset size exceeds the chosen base model context or compute sliders. Try lowering the batch size slider or shortening your dataset tokens." }
         ]
@@ -51,7 +51,7 @@ export const PREMIUM_DATASETS: PremiumDataset[] = [
     row_count: 8400,
     tags: ["sentiment", "csv", "classification", "reviews"],
     mockData: [
-      { "text": "Nemix edge routing has reduced our API response times from 140ms to 14ms! Outstanding technology.", "sentiment": "POSITIVE" },
+      { "text": "Nvmix edge routing has reduced our API response times from 140ms to 14ms! Outstanding technology.", "sentiment": "POSITIVE" },
       { "text": "My fine-tuning job terminated after 3 epochs and did not explain why. Terribly frustrating experience.", "sentiment": "NEGATIVE" },
       { "text": "Is the playground panel custom model tab included in the free trial plan?", "sentiment": "NEUTRAL" },
       { "text": "Setting up the custom training pipelines was incredibly smooth and Firestore synced out of the box.", "sentiment": "POSITIVE" }

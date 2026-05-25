@@ -280,14 +280,14 @@ export default function EdgeRouterPage() {
   }, null, 2);
 
   // ─── Dynamic Code Exporter Snippets ────────────────────────────────────────
-  const javascriptCode = `import { NemixEdgeRouter } from 'nemix-edge-sdk';
+  const javascriptCode = `import { NvmixEdgeRouter } from 'nvmix-edge-sdk';
 
 // Initialize the Zero-Risk Edge Router
-const router = new NemixEdgeRouter({
+const router = new NvmixEdgeRouter({
   config: ${JSON.stringify(JSON.parse(generatedJSON), null, 2).replace(/\n/g, "\n  ")},
   credentials: {
     // Loaded purely from your local secure environment variables.
-    // Nemix servers NEVER touch or save your secret keys.
+    // Nvmix servers NEVER touch or save your secret keys.
     ${fallbackChain.map(n => {
       const keyVar = `${n.provider.toUpperCase().replace(/\s+/g, "_")}_API_KEY`;
       return `${keyVar}: process.env.${keyVar}`;
@@ -303,15 +303,15 @@ const response = await router.generate({
 
 console.log(response.text);`;
 
-  const pythonCode = `from nemix_edge import NemixEdgeRouter
+  const pythonCode = `from nvmix_edge import NvmixEdgeRouter
 import os
 
 # Initialize the Zero-Risk Edge Router
-router = NemixEdgeRouter(
+router = NvmixEdgeRouter(
     config=${JSON.stringify(JSON.parse(generatedJSON), null, 4).replace(/\n/g, "\n    ")},
     credentials={
         # Loaded purely from your local secure environment variables.
-        # Nemix servers NEVER touch or save your secret keys.
+        # Nvmix servers NEVER touch or save your secret keys.
         ${fallbackChain.map(n => {
           const keyVar = `${n.provider.toUpperCase().replace(/\s+/g, "_")}_API_KEY`;
           return `"${keyVar}": os.getenv("${keyVar}")`;
@@ -327,12 +327,12 @@ response = router.generate(
 
 print(response.text)`;
 
-  const javascriptCloudCode = `// Call the Hosted Nemix Cloud Gateway API via fetch
-const response = await fetch("https://api.nemix.com/v1/gateway", {
+  const javascriptCloudCode = `// Call the Hosted Nvmix Cloud Gateway API via fetch
+const response = await fetch("https://api.nvmix.com/v1/gateway", {
   method: "POST",
   headers: {
     "Content-Type": "application/json",
-    "Authorization": "Bearer nex_live_xxxxxxxxxxx"
+    "Authorization": "Bearer nvx_live_xxxxxxxxxxx"
   },
   body: JSON.stringify({
     prompt: "Analyze user query and return structured code.",
@@ -346,12 +346,12 @@ console.log(data.text);`;
 
   const pythonCloudCode = `import requests
 
-# Call the Hosted Nemix Cloud Gateway API via requests
+# Call the Hosted Nvmix Cloud Gateway API via requests
 response = requests.post(
-    "https://api.nemix.com/v1/gateway",
+    "https://api.nvmix.com/v1/gateway",
     headers={
         "Content-Type": "application/json",
-        "Authorization": "Bearer nex_live_xxxxxxxxxxx"
+        "Authorization": "Bearer nvx_live_xxxxxxxxxxx"
     },
     json={
         "prompt": "Analyze user query and return structured code.",
@@ -752,12 +752,12 @@ print(data["text"])`;
                 {deploymentMode === "edge" ? (
                   <span>
                     Load keys securely from your server's local <code className="font-mono text-purple-400">.env</code> keys. 
-                    Zero API credentials touch Nemix databases, eliminating all cloud leak risks.
+                    Zero API credentials touch Nvmix databases, eliminating all cloud leak risks.
                   </span>
                 ) : (
                   <span>
-                    Route your traffic through Nemix's secure, globally distributed hosting gateway. 
-                    Authenticate using your secure Bearer token (<code className="font-mono text-purple-400">nex_live_xxxxxxxxxxx</code>).
+                    Route your traffic through Nvmix's secure, globally distributed hosting gateway. 
+                    Authenticate using your secure Bearer token (<code className="font-mono text-purple-400">nvx_live_xxxxxxxxxxx</code>).
                   </span>
                 )}
               </div>

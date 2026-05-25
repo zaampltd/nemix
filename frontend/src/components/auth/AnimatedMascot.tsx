@@ -28,7 +28,7 @@ const FloatingCodePanel = ({ className = '', delay = 0, x = 0, y = 0, title = 'M
       <span className="ml-1 uppercase tracking-wider">{title}</span>
     </div>
     <div className="space-y-1 text-gray-600 dark:text-gray-400">
-      <p><span className="text-pink-600 dark:text-pink-400 font-semibold">const</span> <span className="text-violet-600 dark:text-violet-400">model</span> = <span className="text-blue-600 dark:text-blue-400">Nemix</span>();</p>
+      <p><span className="text-pink-600 dark:text-pink-400 font-semibold">const</span> <span className="text-violet-600 dark:text-violet-400">model</span> = <span className="text-blue-600 dark:text-blue-400">Nvmix</span>();</p>
       <p><span className="text-violet-600 dark:text-violet-400">model</span>.<span className="text-yellow-600 dark:text-yellow-400">train</span>({'{'}</p>
       <p className="pl-3">epochs: <span className="text-amber-600 dark:text-amber-400">150</span>,</p>
       <p className="pl-3">lr: <span className="text-amber-600 dark:text-amber-400">1e-4</span>,</p>

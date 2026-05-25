@@ -11,7 +11,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Nemix — AI Training Platform",
+  title: "Nvmix — AI Training Platform",
   description: "Train, fine-tune and deploy AI models. Dataset management, LoRA training, and production API endpoints in one platform.",
 };
 

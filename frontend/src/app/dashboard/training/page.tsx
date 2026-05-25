@@ -121,7 +121,7 @@ export default function TrainingPage() {
   // Load from localStorage on mount safely
   useEffect(() => {
     setIsMounted(true);
-    const cached = localStorage.getItem("nemix_training_jobs");
+    const cached = localStorage.getItem("nvmix_training_jobs");
     if (cached) {
       try {
         setJobs(JSON.parse(cached));
@@ -130,14 +130,14 @@ export default function TrainingPage() {
       }
     } else {
       setJobs(mockJobs);
-      localStorage.setItem("nemix_training_jobs", JSON.stringify(mockJobs));
+      localStorage.setItem("nvmix_training_jobs", JSON.stringify(mockJobs));
     }
   }, []);
 
   // Save to localStorage when jobs change
   useEffect(() => {
     if (isMounted) {
-      localStorage.setItem("nemix_training_jobs", JSON.stringify(jobs));
+      localStorage.setItem("nvmix_training_jobs", JSON.stringify(jobs));
     }
   }, [jobs, isMounted]);
 
@@ -164,10 +164,10 @@ export default function TrainingPage() {
         
         if (fetched.length > 0) {
           setUserCreatedModels(fetched);
-          localStorage.setItem("nemix_user_created_models", JSON.stringify(fetched));
+          localStorage.setItem("nvmix_user_created_models", JSON.stringify(fetched));
         } else {
           // Try loading from localStorage fallback
-          const cachedModels = localStorage.getItem("nemix_user_created_models");
+          const cachedModels = localStorage.getItem("nvmix_user_created_models");
           if (cachedModels) {
             setUserCreatedModels(JSON.parse(cachedModels));
           } else {
@@ -180,7 +180,7 @@ export default function TrainingPage() {
         }
       } catch (err) {
         console.error("Error loading user models:", err);
-        const cachedModels = localStorage.getItem("nemix_user_created_models");
+        const cachedModels = localStorage.getItem("nvmix_user_created_models");
         if (cachedModels) {
           setUserCreatedModels(JSON.parse(cachedModels));
         } else {
@@ -367,7 +367,7 @@ export default function TrainingPage() {
       lines.push(`[${timestamp}14:02] [SYSTEM] Initializing Kubernetes orchestration node on Nvidia L40S Cluster...`);
       lines.push(`[${timestamp}14:04] [SYSTEM] Allocating GPU device VRAM blocks (24GB virtual cluster limit)...`);
       lines.push(`[${timestamp}14:08] [PIPELINE] Fetching foundation weights for base model: ${job.baseModel}...`);
-      lines.push(`[${timestamp}14:15] [PIPELINE] Base model weights pulled securely from Nemix Model Vault.`);
+      lines.push(`[${timestamp}14:15] [PIPELINE] Base model weights pulled securely from Nvmix Model Vault.`);
       lines.push(`[${timestamp}14:18] [DATASET] Reading training dataset file: ${job.dataset}...`);
       lines.push(`[${timestamp}14:24] [DATASET] Parsed ${job.dataset} successfully. Detected raw text patterns.`);
       lines.push(`[${timestamp}14:28] [TOKENIZER] Initializing BPE tokenizer dictionary. Running mapping array...`);
@@ -387,7 +387,7 @@ export default function TrainingPage() {
       lines.push(`[${timestamp}00:01] [SYSTEM] Initializing Kubernetes orchestration node on Nvidia L40S Cluster...`);
       lines.push(`[${timestamp}00:03] [SYSTEM] Allocating GPU device VRAM blocks (24GB virtual cluster limit)...`);
       lines.push(`[${timestamp}00:07] [PIPELINE] Fetching foundation weights for base model: ${job.baseModel}...`);
-      lines.push(`[${timestamp}00:15] [PIPELINE] Base model weights pulled securely from Nemix Model Vault.`);
+      lines.push(`[${timestamp}00:15] [PIPELINE] Base model weights pulled securely from Nvmix Model Vault.`);
       lines.push(`[${timestamp}00:18] [DATASET] Reading training dataset file: ${job.dataset}...`);
       lines.push(`[${timestamp}00:24] [DATASET] Parsed ${job.dataset} successfully. Detected raw text patterns.`);
       lines.push(`[${timestamp}00:28] [TOKENIZER] Initializing BPE tokenizer dictionary. Running mapping array...`);
@@ -400,7 +400,7 @@ export default function TrainingPage() {
       lines.push(`[${timestamp}03:32] [PIPELINE] Merging training LoRA parameters with base weights...`);
       lines.push(`[${timestamp}03:38] [PIPELINE] Optimizing fused model layers to BF16 float precision...`);
       lines.push(`[${timestamp}03:41] [PIPELINE] Compressing weights structure for serverless edge inference layout...`);
-      lines.push(`[${timestamp}03:42] [SYSTEM] Saved adapter output reference: 'nemix-checkpoint-${job.name}'.`);
+      lines.push(`[${timestamp}03:42] [SYSTEM] Saved adapter output reference: 'nvmix-checkpoint-${job.name}'.`);
       lines.push(`[${timestamp}03:42] [SYSTEM] SUCCESS: Fine-tuning pipeline finished cleanly in ${job.duration}. Model weights compiled!`);
       return lines;
     }
@@ -751,7 +751,7 @@ export default function TrainingPage() {
                             rps: 0,
                             uptime: '—',
                             calls: '0',
-                            url: `https://api.nemix.ai/v1/${newDepID}/infer`,
+                            url: `https://api.nvmix.com/v1/${newDepID}/infer`,
                             created: new Date().toISOString().split('T')[0],
                             local: true
                           };

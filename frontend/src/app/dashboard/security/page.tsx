@@ -36,7 +36,7 @@ function generateKey(name: string): string {
   const rand = Array.from({ length: 32 }, () =>
     'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'[Math.floor(Math.random() * 62)]
   ).join('');
-  return `nex_sk_${slug}_${rand}`;
+  return `nvx_sk_${slug}_${rand}`;
 }
 
 export default function SecurityPage() {
@@ -55,7 +55,7 @@ export default function SecurityPage() {
   const fetchKeys = async () => {
     try {
       setIsLoadingKeys(true);
-      const q = query(collection(db, "UserNemixAPIKeys"), where("userId", "==", "test-user-123"));
+      const q = query(collection(db, "UserNvmixAPIKeys"), where("userId", "==", "test-user-123"));
       const querySnapshot = await getDocs(q);
       const fetchedKeys: ApiKey[] = [];
       querySnapshot.forEach((docSnap) => {
@@ -63,7 +63,7 @@ export default function SecurityPage() {
         fetchedKeys.push({
           id: docSnap.id,
           name: data.name || "Unnamed Key",
-          prefix: data.prefix || "nex_sk_xxxx_",
+          prefix: data.prefix || "nvx_sk_xxxx_",
           suffix: data.suffix || "...xxxx",
           scopes: data.scopes || [],
           created: data.created || "Unknown",
@@ -104,7 +104,7 @@ export default function SecurityPage() {
         ? ["inference", "models:read", "datasets:read"]
         : ["inference", "models:read", "datasets:read", "training:write", "deployments:read", "admin"];
       
-      const docRef = await addDoc(collection(db, "UserNemixAPIKeys"), {
+      const docRef = await addDoc(collection(db, "UserNvmixAPIKeys"), {
         userId: "test-user-123",
         name: keyName.trim(),
         prefix: fullKey.slice(0, 16),
@@ -150,7 +150,7 @@ export default function SecurityPage() {
     if (!confirmRevoke) return;
 
     try {
-      await deleteDoc(doc(db, "UserNemixAPIKeys", id));
+      await deleteDoc(doc(db, "UserNvmixAPIKeys", id));
       setKeys(prev => prev.filter(k => k.id !== id));
     } catch (error) {
       console.error("Error revoking API key from Firestore:", error);

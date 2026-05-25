@@ -35,7 +35,7 @@ const POSTS = [
   {
     slug: "evaluating-llm-hallucination",
     title: "Measuring Hallucination in Fine-tuned LLMs: A Practical Guide",
-    excerpt: "Hallucination is the silent killer of production AI. This guide covers four benchmarking strategies and how to use Nemix Evaluations to catch it before deployment.",
+    excerpt: "Hallucination is the silent killer of production AI. This guide covers four benchmarking strategies and how to use Nvmix Evaluations to catch it before deployment.",
     category: "Research",
     tags: ["Evaluation", "Hallucination", "Benchmarks"],
     author: { name: "Amira Patel",   role: "AI Researcher", avatar: "AP", color: "#f59e0b" },
@@ -47,7 +47,7 @@ const POSTS = [
   {
     slug: "stripe-ai-billing",
     title: "How We Built Metered Billing for an AI Platform (with Stripe)",
-    excerpt: "A behind-the-scenes look at how Nemix tracks per-inference costs, GPU-hour usage, and storage consumption — and bills customers accurately at scale.",
+    excerpt: "A behind-the-scenes look at how Nvmix tracks per-inference costs, GPU-hour usage, and storage consumption — and bills customers accurately at scale.",
     category: "Engineering",
     tags: ["Billing", "Stripe", "Infrastructure"],
     author: { name: "Tom Bradley",   role: "Backend Eng",   avatar: "TB", color: "#e5534b" },
@@ -59,7 +59,7 @@ const POSTS = [
   {
     slug: "dataset-versioning",
     title: "Why Dataset Versioning is the Most Underrated MLOps Practice",
-    excerpt: "Teams that version their datasets reproduce results 3× faster and catch data drift before it hits production. Here's how to set it up in Nemix.",
+    excerpt: "Teams that version their datasets reproduce results 3× faster and catch data drift before it hits production. Here's how to set it up in Nvmix.",
     category: "MLOps",
     tags: ["Datasets", "Versioning", "MLOps"],
     author: { name: "Maya Rodriguez", role: "ML Eng",        avatar: "MR", color: "#8b5cf6" },
@@ -83,7 +83,7 @@ const POSTS = [
   {
     slug: "autoscaling-inference",
     title: "Auto-scaling LLM Inference: From Zero to 10K RPS",
-    excerpt: "How Nemix's inference layer handles traffic spikes — including cold start optimization, request queuing, and GPU scheduling across multiple regions.",
+    excerpt: "How Nvmix's inference layer handles traffic spikes — including cold start optimization, request queuing, and GPU scheduling across multiple regions.",
     category: "Engineering",
     tags: ["Scaling", "Inference", "Architecture"],
     author: { name: "Sarah Chen",    role: "ML Lead",       avatar: "SC", color: "#5b5bd6" },
@@ -136,7 +136,7 @@ const POST_CONTENT: Record<string, React.ReactNode> = {
       </div>
 
       <h2>Which should you use?</h2>
-      <p>Use <strong>LoRA</strong> if you have access to 24GB+ VRAM and want faster training. Use <strong>QLoRA</strong> if you're working with 13B+ parameter models or have limited GPU memory. On Nemix, both methods are available with one click — you don't need to configure quantization manually.</p>
+      <p>Use <strong>LoRA</strong> if you have access to 24GB+ VRAM and want faster training. Use <strong>QLoRA</strong> if you're working with 13B+ parameter models or have limited GPU memory. On Nvmix, both methods are available with one click — you don't need to configure quantization manually.</p>
 
       <h2>Conclusion</h2>
       <p>For most use cases with models under 13B parameters, LoRA is the right choice. For larger models, or when GPU memory is the constraint, QLoRA unlocks fine-tuning that would otherwise be impossible. The quality difference is minimal — less than 1% on most benchmarks.</p>
@@ -256,7 +256,7 @@ export default function BlogPage() {
         <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "0 24px", height: "56px", display: "flex", alignItems: "center", gap: "16px" }}>
           <Link href="/" style={{ display: "flex", alignItems: "center", gap: "7px", textDecoration: "none", flexShrink: 0 }}>
             <BrandLogo size={22} />
-            <span className="brand-logotype-adaptive" style={{ fontSize: "17px" }}>Nemix</span>
+            <span className="brand-logotype-adaptive" style={{ fontSize: "17px" }}>Nvmix</span>
           </Link>
           <span style={{ color: "var(--md-outline)", fontSize: "18px" }}>/</span>
           <span style={{ fontSize: "14px", fontWeight: 600, color: "var(--md-on-surface-var)" }}>Blog</span>
@@ -274,7 +274,7 @@ export default function BlogPage() {
 
         {/* ── Header ─────────────────────────────────────────────── */}
         <div style={{ textAlign: "center", marginBottom: "56px" }}>
-          <p style={{ fontSize: "12px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--md-primary)", marginBottom: "10px" }}>Nemix Blog</p>
+          <p style={{ fontSize: "12px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--md-primary)", marginBottom: "10px" }}>Nvmix Blog</p>
           <h1 style={{ fontSize: "clamp(32px, 5vw, 52px)", fontWeight: 800, letterSpacing: "-0.03em", color: "var(--md-on-surface)", marginBottom: "14px", lineHeight: 1.1 }}>
             Guides, research &<br />engineering deep-dives
           </h1>

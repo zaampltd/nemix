@@ -352,7 +352,7 @@ export default function ProviderIntegrationsPage() {
           <Database className="w-5 h-5 text-purple-400 shrink-0 mt-0.5" />
           <div className="text-xs leading-relaxed" style={{ color: "var(--md-on-surface-var)" }}>
             <span className="font-bold text-[var(--md-on-surface)] block mb-0.5">Secure Credentials Vault</span>
-            We leverage native Web Crypto APIs to encrypt API keys directly on your local system before storing them. Your private keys never pass through Nemix hosting services in plaintext, guaranteeing ultimate security against data interception.
+            We leverage native Web Crypto APIs to encrypt API keys directly on your local system before storing them. Your private keys never pass through Nvmix hosting services in plaintext, guaranteeing ultimate security against data interception.
           </div>
         </motion.div>
 

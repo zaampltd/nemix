@@ -73,7 +73,7 @@ export default function PlaygroundPage() {
         // Load completed jobs from localStorage
         let localJobs: any[] = [];
         try {
-          localJobs = JSON.parse(localStorage.getItem("nemix_training_jobs") || "[]");
+          localJobs = JSON.parse(localStorage.getItem("nvmix_training_jobs") || "[]");
         } catch {}
         const completedJobs = localJobs.filter(j => j.status === "completed").map(j => ({
           id: j.id,
@@ -234,7 +234,7 @@ export default function PlaygroundPage() {
         setTimeout(() => {
           setMessages(prev => [...prev, { 
             role: "ai", 
-            text: `⚠️ **Demo Environment Fallback Mode**\n\nYou haven't secured your API keys in the **Provider Integrations** page yet. To help you evaluate the Nemix interface, I am responding using a local simulation:\n\n* **Prompt received:** "${userMessage}"\n* **Selected Routing:** ${routingMode === "auto" ? "Edge Router Gateway" : routingMode.toUpperCase()}\n\nTo interact with real live LLMs, please navigate to the [Provider Integrations Page](/dashboard/config) and input your OpenAI, Groq, Gemini, or Nvidia API keys.` 
+            text: `⚠️ **Demo Environment Fallback Mode**\n\nYou haven't secured your API keys in the **Provider Integrations** page yet. To help you evaluate the Nvmix interface, I am responding using a local simulation:\n\n* **Prompt received:** "${userMessage}"\n* **Selected Routing:** ${routingMode === "auto" ? "Edge Router Gateway" : routingMode.toUpperCase()}\n\nTo interact with real live LLMs, please navigate to the [Provider Integrations Page](/dashboard/config) and input your OpenAI, Groq, Gemini, or Nvidia API keys.` 
           }]);
           setIsLoading(false);
         }, 800);
@@ -460,9 +460,9 @@ export default function PlaygroundPage() {
                           }}
                         >
                           <span>
-                            {routingMode === "auto" ? "Nemix Edge Router (Auto)" :
+                            {routingMode === "auto" ? "Nvmix Edge Router (Auto)" :
                              routingMode === "gemini" ? "Direct: Gemini" :
-                             routingMode === "groq" ? "Direct: Groq" : "Nemix Edge Router (Auto)"}
+                             routingMode === "groq" ? "Direct: Groq" : "Nvmix Edge Router (Auto)"}
                           </span>
                           <ChevronDown className="w-4 h-4 opacity-60" />
                         </button>
@@ -484,7 +484,7 @@ export default function PlaygroundPage() {
                                 }}
                               >
                                 {[
-                                  { val: "auto", label: "Nemix Edge Router (Auto)" },
+                                  { val: "auto", label: "Nvmix Edge Router (Auto)" },
                                   { val: "gemini", label: "Direct: Gemini" },
                                   { val: "groq", label: "Direct: Groq" }
                                 ].map(opt => (

@@ -102,7 +102,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         style={{ borderBottom: "1px solid var(--md-outline)" }}>
         <Link href="/dashboard" className="flex items-center gap-2.5 font-bold">
           <BrandLogo size={26} />
-          <span className="brand-logotype-adaptive text-[20px] tracking-tight">Nemix</span>
+          <span className="brand-logotype-adaptive text-[20px] tracking-tight">Nvmix</span>
         </Link>
         {mobile && (
           <button onClick={() => setMobileOpen(false)}
@@ -220,7 +220,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           style={{ borderBottom: "1px solid var(--md-outline)", background: "var(--md-surface-1)" }}>
           <div className="flex items-center gap-2 font-bold">
             <BrandLogo size={22} />
-            <span className="brand-logotype-adaptive text-[17px] tracking-tight">Nemix</span>
+            <span className="brand-logotype-adaptive text-[17px] tracking-tight">Nvmix</span>
           </div>
           <div className="flex items-center gap-2">
             <button onClick={toggle} className="p-2 rounded-xl transition-colors"

@@ -472,7 +472,7 @@ export default function DatasetsPage() {
             }}
           >
             <Sparkles className="w-3.5 h-3.5 text-amber-500 animate-pulse" />
-            Nemix Premium Hub ({PREMIUM_DATASETS.length}+)
+            Nvmix Premium Hub ({PREMIUM_DATASETS.length}+)
           </button>
         </div>
 
@@ -588,7 +588,7 @@ export default function DatasetsPage() {
                     <Database className="w-14 h-14 mb-5" style={{ color: 'var(--md-outline)' }} />
                     <h3 className="text-xl font-bold mb-2" style={{ color: 'var(--md-on-surface)' }}>No datasets yet</h3>
                     <p className="mb-8 text-center max-w-xs" style={{ color: 'var(--md-on-surface-var)' }}>
-                      Upload a CSV, JSON, JSONL, or TXT file or click 'Nemix Premium Hub' to save a pre-built template dataset!
+                      Upload a CSV, JSON, JSONL, or TXT file or click 'Nvmix Premium Hub' to save a pre-built template dataset!
                     </p>
                     <div className="flex gap-3">
                       <Button onClick={() => setDatasetTab('premium-hub')} variant="ghost" className="border gap-2">

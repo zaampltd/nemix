@@ -30,10 +30,10 @@ interface Deployment {
 }
 
 const MOCK_ENDPOINTS: Deployment[] = [
-  { id: 'ep_001', name: 'llama3-sentiment-v2', type: 'model', modelOrRules: 'LLaMA 3 8B', regionOrPolicy: 'us-east-1', status: 'active', latency: 142, rps: 38, uptime: '99.9%', calls: '1.24M', url: 'https://api.nemix.ai/v1/ep_001/infer', computeNode: 'NVIDIA L4 GPU', created: '2026-05-18', apiKey: 'nex_sk_ep_llama3_xxxxxxxx' },
-  { id: 'ep_002', name: 'gpt2-code-assistant', type: 'model', modelOrRules: 'GPT-2 XL', regionOrPolicy: 'eu-west-1', status: 'active', latency: 88, rps: 12, uptime: '100%', calls: '289K', url: 'https://api.nemix.ai/v1/ep_002/infer', computeNode: 'NVIDIA L4 GPU', created: '2026-05-14', apiKey: 'nex_sk_ep_gpt2_xxxxxxxx' },
-  { id: 'ep_r01', name: 'global-smart-router', type: 'router', modelOrRules: 'Llama-3, GPT-2 (Smart Routing)', regionOrPolicy: 'Task-Based Routing', status: 'active', latency: 94, rps: 52, uptime: '100%', calls: '1.58M', url: 'https://api.nemix.ai/v1/router/global-smart-router/infer', computeNode: 'Edge Gateway Node', created: '2026-05-20', apiKey: 'nex_sk_ep_router_xxxxxxxx' },
-  { id: 'ep_003', name: 'bert-ner-pipeline', type: 'model', modelOrRules: 'BERT Base', regionOrPolicy: 'ap-southeast-1', status: 'sleeping', latency: 0, rps: 0, uptime: '—', calls: '54K', url: 'https://api.nemix.ai/v1/ep_003/infer', computeNode: 'Shared CPU Node', created: '2026-05-10', apiKey: 'Use Default System Token' },
+  { id: 'ep_001', name: 'llama3-sentiment-v2', type: 'model', modelOrRules: 'LLaMA 3 8B', regionOrPolicy: 'us-east-1', status: 'active', latency: 142, rps: 38, uptime: '99.9%', calls: '1.24M', url: 'https://api.nvmix.com/v1/ep_001/infer', computeNode: 'NVIDIA L4 GPU', created: '2026-05-18', apiKey: 'nvx_sk_ep_llama3_xxxxxxxx' },
+  { id: 'ep_002', name: 'gpt2-code-assistant', type: 'model', modelOrRules: 'GPT-2 XL', regionOrPolicy: 'eu-west-1', status: 'active', latency: 88, rps: 12, uptime: '100%', calls: '289K', url: 'https://api.nvmix.com/v1/ep_002/infer', computeNode: 'NVIDIA L4 GPU', created: '2026-05-14', apiKey: 'nvx_sk_ep_gpt2_xxxxxxxx' },
+  { id: 'ep_r01', name: 'global-smart-router', type: 'router', modelOrRules: 'Llama-3, GPT-2 (Smart Routing)', regionOrPolicy: 'Task-Based Routing', status: 'active', latency: 94, rps: 52, uptime: '100%', calls: '1.58M', url: 'https://api.nvmix.com/v1/router/global-smart-router/infer', computeNode: 'Edge Gateway Node', created: '2026-05-20', apiKey: 'nvx_sk_ep_router_xxxxxxxx' },
+  { id: 'ep_003', name: 'bert-ner-pipeline', type: 'model', modelOrRules: 'BERT Base', regionOrPolicy: 'ap-southeast-1', status: 'sleeping', latency: 0, rps: 0, uptime: '—', calls: '54K', url: 'https://api.nvmix.com/v1/ep_003/infer', computeNode: 'Shared CPU Node', created: '2026-05-10', apiKey: 'Use Default System Token' },
 ];
 
 const REGIONS = [
@@ -59,7 +59,7 @@ function generateSecretKey(name: string, prefix = 'ep') {
   const rand = Array.from({ length: 24 }, () =>
     'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'[Math.floor(Math.random() * 62)]
   ).join('');
-  return `nex_sk_${prefix}_${name.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 6)}_${rand}`;
+  return `nvx_sk_${prefix}_${name.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 6)}_${rand}`;
 }
 
 export default function DeploymentsPage() {
@@ -192,7 +192,7 @@ export default function DeploymentsPage() {
       activeKeyStr = newKey;
       // Sync it directly with the Security Credentials Vault in Firestore
       try {
-        await addDoc(collection(db, "UserNemixAPIKeys"), {
+        await addDoc(collection(db, "UserNvmixAPIKeys"), {
           userId: "test-user-123",
           name: `Dedicated ${deploymentType === 'model' ? 'endpoint' : 'edge router'} key for ${nameToUse}`,
           prefix: newKey.slice(0, 16),
@@ -225,7 +225,7 @@ export default function DeploymentsPage() {
         rps: 0,
         uptime: '—',
         calls: '0',
-        url: `https://api.nemix.ai/v1/${newDepID}/infer`,
+        url: `https://api.nvmix.com/v1/${newDepID}/infer`,
         computeNode: targetCompute,
         created: new Date().toISOString().split('T')[0],
         apiKey: activeKeyStr,
@@ -245,7 +245,7 @@ export default function DeploymentsPage() {
         rps: 18,
         uptime: '100%',
         calls: '0',
-        url: `https://api.nemix.ai/v1/router/${nameToUse}/infer`,
+        url: `https://api.nvmix.com/v1/router/${nameToUse}/infer`,
         computeNode: 'Edge Gateway Node',
         created: new Date().toISOString().split('T')[0],
         apiKey: activeKeyStr,
@@ -294,8 +294,8 @@ export default function DeploymentsPage() {
   };
 
   // Dedicated dynamic token string for Step 3 Code Block preview
-  const previewTokenString = generateDedicatedKey ? `nex_sk_${deploymentType === 'model' ? 'ep' : 'router'}_${(customName || (deploymentType === 'model' ? selectedModel?.name : 'gateway') || 'api').slice(0, 6).toLowerCase().replace(/[^a-z]/g, 'x')}_xxxxxxxxxxxxxxxx` : 'YOUR_MASTER_API_TOKEN';
-  const previewUrlString = deploymentType === 'model' ? `https://api.nemix.ai/v1/ep_0142/infer` : `https://api.nemix.ai/v1/router/${customName || 'smart-gateway'}/infer`;
+  const previewTokenString = generateDedicatedKey ? `nvx_sk_${deploymentType === 'model' ? 'ep' : 'router'}_${(customName || (deploymentType === 'model' ? selectedModel?.name : 'gateway') || 'api').slice(0, 6).toLowerCase().replace(/[^a-z]/g, 'x')}_xxxxxxxxxxxxxxxx` : 'YOUR_MASTER_API_TOKEN';
+  const previewUrlString = deploymentType === 'model' ? `https://api.nvmix.com/v1/ep_0142/infer` : `https://api.nvmix.com/v1/router/${customName || 'smart-gateway'}/infer`;
 
   return (
     <DashboardLayout>
@@ -852,7 +852,7 @@ export default function DeploymentsPage() {
                             <div className="flex items-center gap-2 p-2 rounded-xl border border-dashed text-[10px] font-mono text-purple-400" style={{ background: 'var(--md-surface-1)', borderColor: 'var(--md-primary)' }}>
                               <Shield className="w-3.5 h-3.5 shrink-0" />
                               <span>Token prefix will be: </span>
-                              <code>{`nex_sk_${deploymentType === 'model' ? 'ep' : 'router'}_${(customName || 'api').slice(0, 6).toLowerCase().replace(/[^a-z]/g, 'x')}_...`}</code>
+                              <code>{`nvx_sk_${deploymentType === 'model' ? 'ep' : 'router'}_${(customName || 'api').slice(0, 6).toLowerCase().replace(/[^a-z]/g, 'x')}_...`}</code>
                             </div>
                           )}
                         </div>
