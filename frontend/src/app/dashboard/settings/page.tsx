@@ -572,12 +572,30 @@ function APIKeysTab({ currentUser }: APIKeysTabProps) {
 
   const userIdentifier = currentUser?.email || currentUser?.id || "test-user-123";
 
+  // Resilient timeout wrapper to prevent Firestore infinite blocks if offline
+  const withTimeout = async <T,>(promise: Promise<T>, ms: number = 1800): Promise<T> => {
+    let timeoutId: any;
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      timeoutId = setTimeout(() => {
+        reject(new Error("Timeout: Database offline"));
+      }, ms);
+    });
+    try {
+      const result = await Promise.race([promise, timeoutPromise]);
+      clearTimeout(timeoutId);
+      return result;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      throw error;
+    }
+  };
+
   useEffect(() => {
     const loadKeys = async () => {
       try {
         setIsLoading(true);
         const q = query(collection(db, "UserNvmixAPIKeys"), where("userId", "==", userIdentifier));
-        const snapshot = await getDocs(q);
+        const snapshot = await withTimeout(getDocs(q), 1500);
         const fetched: any[] = [];
         snapshot.forEach(docSnap => {
           const data = docSnap.data();
@@ -590,8 +608,16 @@ function APIKeysTab({ currentUser }: APIKeysTabProps) {
           });
         });
         setKeys(fetched);
+        // Sync to localStorage
+        localStorage.setItem(`nvmix_generated_keys_${userIdentifier}`, JSON.stringify(fetched));
       } catch (err) {
-        console.error("Failed to load keys from Firestore:", err);
+        console.warn("Failed to load keys from Firestore (falling back to local storage):", err);
+        try {
+          const cached = localStorage.getItem(`nvmix_generated_keys_${userIdentifier}`);
+          if (cached) {
+            setKeys(JSON.parse(cached));
+          }
+        } catch {}
       } finally {
         setIsLoading(false);
       }
@@ -608,35 +634,51 @@ function APIKeysTab({ currentUser }: APIKeysTabProps) {
   const createKey = async () => {
     if (!newName.trim()) return;
     setCreating(true);
+    
+    // Generate key designations
+    const randomSeed = Array.from({ length: 20 }, () => Math.random().toString(36)[2]).join('');
+    const generatedKey = `nvx_sk_ep_${randomSeed}`;
+    const generatedId = `opt_key_${Date.now()}`;
+    
+    const keyData = {
+      userId: userIdentifier,
+      name: newName.trim(),
+      key: generatedKey,
+      created: Date.now(),
+      perms: 'Full access'
+    };
+
+    // 1. Optimistic UI Update: Instantly add to state & localStorage (0ms save!)
+    const updatedKeys = [...keys, {
+      id: generatedId,
+      name: keyData.name,
+      key: generatedKey,
+      created: keyData.created,
+      perms: keyData.perms
+    }];
+    setKeys(updatedKeys);
     try {
-      const randomSeed = Array.from({ length: 20 }, () => Math.random().toString(36)[2]).join('');
-      const generatedKey = `nvx_sk_ep_${randomSeed}`;
-      
-      const keyData = {
-        userId: userIdentifier,
-        name: newName.trim(),
-        key: generatedKey,
-        created: Date.now(),
-        perms: 'Full access',
+      localStorage.setItem(`nvmix_generated_keys_${userIdentifier}`, JSON.stringify(updatedKeys));
+    } catch {}
+
+    setNewName(''); 
+    setShowCreate(false);
+    setCreating(false); // Stop loading instantly!
+
+    // 2. Background Firestore Sync: fire-and-forget in the background
+    withTimeout(
+      addDoc(collection(db, "UserNvmixAPIKeys"), {
+        ...keyData,
         createdAt: serverTimestamp()
-      };
-
-      const docRef = await addDoc(collection(db, "UserNvmixAPIKeys"), keyData);
-
-      setKeys(p => [...p, {
-        id: docRef.id,
-        name: keyData.name,
-        key: generatedKey,
-        created: keyData.created,
-        perms: keyData.perms
-      }]);
-
-      setNewName(''); setShowCreate(false);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setCreating(false);
-    }
+      }),
+      2500
+    ).then((docRef) => {
+      console.log("Successfully synced generated key to Firestore database in background:", docRef.id);
+      // Replace the optimistic mock id with the real Firestore doc ID
+      setKeys(prev => prev.map(k => k.id === generatedId ? { ...k, id: docRef.id } : k));
+    }).catch((err) => {
+      console.warn("Background Firestore key synchronization failed or timed out (saved locally):", err);
+    });
   };
 
   const deleteKey = async (id: string) => {
