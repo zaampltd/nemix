@@ -63,7 +63,12 @@ function LoginForm() {
          window.location.hostname.endsWith('.nvmix.com') ||
          window.location.hostname.endsWith('vercel.app'));
 
-      if (grecaptcha && grecaptcha.enterprise && isProduction) {
+      if (!isProduction) {
+        console.warn("reCAPTCHA Enterprise local/sandbox bypass active. Skipping verification.");
+        return true;
+      }
+
+      if (grecaptcha && grecaptcha.enterprise) {
         token = await new Promise<string>((resolve, reject) => {
           grecaptcha.enterprise.ready(async () => {
             try {
@@ -77,8 +82,6 @@ function LoginForm() {
             }
           });
         });
-      } else {
-        console.warn("reCAPTCHA Enterprise local/sandbox bypass active.");
       }
 
       await api.post('/auth/verify-recaptcha', { token, action });
