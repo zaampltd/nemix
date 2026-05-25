@@ -198,6 +198,16 @@ export default function PlaygroundPage() {
     }
 
     try {
+      // Load keys from localStorage for offline/sandbox backup
+      let localNvidiaKey = "";
+      let localGroqKey = "";
+      let localGeminiKey = "";
+      try {
+        localNvidiaKey = localStorage.getItem("nvmix_key_nvidia") || "";
+        localGroqKey = localStorage.getItem("nvmix_key_groq") || "";
+        localGeminiKey = localStorage.getItem("nvmix_key_gemini") || "";
+      } catch {}
+
       // 2. Call our real backend API
       let promptToSend = systemPrompt;
       const response = await fetch("/api/chat", {
@@ -207,7 +217,10 @@ export default function PlaygroundPage() {
           message: userMessage,
           chatHistory: [...messages, { role: "user", text: userMessage }],
           systemPrompt: promptToSend, // using the state from the left panel
-          temperature: temperature    // using the state from the left panel
+          temperature: temperature,    // using the state from the left panel
+          nvidiaKey: localNvidiaKey,
+          groqKey: localGroqKey,
+          geminiKey: localGeminiKey
         }),
       });
 

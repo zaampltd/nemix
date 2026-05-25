@@ -4,10 +4,17 @@ import { doc, getDoc } from 'firebase/firestore';
 
 export async function POST(req: Request) {
   try {
-    const { message, chatHistory, systemPrompt, temperature } = await req.json();
+    const body = await req.json();
+    const { message, chatHistory, systemPrompt, temperature } = body;
 
-    // 1. Fetch saved keys from Firebase using STRICT string matching
+    // 1. Fetch saved keys from Firebase (with request body fallback for offline/sandbox mode)
     const checkKey = async (providerName: string) => {
+      // Check if key was passed in the request body (client-side offline/sandbox backup)
+      const bodyKey = body[`${providerName.toLowerCase()}Key`] || body[`${providerName}Key`] || body[`${providerName.toUpperCase()}Key`];
+      if (bodyKey && bodyKey.trim()) {
+        return bodyKey.trim();
+      }
+
       try {
         // In production, 'test-user-123' will be dynamically replaced by authenticated user ID
         const snap = await getDoc(doc(db, "UserAPIKeys", `test-user-123_${providerName}`));
