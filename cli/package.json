@@ -1,0 +1,13 @@
+{
+  "name": "nvmix",
+  "version": "1.0.0",
+  "description": "Premium global Command Line Interface (CLI) for Nvmix Swarm Agents and Inference Gateway",
+  "main": "bin/index.js",
+  "bin": {
+    "nvmix": "./bin/index.js"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
