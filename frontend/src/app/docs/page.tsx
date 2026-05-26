@@ -73,6 +73,18 @@ const NAV = [
       { id: "audit-logs",   label: "Audit Logs"                },
     ],
   },
+  {
+    section: "Nvmix Agents",
+    icon: Users,
+    items: [
+      { id: "agents-overview",    label: "Overview"             },
+      { id: "agents-launch",      label: "Launching a Company"  },
+      { id: "agents-heartbeat",   label: "Pulse & Auto Runner"  },
+      { id: "agents-outputs",     label: "Output Formats"       },
+      { id: "agents-governance",  label: "Governance & Approval" },
+      { id: "agents-api",         label: "API Reference"        },
+    ],
+  },
 ];
 
 // ─── Doc content pages ─────────────────────────────────────────────
@@ -594,6 +606,244 @@ const DOCS: Record<string, React.ReactNode> = {
         <Info className="callout-icon" style={{ color: "var(--md-primary)" }} />
         <p>Audit logs retained 90 days (free) or 1 year (paid plans).</p>
       </div>
+    </div>
+  ),
+
+  // ─── Nvmix Agents Docs ─────────────────────────────────────────
+
+  "agents-overview": (
+    <div>
+      <div className="doc-badge">Nvmix Agents</div>
+      <h1>Nvmix Agents — Overview</h1>
+      <p className="lead">An autonomous AI company-in-a-box. Describe your business, and Nvmix hires a full team of specialized AI agents that work 24/7.</p>
+
+      <div className="callout success">
+        <CheckCircle2 className="callout-icon" style={{ color: "var(--md-success)" }} />
+        <p><strong>Zero employees needed.</strong> No salaries, no standups, no onboarding. Just describe your company and let AI agents handle everything.</p>
+      </div>
+
+      <h2>What are Nvmix Agents?</h2>
+      <p>Nvmix Agents is an autonomous swarm system that creates a complete AI workforce for your company. Each agent is specialized for a specific business role and independently executes tasks, produces deliverables (code, reports, documents, social content), and coordinates with other agents.</p>
+
+      <h2>Key Concepts</h2>
+      <table className="doc-table">
+        <thead><tr><th>Concept</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Company</strong></td><td>Your AI workspace. Stores mission, goal, budget, and API key.</td></tr>
+          <tr><td><strong>Agents</strong></td><td>Specialized AI workers hired automatically for your industry (7 per company).</td></tr>
+          <tr><td><strong>Tickets</strong></td><td>Backlog tasks auto-generated for your goal. Agents execute these.</td></tr>
+          <tr><td><strong>Heartbeat</strong></td><td>A single execution cycle. Each Pulse processes one ticket end-to-end.</td></tr>
+          <tr><td><strong>Auto Runner</strong></td><td>Continuous mode — runs heartbeats automatically every few seconds.</td></tr>
+          <tr><td><strong>Governance</strong></td><td>Board approval gate — agents submit work, CEO reviews before it's saved.</td></tr>
+        </tbody>
+      </table>
+
+      <h2>Supported Industries</h2>
+      <p>Nvmix agents are pre-configured for 11 industries, each with 7 role-appropriate agents:</p>
+      <ul className="doc-list">
+        <li>💻 <strong>Technology</strong> — CEO, Software Engineer, QA, DevOps, Security, Project Manager, Tech Writer</li>
+        <li>💰 <strong>Finance</strong> — CEO, CFO, Accountant, Financial Analyst, Risk Advisor, Compliance Officer, Investment Strategist</li>
+        <li>📣 <strong>Marketing</strong> — CEO, CMO, Content Writer, SEO Specialist, Social Media Manager, Ad Strategist, Brand Designer</li>
+        <li>🏥 <strong>Healthcare</strong> — CEO, Medical Advisor, Data Analyst, Compliance Officer, Patient Coordinator, Research Analyst, Operations Manager</li>
+        <li>🛒 <strong>E-Commerce</strong> — CEO, E-Commerce Manager, Inventory Manager, Customer Support, Social Media, Analytics, Logistics Coordinator</li>
+        <li>🚀 <strong>Startup</strong> — CEO, CTO, Product Manager, Growth Hacker, Full-Stack Developer, Customer Success, Investor Relations</li>
+        <li>📚 <strong>Education</strong> — CEO, Curriculum Designer, Content Creator, Student Advisor, Platform Developer, Research Analyst, Operations</li>
+        <li>🍽️ <strong>Restaurant</strong> — CEO, Operations Manager, Chef Advisor, Inventory Manager, Social Media, Customer Relations, Financial Controller</li>
+        <li>🧠 <strong>Consulting</strong> — CEO, Senior Consultant, Research Analyst, Project Manager, Business Advisor, Financial Analyst, Report Writer</li>
+        <li>🏠 <strong>Real Estate</strong> — CEO, Property Manager, Sales Agent, Legal Advisor, Finance Manager, Marketing Specialist, Client Relations</li>
+        <li>🗺️ <strong>Logistics</strong> — CEO, Logistics Manager, Supply Chain Analyst, Operations Manager, Fleet Coordinator, Warehouse Manager, Compliance</li>
+      </ul>
+
+      <div className="callout info">
+        <Info className="callout-icon" style={{ color: "var(--md-primary)" }} />
+        <p>Don't see your industry? Enter any custom industry and Nvmix will dynamically generate the optimal agent roster using AI.</p>
+      </div>
+    </div>
+  ),
+
+  "agents-launch": (
+    <div>
+      <div className="doc-badge">Nvmix Agents</div>
+      <h1>Launching a Company</h1>
+      <p className="lead">Deploy your autonomous AI company in under 2 minutes using the 4-step wizard.</p>
+
+      <h2>Step 1 — Company Details</h2>
+      <p>Enter your name, company name, and industry. The industry selection determines which 7 agents are hired.</p>
+
+      <h2>Step 2 — Mission & Goal</h2>
+      <p>Describe your company's mission (what it does) and your primary goal (what you want to achieve). Be specific — agents use this to generate relevant tasks.</p>
+      <div className="callout info">
+        <Info className="callout-icon" style={{ color: "var(--md-primary)" }} />
+        <p><strong>Good goal:</strong> "Build a SaaS platform for restaurant inventory management with real-time alerts."<br /><strong>Vague goal:</strong> "Build an app."</p>
+      </div>
+
+      <h2>Step 3 — Connect Nvmix API Key</h2>
+      <p>Enter your Nvmix API key to enable AI execution. This allows agents to use the Nvmix inference engine to generate real outputs.</p>
+      <CodeBlock lang="bash" code={`# Your API key format:\nnvx_live_sk_XXXXXXXXXXXXXXXXXXXXXXXX`} />
+
+      <h2>Step 4 — Launch</h2>
+      <p>Click <strong>Launch Company</strong>. Nvmix will:</p>
+      <ol className="doc-list">
+        <li>AI-generate 7 industry-specific agents with names, roles, and avatars</li>
+        <li>Auto-create 6 backlog tickets tailored to your goal and industry</li>
+        <li>Send a CEO welcome message in the company chat</li>
+        <li>Draft a CEO welcome email with your team roster and task list</li>
+      </ol>
+
+      <h2>Via API</h2>
+      <CodeBlock lang="bash" code={`curl -X POST https://your-app.com/api/orchestrator \\\n  -H "Content-Type: application/json" \\\n  -d '{\n    "action": "onboard",\n    "companyName": "TechFlow AI",\n    "goal": "Build an automated SaaS billing platform",\n    "mission": "Automate B2B SaaS billing end-to-end",\n    "userName": "Alex",\n    "industry": "technology",\n    "apiKey": "nvx_live_sk_..."\n  }'`} />
+      <CodeBlock lang="json" code={`{\n  "success": true,\n  "message": "🚀 Swarm deployed successfully via Nvmix API!",\n  "state": {\n    "companyName": "TechFlow AI",\n    "agents": [ /* 7 agents */ ],\n    "tickets": [ /* 6 backlog tasks */ ]\n  }\n}`} />
+    </div>
+  ),
+
+  "agents-heartbeat": (
+    <div>
+      <div className="doc-badge">Nvmix Agents</div>
+      <h1>Pulse & Auto Runner</h1>
+      <p className="lead">Heartbeats are execution cycles. Each pulse picks the next ticket, executes it with AI, and awaits board approval.</p>
+
+      <h2>Manual Pulse</h2>
+      <p>Click the <strong>⚡ Pulse</strong> button to trigger one execution cycle. The active agent picks up the next "todo" ticket, generates its deliverable using the Nvmix AI engine, and submits it for governance approval.</p>
+
+      <h2>Auto Runner</h2>
+      <p>Enable <strong>Auto Runner</strong> to run continuous heartbeats automatically. Agents will sequentially complete all backlog tickets without any user input.</p>
+
+      <div className="callout warning">
+        <AlertCircle className="callout-icon" style={{ color: "var(--md-warning)" }} />
+        <p>Auto Runner uses API credits on each heartbeat. Monitor your budget usage in the dashboard sidebar.</p>
+      </div>
+
+      <h2>Heartbeat Lifecycle</h2>
+      <ol className="doc-list">
+        <li><strong>Pick ticket</strong> — finds the first "todo" or "inprogress" ticket</li>
+        <li><strong>Set status</strong> — marks it "inprogress", activates the assigned agent</li>
+        <li><strong>AI generation</strong> — calls Nvmix engine with role-aware system prompt (20s timeout)</li>
+        <li><strong>Submit for review</strong> — sets status to "awaiting", deactivates agent</li>
+        <li><strong>Governance</strong> — CEO reviews output; approve to save, reject to retry</li>
+      </ol>
+
+      <h2>Heartbeat States</h2>
+      <table className="doc-table">
+        <thead><tr><th>Status</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>todo</code></td><td>Waiting in backlog, not yet started</td></tr>
+          <tr><td><code>inprogress</code></td><td>Actively being worked on by an agent</td></tr>
+          <tr><td><code>awaiting</code></td><td>Output generated, pending governance approval</td></tr>
+          <tr><td><code>done</code></td><td>Approved and saved to workspace files</td></tr>
+        </tbody>
+      </table>
+
+      <h2>Via API</h2>
+      <CodeBlock lang="bash" code={`# Trigger one heartbeat pulse\ncurl -X POST https://your-app.com/api/orchestrator \\\n  -H "Content-Type: application/json" \\\n  -d '{"action": "heartbeat"}'`} />
+    </div>
+  ),
+
+  "agents-outputs": (
+    <div>
+      <div className="doc-badge">Nvmix Agents</div>
+      <h1>Output Formats</h1>
+      <p className="lead">Every agent produces deliverables in the format most appropriate for their role — not generic text.</p>
+
+      <h2>Format Routing</h2>
+      <p>Nvmix automatically detects the correct output format based on the agent's role:</p>
+      <table className="doc-table">
+        <thead><tr><th>Agent Role</th><th>Output Format</th><th>File Extension</th></tr></thead>
+        <tbody>
+          <tr><td>Software Engineer, CTO, DevOps, QA</td><td>Python code</td><td><code>.py</code></td></tr>
+          <tr><td>CFO, Accountant, Financial Analyst</td><td>CSV financial report</td><td><code>.csv</code></td></tr>
+          <tr><td>Social Media Manager, Content Creator, Brand Designer</td><td>Social media content</td><td><code>.md</code></td></tr>
+          <tr><td>Compliance Officer, Legal Advisor, Security Auditor</td><td>Compliance document</td><td><code>.md</code></td></tr>
+          <tr><td>Research Analyst, SEO Specialist, Data Analyst</td><td>Analysis report</td><td><code>.md</code></td></tr>
+          <tr><td>Content Writer, Tech Writer, Curriculum Designer</td><td>Document</td><td><code>.md</code></td></tr>
+          <tr><td>All other roles</td><td>Business document</td><td><code>.md</code></td></tr>
+        </tbody>
+      </table>
+
+      <h2>Python Code (Software Agents)</h2>
+      <p>Agents writing code receive this system prompt directive:</p>
+      <CodeBlock lang="text" code={`Write complete, production-ready Python code.\nDo NOT output placeholders or mock setups. Write REAL, fully working\ncode with proper imports, classes, error handling, and logic.\nOutput ONLY the raw Python code — no markdown fences, no explanation.`} />
+
+      <h2>CSV Reports (Financial Agents)</h2>
+      <CodeBlock lang="text" code={`Produce structured financial reports in CSV format.\nCreate REAL financial data with proper headers, realistic numbers,\nand multiple rows. Include totals, summaries, and analysis rows.\nOutput ONLY the raw CSV content — no markdown, no explanation.`} />
+
+      <h2>Social Media Content</h2>
+      <CodeBlock lang="text" code={`Create compelling social media content.\nWrite ready-to-post content for LinkedIn, Instagram, and Twitter/X.\nInclude: post captions, hashtags, emojis, call-to-actions, and engagement hooks.\nFormat in clean Markdown with sections for each platform.`} />
+
+      <div className="callout info">
+        <Info className="callout-icon" style={{ color: "var(--md-primary)" }} />
+        <p>All outputs are saved to the workspace file browser after governance approval. Files are downloadable from the dashboard.</p>
+      </div>
+    </div>
+  ),
+
+  "agents-governance": (
+    <div>
+      <div className="doc-badge">Nvmix Agents</div>
+      <h1>Governance & Approval</h1>
+      <p className="lead">Every agent deliverable goes through a governance gate before being saved — ensuring quality control without micromanagement.</p>
+
+      <h2>How Governance Works</h2>
+      <ol className="doc-list">
+        <li>Agent completes a task → output status becomes <code>awaiting</code></li>
+        <li>You review the output in the <strong>Board of Directors</strong> panel</li>
+        <li><strong>Approve</strong> → output is saved to workspace, status becomes <code>done</code>, budget is debited</li>
+        <li><strong>Reject</strong> → ticket is reset to <code>todo</code> for retry on next heartbeat</li>
+      </ol>
+
+      <h2>Approving via API</h2>
+      <CodeBlock lang="bash" code={`curl -X POST https://your-app.com/api/orchestrator \\\n  -H "Content-Type: application/json" \\\n  -d '{"action": "approve", "ticketId": "ticket_1"}'`} />
+
+      <h2>Rejecting via API</h2>
+      <CodeBlock lang="bash" code={`curl -X POST https://your-app.com/api/orchestrator \\\n  -H "Content-Type: application/json" \\\n  -d '{"action": "reject", "ticketId": "ticket_1"}'`} />
+
+      <h2>Disabling Governance</h2>
+      <p>Toggle <strong>Governance Mode</strong> off to enable fully autonomous execution — agents will automatically approve and save their own outputs without human review.</p>
+      <div className="callout warning">
+        <AlertCircle className="callout-icon" style={{ color: "var(--md-warning)" }} />
+        <p>Disabling governance means all agent outputs are saved automatically. Recommended only after validating agent quality for your use case.</p>
+      </div>
+    </div>
+  ),
+
+  "agents-api": (
+    <div>
+      <div className="doc-badge">Nvmix Agents</div>
+      <h1>Agents API Reference</h1>
+      <p className="lead">All agent operations are exposed via the <code>POST /api/orchestrator</code> endpoint.</p>
+
+      <h2>Base URL</h2>
+      <CodeBlock lang="bash" code={`POST https://your-app.com/api/orchestrator\nContent-Type: application/json`} />
+
+      <h2>Actions</h2>
+      <table className="doc-table">
+        <thead><tr><th>Action</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>onboard</code></td><td>Launch a new AI company with agents and tickets</td></tr>
+          <tr><td><code>heartbeat</code></td><td>Execute one agent task cycle (Pulse)</td></tr>
+          <tr><td><code>approve</code></td><td>Approve a ticket's output and save to workspace</td></tr>
+          <tr><td><code>reject</code></td><td>Reject and retry a ticket</td></tr>
+          <tr><td><code>state</code></td><td>Get full company state (agents, tickets, activity)</td></tr>
+          <tr><td><code>chat</code></td><td>Send a message to the CEO agent</td></tr>
+          <tr><td><code>hire</code></td><td>Hire a new agent manually</td></tr>
+          <tr><td><code>fire</code></td><td>Remove an agent from the company</td></tr>
+          <tr><td><code>add_ticket</code></td><td>Add a new task to the backlog</td></tr>
+          <tr><td><code>reset</code></td><td>Reset the entire company workspace</td></tr>
+        </tbody>
+      </table>
+
+      <h2>onboard — Full Example</h2>
+      <CodeBlock lang="json" code={`{\n  "action": "onboard",\n  "companyName": "FinanceFlow",\n  "goal": "Automate financial reporting and compliance for SMBs",\n  "mission": "Making financial operations effortless for small businesses",\n  "userName": "Sarah",\n  "industry": "finance",\n  "apiKey": "nvx_live_sk_..."\n}`} />
+
+      <h2>heartbeat — Trigger Execution</h2>
+      <CodeBlock lang="json" code={`{ "action": "heartbeat" }`} />
+      <CodeBlock lang="json" code={`{\n  "success": true,\n  "state": {\n    "activeTicket": "Produce Q2 Financial Report",\n    "agentWorking": "Vault-AI (CFO)",\n    "ticketStatus": "awaiting",\n    "output": "Date,Category,Amount,Notes\\n2026-Q2,Revenue,125000,..."\n  }\n}`} />
+
+      <h2>approve — Save Output</h2>
+      <CodeBlock lang="json" code={`{ "action": "approve", "ticketId": "ticket_2" }`} />
+
+      <h2>state — Get Full State</h2>
+      <CodeBlock lang="json" code={`{ "action": "state" }`} />
+      <CodeBlock lang="json" code={`{\n  "company": { "companyName": "FinanceFlow", "budgetUsed": 3200, ... },\n  "agents": [ { "id": "agent_ceo", "role": "CEO", "status": "working" }, ... ],\n  "tickets": [ { "id": "ticket_1", "status": "done", "output": "..." }, ... ],\n  "activity": [ "✅ Q2 Financial Report saved to workspace" ]\n}`} />
     </div>
   ),
 };

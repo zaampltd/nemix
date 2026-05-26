@@ -6,7 +6,8 @@ import {
   ArrowRight, Zap, Database, Cpu, Rocket, Shield, MessageSquare,
   Check, BarChart2, BookOpen, FlaskConical, Sun, Moon, Star,
   Users, Globe, ChevronRight, Play, MessageCircle,
-  GitBranch, Link2, Activity, Clock, Lock, Calculator, Server
+  GitBranch, Link2, Activity, Clock, Lock, Calculator, Server,
+  Bot, Sparkles, BriefcaseBusiness
 } from "lucide-react";
 import { useTheme } from "@/lib/theme";
 import { motion, AnimatePresence } from "framer-motion";
@@ -92,12 +93,38 @@ const FEATURES = [
   },
 ];
 
+const AGENT_INDUSTRIES = [
+  { icon: "💻", label: "Technology",   desc: "Full engineering team: CEO, Dev, QA, DevOps, Security" },
+  { icon: "💰", label: "Finance",      desc: "CFO, Accountant, Analyst, Risk Advisor, Compliance" },
+  { icon: "📣", label: "Marketing",   desc: "CMO, Content Writer, SEO, Social Media, Ad Strategy" },
+  { icon: "🏥", label: "Healthcare",  desc: "Medical Advisor, Compliance, Research, Patient Care" },
+  { icon: "🛒", label: "E-Commerce",  desc: "Store Manager, Inventory, Support, Analytics, Logistics" },
+  { icon: "🚀", label: "Startup",     desc: "Founder AI, CTO, Growth Hacker, Full-Stack, Investor" },
+  { icon: "📚", label: "Education",   desc: "Curriculum Designer, Advisor, Platform Dev, Research" },
+  { icon: "🍽️", label: "Restaurant",  desc: "Kitchen Ops, Chef Advisor, Inventory, Social, Finance" },
+  { icon: "🧠", label: "Consulting",  desc: "Strategy, Research Analyst, PM, Advisory, Report Writer" },
+  { icon: "🏠", label: "Real Estate", desc: "Property Manager, Sales Agent, Legal, Finance, Marketing" },
+  { icon: "🗺️", label: "Logistics",  desc: "Route Manager, Supply Chain, Fleet Coordinator, Warehouse" },
+];
+
+const AGENT_OUTPUTS = [
+  { icon: "🐍", label: "Python Scripts",      desc: "Full working code with imports, logic, and error handling" },
+  { icon: "📊", label: "CSV Reports",          desc: "Financial data, budget plans, quarterly analysis" },
+  { icon: "📱", label: "Social Media Posts",   desc: "LinkedIn, Instagram, Twitter/X with hashtags & CTAs" },
+  { icon: "📋", label: "Compliance Docs",      desc: "HR policies, legal frameworks, audit-ready documentation" },
+  { icon: "📈", label: "Analysis Reports",     desc: "Market research, executive summaries, recommendations" },
+  { icon: "📝", label: "Business Documents",   desc: "Strategy plans, onboarding guides, proposals" },
+];
+
 const FAQS = [
   { q: "How does Nvmix keep training costs so low?", a: "We run on a serverless GPU scheduling matrix. Unlike AWS where you rent an entire idle machine, Nvmix spins up high-performance NVIDIA L4 chips only when training begins, billing you to the exact millisecond." },
   { q: "Can I deploy custom open-source models?", a: "Absolutely. We support LLaMA 3, Mistral 7B, GPT-2, BERT, RoBERTa, Whisper, CLIP, and standard Hugging Face model imports right out of the box." },
   { q: "How does the Intelligent Edge Router compare to standard endpoints?", a: "Standard endpoints route traffic directly to a single deployed container. Edge Routers act as a smart gateway, combining multiple models with fallback rules, token limiters, and smart semantic load balancing." },
   { q: "Is my training data secure?", a: "Yes. All uploaded datasets and trained weights are isolated in private, SOC 2 compliant database vaults. We never share your data or use it to train global models." },
   { q: "Do you offer annual discounts?", a: "Yes. Billed annually subscriptions receive a 20% discount on both Developer Pro ($39/mo) and Business Enterprise ($159/mo) plan tiers." },
+  { q: "What is Nvmix Agents and how does it work?", a: "Nvmix Agents is an autonomous AI company-in-a-box. You describe your company, choose your industry, and Nvmix hires 7 specialized AI agents (CEO, engineers, marketers, analysts etc.) tailored to your industry. Each agent independently executes tasks — writing code, producing reports, creating social media content, drafting compliance docs — 24/7 without human input." },
+  { q: "What outputs can Nvmix Agents produce?", a: "Agents produce production-ready outputs based on their role: Software Engineers write Python/JS scripts, Financial Analysts generate CSV reports, Social Media Managers write platform-specific posts with hashtags, Compliance Officers draft legal documents, and Business Analysts create strategy documents — all in the correct file format." },
+  { q: "Can Nvmix Agents handle any industry?", a: "Yes. We support 11 built-in industry rosters (Technology, Finance, Marketing, Healthcare, E-Commerce, Startup, Education, Restaurant, Consulting, Real Estate, Logistics) plus dynamic AI-generated rosters for any custom industry. Every company gets 7 specialized agents with roles chosen specifically for their sector." },
 ];
 
 const LOGOS = ["Vercel", "Stripe", "Linear", "Notion", "Figma", "Anthropic", "GitHub", "Cloudflare"];
@@ -151,6 +178,9 @@ export default function LandingPage() {
 
           <nav style={{ display: "flex", alignItems: "center", gap: "6px" }} className="hidden sm:flex">
             <a href="#features" style={{ padding: "8px 12px", fontSize: "14px", color: "var(--md-on-surface-var)", borderRadius: "8px", textDecoration: "none", fontWeight: 600 }}>Features</a>
+            <a href="#agents" style={{ padding: "8px 12px", fontSize: "14px", color: "var(--md-primary)", borderRadius: "8px", textDecoration: "none", fontWeight: 700, background: "var(--md-primary-container)", display: "flex", alignItems: "center", gap: "5px" }}>
+              <span style={{ fontSize: "12px" }}>✨</span> Agents <span style={{ fontSize: "9px", background: "var(--md-primary)", color: "var(--md-on-primary)", padding: "1px 5px", borderRadius: "4px", fontWeight: 800 }}>NEW</span>
+            </a>
             <a href="#roi" style={{ padding: "8px 12px", fontSize: "14px", color: "var(--md-on-surface-var)", borderRadius: "8px", textDecoration: "none", fontWeight: 600 }}>Savings ROI</a>
             <a href="#pricing" style={{ padding: "8px 12px", fontSize: "14px", color: "var(--md-on-surface-var)", borderRadius: "8px", textDecoration: "none", fontWeight: 600 }}>Pricing</a>
             <a href="#faq" style={{ padding: "8px 12px", fontSize: "14px", color: "var(--md-on-surface-var)", borderRadius: "8px", textDecoration: "none", fontWeight: 600 }}>FAQ</a>
@@ -179,7 +209,7 @@ export default function LandingPage() {
           <div className="space-y-6">
             <div style={{ display: "inline-flex", alignItems: "center", gap: "8px", padding: "6px 14px", borderRadius: "100px", background: "var(--md-primary-container)", color: "var(--md-primary)", fontSize: "12px", fontWeight: 700, border: "1px solid var(--md-outline)" }}>
               <span className="w-2 h-2 rounded-full bg-green-500 animate-ping" />
-              SaaS MLOps Suite — Deploying models globally
+              SaaS MLOps + Autonomous AI Agents — Now Live
             </div>
             <h1 style={{ fontSize: "clamp(34px, 5.5vw, 56px)", fontWeight: 950, lineHeight: 1.05, letterSpacing: "-0.04em", color: "var(--md-on-surface)" }}>
               Train & fine-tune <br />
@@ -278,6 +308,98 @@ export default function LandingPage() {
                 {logo}
               </span>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════════════════════════════ */}
+      {/* ── Nvmix Agents Section ─────────────────────────────────────── */}
+      {/* ══════════════════════════════════════════════════════════════════ */}
+      <section id="agents" style={{ borderTop: "1px solid var(--md-outline)", padding: "96px 24px", background: "var(--md-surface-1)", position: "relative", overflow: "hidden" }}>
+        {/* Background glow */}
+        <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: "700px", height: "400px", borderRadius: "50%", background: "var(--md-primary)", opacity: 0.04, filter: "blur(100px)", pointerEvents: "none" }} />
+        <div style={{ ...W }}>
+          {/* Section Header */}
+          <div style={{ textAlign: "center", marginBottom: "64px" }}>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: "8px", padding: "6px 16px", borderRadius: "100px", background: "var(--md-primary-container)", color: "var(--md-primary)", fontSize: "12px", fontWeight: 800, marginBottom: "20px", border: "1px solid var(--md-outline)" }}>
+              <Bot style={{ width: "14px", height: "14px" }} /> Nvmix Agents — Autonomous AI Company
+            </div>
+            <h2 style={{ fontSize: "clamp(28px, 4vw, 48px)", fontWeight: 950, letterSpacing: "-0.04em", color: "var(--md-on-surface)", lineHeight: 1.1, marginBottom: "16px" }}>
+              Your entire company,<br />
+              <span style={{ color: "var(--md-primary)" }}>run by AI agents.</span>
+            </h2>
+            <p style={{ fontSize: "16px", color: "var(--md-on-surface-var)", maxWidth: "580px", margin: "0 auto", lineHeight: 1.6 }}>
+              Describe your company, choose your industry, and Nvmix hires 7 specialized AI agents. They independently execute tasks, produce deliverables, and run 24/7 — no human input required.
+            </p>
+          </div>
+
+          {/* How It Works: 3 Steps */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "24px", marginBottom: "64px" }}>
+            {[
+              { step: "01", icon: BriefcaseBusiness, title: "Describe Your Company", desc: "Enter your company name, industry, and mission. Our AI understands your business context instantly.", color: "var(--md-primary)" },
+              { step: "02", icon: Users, title: "AI Hires Your Team", desc: "Nvmix automatically hires 7 specialized agents for your industry — CEO, engineers, analysts, marketers, compliance, and more.", color: "var(--md-success)" },
+              { step: "03", icon: Sparkles, title: "Agents Start Working", desc: "Press Pulse or enable Auto Runner. Agents execute tasks, produce deliverables, and report back — completely autonomously.", color: "var(--md-warning)" },
+            ].map(s => (
+              <div key={s.step} style={{ padding: "28px", borderRadius: "24px", background: "var(--md-surface)", border: "1px solid var(--md-outline)", position: "relative" }}>
+                <div style={{ fontSize: "11px", fontWeight: 900, letterSpacing: "0.1em", color: "var(--md-on-surface-var)", opacity: 0.4, marginBottom: "16px" }}>STEP {s.step}</div>
+                <div style={{ width: "44px", height: "44px", borderRadius: "14px", background: `${s.color}20`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "16px" }}>
+                  <s.icon style={{ width: "22px", height: "22px", color: s.color }} />
+                </div>
+                <h3 style={{ fontSize: "17px", fontWeight: 800, color: "var(--md-on-surface)", marginBottom: "8px" }}>{s.title}</h3>
+                <p style={{ fontSize: "13px", color: "var(--md-on-surface-var)", lineHeight: 1.6 }}>{s.desc}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Industry Roster Grid */}
+          <div style={{ marginBottom: "64px" }}>
+            <h3 style={{ fontSize: "20px", fontWeight: 800, color: "var(--md-on-surface)", textAlign: "center", marginBottom: "32px" }}>
+              11 Industries. 7 Specialized Agents Each.
+            </h3>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "12px" }}>
+              {AGENT_INDUSTRIES.map(ind => (
+                <div key={ind.label} style={{ padding: "16px 20px", borderRadius: "16px", background: "var(--md-surface)", border: "1px solid var(--md-outline)", display: "flex", flexDirection: "column", gap: "8px", transition: "all 0.2s" }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.borderColor = "var(--md-primary)"; (e.currentTarget as HTMLDivElement).style.background = "var(--md-primary-container)"; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = "var(--md-outline)"; (e.currentTarget as HTMLDivElement).style.background = "var(--md-surface)"; }}
+                >
+                  <div style={{ fontSize: "22px" }}>{ind.icon}</div>
+                  <div style={{ fontSize: "13px", fontWeight: 700, color: "var(--md-on-surface)" }}>{ind.label}</div>
+                  <div style={{ fontSize: "11px", color: "var(--md-on-surface-var)", lineHeight: 1.4 }}>{ind.desc}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Output Types Grid */}
+          <div style={{ marginBottom: "48px" }}>
+            <h3 style={{ fontSize: "20px", fontWeight: 800, color: "var(--md-on-surface)", textAlign: "center", marginBottom: "8px" }}>
+              Every Agent Produces the Right Output Format
+            </h3>
+            <p style={{ textAlign: "center", fontSize: "14px", color: "var(--md-on-surface-var)", marginBottom: "32px" }}>
+              No generic text blobs. Agents produce production-ready deliverables in the correct file format.
+            </p>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "16px" }}>
+              {AGENT_OUTPUTS.map(out => (
+                <div key={out.label} style={{ display: "flex", gap: "14px", alignItems: "flex-start", padding: "18px 20px", borderRadius: "16px", background: "var(--md-surface)", border: "1px solid var(--md-outline)" }}>
+                  <div style={{ fontSize: "24px", flexShrink: 0 }}>{out.icon}</div>
+                  <div>
+                    <div style={{ fontSize: "14px", fontWeight: 700, color: "var(--md-on-surface)", marginBottom: "4px" }}>{out.label}</div>
+                    <div style={{ fontSize: "12px", color: "var(--md-on-surface-var)", lineHeight: 1.5 }}>{out.desc}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* CTA */}
+          <div style={{ textAlign: "center", padding: "48px", borderRadius: "28px", background: "linear-gradient(135deg, var(--md-primary-container) 0%, var(--md-surface) 100%)", border: "1px solid var(--md-outline)" }}>
+            <div style={{ fontSize: "32px", marginBottom: "12px" }}>🚀</div>
+            <h3 style={{ fontSize: "24px", fontWeight: 900, color: "var(--md-on-surface)", letterSpacing: "-0.02em", marginBottom: "8px" }}>Launch Your AI Company Today</h3>
+            <p style={{ fontSize: "14px", color: "var(--md-on-surface-var)", marginBottom: "24px", maxWidth: "420px", margin: "0 auto 24px" }}>No team needed. No salaries. Just describe what you want to build and let your AI agents handle everything.</p>
+            <Link href="/auth/register"
+              style={{ display: "inline-flex", alignItems: "center", gap: "8px", padding: "14px 32px", borderRadius: "14px", background: "var(--md-primary)", color: "var(--md-on-primary)", textDecoration: "none", fontWeight: 800, fontSize: "15px", boxShadow: "var(--shadow-2)" }}>
+              <Bot style={{ width: "18px", height: "18px" }} /> Start with Nvmix Agents <ArrowRight style={{ width: "16px", height: "16px" }} />
+            </Link>
           </div>
         </div>
       </section>
