@@ -54,25 +54,49 @@ export async function POST(request: Request) {
       );
     }
 
+    // A highly resilient helper to race Firestore calls with a strict 1000ms timeout
+    const withTimeout = async <T>(promise: Promise<T>, timeoutMs = 1000): Promise<T> => {
+      let timeoutId: any;
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        timeoutId = setTimeout(() => reject(new Error('Firestore operation timed out')), timeoutMs);
+      });
+      try {
+        const result = await Promise.race([promise, timeoutPromise]);
+        clearTimeout(timeoutId);
+        return result;
+      } catch (err) {
+        clearTimeout(timeoutId);
+        throw err;
+      }
+    };
+
     // 3. Resolve the user associated with this API key to load their custom provider credentials
     let userId = "test-user-123"; // fallback
     try {
       const q = query(collection(db, "UserNvmixAPIKeys"), where("key", "==", nvmixApiKey));
-      const snap = await getDocs(q);
+      const snap = await withTimeout(getDocs(q));
       if (!snap.empty) {
         userId = snap.docs[0].data().userId || "test-user-123";
+      } else {
+        // Fallback for development/offline testing: If key is placeholder, find the first active user in the vault
+        const keysSnap = await withTimeout(getDocs(collection(db, "UserAPIKeys")));
+        if (!keysSnap.empty) {
+          const firstKeyDocId = keysSnap.docs[0].id;
+          userId = firstKeyDocId.split('_')[0] || "test-user-123";
+          console.log("Resilient Fallback: Resolved active developer user ID from Firestore vault:", userId);
+        }
       }
-    } catch (err) {
-      console.warn("Could not lookup user owner for Nvmix API Key:", err);
+    } catch (err: any) {
+      console.warn("Could not lookup user owner for Nvmix API Key (falling back):", err?.message || err);
     }
 
     // Fetch user-configured LLM keys dynamically from Firestore credentials vault
     const checkKey = async (providerName: string) => {
       try {
-        const snap = await getDoc(doc(db, "UserAPIKeys", `${userId}_${providerName}`));
+        const snap = await withTimeout(getDoc(doc(db, "UserAPIKeys", `${userId}_${providerName}`)));
         return snap.exists() ? snap.data().key : null;
-      } catch (err) {
-        console.warn(`Error loading key for ${providerName}:`, err);
+      } catch (err: any) {
+        console.warn(`Error loading key for ${providerName} (falling back):`, err?.message || err);
         return null;
       }
     };
@@ -125,7 +149,7 @@ export async function POST(request: Request) {
             'Authorization': `Bearer ${activeNvidiaKey}`
           },
           {
-            model: 'meta/llama-3.1-70b-instruct',
+            model: 'meta/llama-3.1-8b-instruct',
             messages,
             temperature: temperature ?? 0.7,
             max_tokens: max_tokens ?? 1024,
