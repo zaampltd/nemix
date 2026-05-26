@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "@/lib/theme";
 import { BrandLogo } from "@/components/ui/BrandLogo";
+import { useAuth } from "@/context/AuthContext";
 
 const NAV_SECTIONS = [
   {
@@ -66,6 +67,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const router = useRouter();
   const { theme, toggle } = useTheme();
 
+  const { logout } = useAuth();
+
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) { router.push("/auth/login"); return; }
@@ -83,8 +86,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
   }, [router]);
 
-  const handleLogout = () => {
-    ["token", "current_user", "demo_user"].forEach(k => localStorage.removeItem(k));
+  const handleLogout = async () => {
+    await logout();          // Firebase signOut + clears localStorage
     router.push("/auth/login");
   };
 

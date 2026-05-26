@@ -134,17 +134,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Logout
   const logout = async () => {
-    setLoading(true);
     try {
       await signOut(auth);
+    } catch (error) {
+      console.error("Firebase logout error:", error);
+    } finally {
+      // Always clear local state and storage regardless of Firebase result
       localStorage.removeItem('token');
       localStorage.removeItem('current_user');
       localStorage.removeItem('demo_user');
       setUser(null);
       setFirebaseUser(null);
-    } catch (error) {
-      console.error("Firebase logout error:", error);
-    } finally {
       setLoading(false);
     }
   };
