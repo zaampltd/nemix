@@ -77,12 +77,13 @@ const NAV = [
     section: "Nvmix Agents",
     icon: Users,
     items: [
-      { id: "agents-overview",    label: "Overview"             },
-      { id: "agents-launch",      label: "Launching a Company"  },
-      { id: "agents-heartbeat",   label: "Pulse & Auto Runner"  },
-      { id: "agents-outputs",     label: "Output Formats"       },
-      { id: "agents-governance",  label: "Governance & Approval" },
-      { id: "agents-api",         label: "API Reference"        },
+      { id: "agents-local-install", label: "⬇️ Local Installation"  },
+      { id: "agents-overview",      label: "Overview"              },
+      { id: "agents-launch",        label: "Launching a Company"   },
+      { id: "agents-heartbeat",     label: "Pulse & Auto Runner"   },
+      { id: "agents-outputs",       label: "Output Formats"        },
+      { id: "agents-governance",    label: "Governance & Approval" },
+      { id: "agents-api",           label: "API Reference"         },
     ],
   },
 ];
@@ -610,6 +611,99 @@ const DOCS: Record<string, React.ReactNode> = {
   ),
 
   // ─── Nvmix Agents Docs ─────────────────────────────────────────
+
+  "agents-local-install": (
+    <div>
+      <div className="doc-badge">Nvmix Agents</div>
+      <h1>Local Installation</h1>
+      <p className="lead">Run Nvmix Agents completely on your own PC — no cloud, no server, no subscription needed. Just Node.js and an AI API key.</p>
+
+      <div className="callout success">
+        <CheckCircle2 className="callout-icon" style={{ color: "var(--md-success)" }} />
+        <p><strong>100% local.</strong> All data is stored in JSON files on your computer. No database setup, no Docker, no cloud account required.</p>
+      </div>
+
+      <h2>Prerequisites</h2>
+      <table className="doc-table">
+        <thead><tr><th>Requirement</th><th>Version</th><th>Download</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Node.js</strong></td><td>18 or higher</td><td><code>nodejs.org</code></td></tr>
+          <tr><td><strong>Git</strong></td><td>Any</td><td><code>git-scm.com</code></td></tr>
+          <tr><td><strong>AI API Key</strong></td><td>—</td><td>1 key from any supported provider (see below)</td></tr>
+        </tbody>
+      </table>
+
+      <div className="callout info">
+        <Info className="callout-icon" style={{ color: "var(--md-primary)" }} />
+        <p>You need <strong>at least one</strong> AI API key. Nvmix supports: <strong>Groq</strong> (free tier available), <strong>Google Gemini</strong> (free tier available), OpenAI, NVIDIA NIM, DeepSeek, or Mistral.</p>
+      </div>
+
+      <h2>Step 1 — Clone the Repository</h2>
+      <p>Open your terminal (Command Prompt, PowerShell, or Terminal) and run:</p>
+      <CodeBlock lang="bash" code={`git clone https://github.com/zaampltd/nemix-agent.git\ncd nemix-agent`} />
+
+      <h2>Step 2 — Install Dependencies</h2>
+      <CodeBlock lang="bash" code={`npm install`} />
+      <p>This installs Next.js, React, Framer Motion, and all other packages. Takes ~1–2 minutes on first run.</p>
+
+      <h2>Step 3 — Add Your AI API Key</h2>
+      <p>Create a <code>.env.local</code> file in the <code>nemix-agent</code> folder and add at least one API key:</p>
+      <CodeBlock lang="bash" code={`# .env.local — add at least ONE of these:\n\n# Option A: Groq (FREE tier — recommended for beginners)\nGROQ_API_KEY=gsk_XXXXXXXXXXXXXXXXXXXXXXXX\n\n# Option B: Google Gemini (FREE tier available)\nGEMINI_API_KEY=AIzaSyXXXXXXXXXXXXXXXXXXXXX\n\n# Option C: OpenAI\nOPENAI_API_KEY=sk-XXXXXXXXXXXXXXXXXXXXXXXX\n\n# Option D: NVIDIA NIM\nNVIDIA_API_KEY=nvapi-XXXXXXXXXXXXXXXXXXXXXXXX\n\n# Option E: DeepSeek\nDEEPSEEK_API_KEY=sk-XXXXXXXXXXXXXXXXXXXXXXXX\n\n# Option F: Mistral\nMISTRAL_API_KEY=XXXXXXXXXXXXXXXXXXXXXXXX`} />
+
+      <div className="callout info">
+        <Info className="callout-icon" style={{ color: "var(--md-primary)" }} />
+        <p><strong>Where to get free API keys:</strong><br />
+        • <strong>Groq</strong> → <code>console.groq.com</code> — Fast, generous free tier<br />
+        • <strong>Google Gemini</strong> → <code>aistudio.google.com</code> — Free with Google account<br />
+        • <strong>NVIDIA NIM</strong> → <code>build.nvidia.com</code> — Free credits on signup</p>
+      </div>
+
+      <h2>Step 4 — Start the App</h2>
+      <CodeBlock lang="bash" code={`npm run dev`} />
+      <p>The app will start at <code>http://localhost:3000</code>. Open that URL in your browser.</p>
+
+      <div className="callout success">
+        <CheckCircle2 className="callout-icon" style={{ color: "var(--md-success)" }} />
+        <p>You should see the Nvmix Agents onboarding screen. Enter your company name, industry, goal, and your API key — then click <strong>Launch Company</strong>!</p>
+      </div>
+
+      <h2>Where Are Files Saved?</h2>
+      <p>When agents complete tasks, their output files are saved to your PC automatically:</p>
+      <CodeBlock lang="bash" code={`# Windows:\nC:\\Users\\YourName\\NvmixProjects\\YourCompanyName\\\n\n# Mac / Linux:\n/Users/YourName/NvmixProjects/YourCompanyName/`} />
+      <p>Example: If your company is called <code>FinanceFlow</code>, files will appear in <code>NvmixProjects/FinanceFlow/</code> as <code>.py</code>, <code>.csv</code>, and <code>.md</code> files.</p>
+
+      <h2>App Data Location</h2>
+      <p>All agents, tickets, chats, and emails are stored locally in the <code>data/</code> folder inside the project:</p>
+      <CodeBlock lang="bash" code={`nemix-agent/\n├── data/\n│   ├── company.json     ← Your company settings\n│   ├── agents.json      ← Your 7 AI agents\n│   ├── tickets.json     ← Task backlog\n│   ├── activity.json    ← Activity log\n│   ├── chats/           ← Chat history\n│   ├── emails/          ← Agent emails\n│   └── files/           ← File registry\n└── .env.local           ← Your API keys (never commit this!)`} />
+
+      <h2>Alternative: API Keys via db.json</h2>
+      <p>If you prefer not to use <code>.env.local</code>, you can also put keys in a <code>db.json</code> file in the project root:</p>
+      <CodeBlock lang="json" code={`{\n  "groqKey": "gsk_XXXXXXXXXXXXXXXXXXXXXXXX",\n  "geminiKey": "AIzaSyXXXXXXXXXXXXXXXXXXXXX",\n  "openaiKey": "sk-XXXXXXXXXXXXXXXXXXXXXXXX"\n}`} />
+
+      <h2>Resetting Everything</h2>
+      <p>To start fresh with a new company, reset all data via the API:</p>
+      <CodeBlock lang="bash" code={`curl -X POST http://localhost:3000/api/orchestrator \\\n  -H "Content-Type: application/json" \\\n  -d '{"action": "reset"}'`} />
+      <p>Or simply delete the contents of the <code>data/</code> folder and restart <code>npm run dev</code>.</p>
+
+      <h2>Stopping the App</h2>
+      <CodeBlock lang="bash" code={`# Press Ctrl+C in the terminal to stop the dev server`} />
+
+      <h2>Troubleshooting</h2>
+      <table className="doc-table">
+        <thead><tr><th>Problem</th><th>Fix</th></tr></thead>
+        <tbody>
+          <tr><td>Port 3000 already in use</td><td>Run <code>npm run dev -- -p 3001</code> to use port 3001</td></tr>
+          <tr><td>"No API keys configured" error</td><td>Make sure <code>.env.local</code> exists and has at least one valid key</td></tr>
+          <tr><td>Agents not generating output</td><td>Check your API key is valid and has credits/quota remaining</td></tr>
+          <tr><td>Files not appearing in NvmixProjects</td><td>Approve the ticket in the Board panel — files only save after approval</td></tr>
+          <tr><td>npm install fails</td><td>Ensure Node.js 18+ is installed: run <code>node --version</code></td></tr>
+        </tbody>
+      </table>
+
+      <h2>Full Setup Summary</h2>
+      <CodeBlock lang="bash" code={`# 1. Clone\ngit clone https://github.com/zaampltd/nemix-agent.git\ncd nemix-agent\n\n# 2. Install\nnpm install\n\n# 3. Add API key (create this file)\necho GROQ_API_KEY=your_key_here > .env.local\n\n# 4. Run\nnpm run dev\n\n# 5. Open browser\n# http://localhost:3000`} />
+    </div>
+  ),
 
   "agents-overview": (
     <div>
