@@ -18,6 +18,32 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${inter.variable} h-full antialiased`} suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var saved = localStorage.getItem('nvmix-theme');
+                  var dark = false;
+                  if (saved === 'dark') {
+                    dark = true;
+                  } else if (saved === 'light') {
+                    dark = false;
+                  } else {
+                    dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                  }
+                  if (dark) {
+                    document.documentElement.classList.add('dark');
+                  } else {
+                    document.documentElement.classList.remove('dark');
+                  }
+                } catch (e) {}
+              })();
+            `
+          }}
+        />
+      </head>
       <body className="min-h-full flex flex-col font-sans">
         <ThemeProvider>
           <AuthProvider>{children}</AuthProvider>
